@@ -1,0 +1,11 @@
+{
+  "name": "marvel-nexus",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "MARVEL NEXUS — bullet hell 2D pixel art fan game",
+  "scripts": {
+    "test": "node test/headless.mjs",
+    "sprites": "node tools/build_sprites.mjs"
+  }
+}

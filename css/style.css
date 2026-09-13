@@ -1,0 +1,61 @@
+/* MARVEL NEXUS — shell styles. Everything visible in-game is drawn on the canvas. */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  background: #06050b;
+  overflow: hidden;
+  font-family: monospace;
+  -webkit-font-smoothing: none;
+  overscroll-behavior: none;
+}
+
+#stage {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 50% 40%, #17123a 0%, #0a0818 45%, #05040a 100%);
+}
+
+#game {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: #05040a;
+  outline: none;
+  cursor: crosshair;
+  box-shadow: 0 0 0 2px #1d1740, 0 0 42px 6px rgba(94, 62, 220, .35);
+  touch-action: none;
+}
+
+#game:focus-visible { box-shadow: 0 0 0 2px #7b5cff, 0 0 42px 6px rgba(123, 92, 255, .45); }
+
+/* Boot overlay — replaced by the canvas title screen as soon as the engine is up */
+#boot {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  color: #cdbcf6;
+  letter-spacing: 3px;
+  pointer-events: none;
+  transition: opacity .35s ease;
+}
+#boot.gone { opacity: 0; }
+.boot-logo { font-size: 22px; font-weight: 700; color: #e8e0ff; text-shadow: 0 2px 0 #2a1b6b; }
+.boot-logo b { color: #ff4d4d; }
+.boot-bar {
+  width: 220px; height: 10px;
+  border: 2px solid #3a2c7a; background: #120e2a;
+}
+.boot-bar i {
+  display: block; height: 100%; width: 8%;
+  background: linear-gradient(90deg, #ff4d4d, #7b5cff);
+  transition: width .2s ease;
+}
+.boot-hint { font-size: 10px; opacity: .75; }

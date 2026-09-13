@@ -10,7 +10,7 @@ import { buildAllSprites } from './data/sprites.js';
 import { loadHeroArt, HEROES } from './data/heroes.js';
 import { ENEMIES, enemyById } from './data/enemies.js';
 import { itemById } from './data/shop.js';
-import { UI, setCtx } from './scenes/scene.js';
+import { UI, setCtx, toggleFullscreen } from './scenes/scene.js';
 import { TitleScene } from './scenes/title.js';
 import { LobbyScene } from './scenes/lobby.js';
 import { GameScene } from './scenes/game.js';
@@ -47,6 +47,7 @@ export function createGame(canvas) {
     G.sceneName = name;
     G.scene = scenes[name]();
     G.scene.enter(G, params || {});
+    UI.beginFrame(); // swallow clicks held across the scene change
   }
 
   G.gotoLobby = () => setScene('lobby');
@@ -75,14 +76,16 @@ export function createGame(canvas) {
 
   // ---- sizing ----
   function resize() {
-    const pad = 24;
-    const aw = innerWidth - pad, ah = innerHeight - pad;
-    let scale = Math.min(aw / VIEW_W, ah / VIEW_H);
-    if (scale >= 1) scale = Math.floor(scale);
-    canvas.style.width = VIEW_W * scale + 'px';
-    canvas.style.height = VIEW_H * scale + 'px';
+    const s = Save.data ? Save.data.settings : {};
+    const scale = Math.min(innerWidth / VIEW_W, innerHeight / VIEW_H);
+    let sc = scale;
+    if (s.integerScale && scale >= 1) sc = Math.floor(scale);
+    canvas.style.width = Math.round(VIEW_W * sc) + 'px';
+    canvas.style.height = Math.round(VIEW_H * sc) + 'px';
   }
   addEventListener('resize', resize);
+  document.addEventListener('fullscreenchange', resize);
+  G.resize = resize;
   resize();
 
   Input.init(canvas);
@@ -102,6 +105,7 @@ export function createGame(canvas) {
     acc += dt;
     Input.pollGamepad();
     UI.beginFrame();
+    if (Input.pressed('KeyF')) toggleFullscreen();
     let steps = 0;
     while (acc >= STEP && steps < 4) {
       G.scene.update(STEP, G);
@@ -130,22 +134,36 @@ async function boot() {
   const canvas = document.getElementById('game');
   const fill = document.getElementById('boot-fill');
   const hint = document.getElementById('boot-hint');
-  Save.load();
-  if (fill) fill.style.width = '30%';
-  buildAllSprites();
-  if (fill) fill.style.width = '60%';
-  if (hint) hint.textContent = 'INVOCANDO HERÓIS...';
-  await loadHeroArt();
-  if (fill) fill.style.width = '90%';
-  Audio.setVolumes({ ...Save.data.settings });
-  createGame(canvas);
-  if (fill) fill.style.width = '100%';
-  const bootEl = document.getElementById('boot');
-  if (bootEl) {
-    bootEl.classList.add('gone');
-    setTimeout(() => bootEl.remove(), 500);
+  const err = document.getElementById('boot-err');
+  const setP = (p, msg) => {
+    if (fill) fill.style.width = Math.round(p) + '%';
+    if (msg && hint) hint.textContent = msg;
+  };
+  try {
+    setP(8, 'CARREGANDO PERFIL...');
+    Save.load();
+    setP(20, 'COMPILANDO SPRITES...');
+    await new Promise((r) => setTimeout(r, 30)); // let the bar paint
+    buildAllSprites();
+    setP(38, 'INVOCANDO HERÓIS 0/6...');
+    await loadHeroArt((n, total) => setP(38 + (n / total) * 52, `INVOCANDO HERÓIS ${n}/${total}...`));
+    setP(94, 'SINCRONIZANDO O NEXUS...');
+    Audio.setVolumes({ ...Save.data.settings });
+    createGame(canvas);
+    setP(100, 'PRONTO!');
+    const bootEl = document.getElementById('boot');
+    if (bootEl) {
+      setTimeout(() => {
+        bootEl.classList.add('gone');
+        setTimeout(() => bootEl.remove(), 500);
+      }, 180);
+    }
+    canvas.focus({ preventScroll: true });
+  } catch (e) {
+    console.error(e);
+    if (err) err.textContent = 'ERRO AO CARREGAR: ' + (e && e.message ? e.message : e) + '\nRecarregue a página (F5).';
+    if (hint) hint.textContent = '';
   }
-  canvas.focus({ preventScroll: true });
 }
 
 if (typeof document !== 'undefined' && !g.__NX_NO_AUTOBOOT) {

@@ -22,7 +22,7 @@ export const DEFAULT_SAVE = {
   missionsClaimed: {},   // mission id -> true
   stats: { runs: 0, wins: 0, kills: 0, deaths: 0, bulletsDodged: 0, playTime: 0, levelReached: 0 },
   discovered: { enemies: {}, bosses: {} },
-  settings: { sfx: 0.9, music: 0.7, master: 0.8, screenshake: true, dmgNumbers: true, autofire: true },
+  settings: { sfx: 0.9, music: 0.7, master: 0.8, screenshake: true, dmgNumbers: true, autofire: true, integerScale: false },
   tutorialDone: false,
 };
 

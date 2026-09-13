@@ -2,7 +2,7 @@
 // MARVEL NEXUS — scenes/lobby.js
 // The hero base lobby with 8 functional tabs. Pixel-art room, not a website.
 // ---------------------------------------------------------------------------
-import { Scene, UI } from './scene.js';
+import { Scene, UI, toggleFullscreen } from './scene.js';
 import { drawText, textWidth } from '../core/font.js';
 import { SPR, drawSprite } from '../core/pixel.js';
 import { Input } from '../core/input.js';
@@ -517,14 +517,16 @@ export class LobbyScene extends Scene {
     ctx.fillStyle = '#4dd8ff'; ctx.fillRect(348, 113, Math.round(60 * s.sfx), 6);
     if (UI.button('cs+', 416, 110, 20, 14, '+')) s.sfx = clamp(s.sfx + 0.1, 0, 1);
     if (UI.button('t1', 196, 136, 240, 18, 'VIBRAÇÃO DE TELA: ' + (s.screenshake ? 'ON' : 'OFF'))) s.screenshake = !s.screenshake;
-    if (UI.button('t2', 196, 160, 240, 18, 'NÚMEROS DE DANO: ' + (s.dmgNumbers ? 'ON' : 'OFF'))) s.dmgNumbers = !s.dmgNumbers;
-    if (UI.button('t3', 196, 184, 240, 18, 'MIRA AUTOMÁTICA: ' + (s.autofire ? 'ON' : 'OFF'))) s.autofire = !s.autofire;
-    if (UI.button('tut', 196, 208, 240, 18, 'REEXIBIR TUTORIAL')) s.tutorialDone = false;
-    if (UI.button('reset', 196, 244, 240, 20, 'APAGAR SAVE (CLIQUE 2x)', { color: '#ff4d4d' })) {
+    if (UI.button('t2', 196, 158, 240, 18, 'NÚMEROS DE DANO: ' + (s.dmgNumbers ? 'ON' : 'OFF'))) s.dmgNumbers = !s.dmgNumbers;
+    if (UI.button('t3', 196, 180, 240, 18, 'MIRA AUTOMÁTICA: ' + (s.autofire ? 'ON' : 'OFF'))) s.autofire = !s.autofire;
+    if (UI.button('t4', 196, 202, 240, 18, 'ESCALA INTEIRA DE PIXEL: ' + (s.integerScale ? 'ON' : 'OFF'))) { s.integerScale = !s.integerScale; G.resize && G.resize(); }
+    if (UI.button('fs', 196, 224, 240, 18, 'TELA CHEIA [F]')) toggleFullscreen();
+    if (UI.button('tut', 196, 246, 240, 18, 'REEXIBIR TUTORIAL')) s.tutorialDone = false;
+    if (UI.button('reset', 196, 276, 240, 20, 'APAGAR SAVE (CLIQUE 2x)', { color: '#ff4d4d' })) {
       if (this._resetArm) { Save.reset(); Audio.sfx('defeat'); this._resetArm = false; }
       else { this._resetArm = true; }
     }
-    if (this._resetArm) drawText(ctx, 'CLIQUE NOVAMENTE PARA CONFIRMAR', 320, 272, { align: 'center', color: '#ff4d4d' });
+    if (this._resetArm) drawText(ctx, 'CLIQUE NOVAMENTE PARA CONFIRMAR', 320, 302, { align: 'center', color: '#ff4d4d' });
     Audio.setVolumes({ music: s.music, sfx: s.sfx, master: s.master });
     Save.save();
     drawText(ctx, 'MARVEL NEXUS v1.0 — FAN GAME PIXEL ART', 320, 330, { align: 'center', color: '#3a3350' });

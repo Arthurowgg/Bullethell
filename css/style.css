@@ -32,7 +32,7 @@ html, body {
 
 #game:focus-visible { box-shadow: 0 0 0 2px #7b5cff, 0 0 42px 6px rgba(123, 92, 255, .45); }
 
-/* Boot overlay — replaced by the canvas title screen as soon as the engine is up */
+/* Boot overlay — pixel-styled loader replaced by the title screen when ready */
 #boot {
   position: absolute;
   inset: 0;
@@ -40,22 +40,40 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 18px;
+  gap: 14px;
   color: #cdbcf6;
   letter-spacing: 3px;
   pointer-events: none;
   transition: opacity .35s ease;
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.02) 0 1px, transparent 1px 3px),
+    radial-gradient(circle at 50% 42%, #17123a 0%, #0a0818 55%, #05040a 100%);
 }
 #boot.gone { opacity: 0; }
-.boot-logo { font-size: 22px; font-weight: 700; color: #e8e0ff; text-shadow: 0 2px 0 #2a1b6b; }
+.boot-logo {
+  font-size: 26px; font-weight: 700; color: #e8e0ff;
+  text-shadow: 0 3px 0 #2a1b6b, 0 0 22px rgba(123,92,255,.55);
+  animation: bootPulse 1.6s steps(2) infinite;
+}
 .boot-logo b { color: #ff4d4d; }
+@keyframes bootPulse { 50% { text-shadow: 0 3px 0 #2a1b6b, 0 0 34px rgba(255,77,77,.65); } }
+.boot-sub { font-size: 10px; color: #7b6cff; letter-spacing: 5px; margin-top: -6px; }
 .boot-bar {
-  width: 220px; height: 10px;
+  width: 260px; height: 12px;
   border: 2px solid #3a2c7a; background: #120e2a;
+  position: relative; overflow: hidden;
 }
+.boot-bar::after {
+  content: ''; position: absolute; inset: 0;
+  background: repeating-linear-gradient(45deg, rgba(255,255,255,.14) 0 6px, transparent 6px 12px);
+  animation: bootStripes .5s steps(6) infinite;
+}
+@keyframes bootStripes { to { transform: translateX(12px); } }
 .boot-bar i {
-  display: block; height: 100%; width: 8%;
-  background: linear-gradient(90deg, #ff4d4d, #7b5cff);
-  transition: width .2s ease;
+  display: block; height: 100%; width: 4%;
+  background: linear-gradient(90deg, #ff4d4d, #7b5cff 60%, #4dd8ff);
+  transition: width .25s steps(8);
 }
-.boot-hint { font-size: 10px; opacity: .75; }
+.boot-hint { font-size: 10px; opacity: .85; animation: bootBlink 1s steps(2) infinite; }
+@keyframes bootBlink { 50% { opacity: .45; } }
+.boot-err { font-size: 10px; color: #ff4d4d; max-width: 80%; text-align: center; white-space: pre-wrap; }

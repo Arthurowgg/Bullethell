@@ -102,6 +102,16 @@ export function setCtx(ctx) { GCTX = ctx; }
 function ctxFill(x, y, w, h, col) { GCTX.fillStyle = col; GCTX.fillRect(x, y, w, h); }
 function ctxStroke(x, y, w, h, col) { GCTX.strokeStyle = col; GCTX.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1); }
 
+/** Browser fullscreen toggle (no-op headless). */
+export function toggleFullscreen() {
+  if (typeof document === 'undefined' || !document.documentElement || !document.documentElement.requestFullscreen) return;
+  if (document.fullscreenElement) {
+    document.exitFullscreen && document.exitFullscreen().catch(() => {});
+  } else {
+    document.documentElement.requestFullscreen().catch(() => {});
+  }
+}
+
 /** keyboard navigation helper: returns true once when key pressed */
 export function pressed(code) { return Input.pressed(code); }
 

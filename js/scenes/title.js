@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // MARVEL NEXUS — scenes/title.js
 // ---------------------------------------------------------------------------
-import { Scene } from './scene.js';
+import { Scene, UI, toggleFullscreen } from './scene.js';
 import { drawText } from '../core/font.js';
 import { SPR, drawSprite } from '../core/pixel.js';
 import { Input } from '../core/input.js';
@@ -11,13 +11,18 @@ import { HEROES } from '../data/heroes.js';
 import { Save } from '../core/save.js';
 
 export class TitleScene extends Scene {
-  enter() { this.t = 0; Audio.playTrack('title'); }
-  update(dt) {
+  enter() { this.t = 0; this.hold = 0.5; Audio.playTrack('title'); }
+  update(dt, G) {
     this.t += dt;
-    if (Input.pressed('Enter') || Input.pressed('Space') || Input.mouse.down) {
+    this.hold = Math.max(0, this.hold - dt);
+    const start = this.hold <= 0 && (Input.pressed('Enter') || Input.pressed('Space') || Input.mouse.down);
+    if (start) {
       Audio.sfx('ui');
-      this.go = true;
+      Input.mouse.down = false; // don't leak the click into the lobby
+      G.gotoLobby();
+      return;
     }
+    if (Input.pressed('KeyF')) toggleFullscreen();
   }
   draw(ctx, G) {
     ctx.fillStyle = '#06050b';
@@ -56,8 +61,11 @@ export class TitleScene extends Scene {
     });
 
     if (Math.floor(this.t * 2) % 2 === 0)
-      drawText(ctx, 'PRESSIONE ENTER OU CLIQUE', cx, 262, { align: 'center', scale: 1, color: '#ffd94a', shadow: true });
-    drawText(ctx, 'WASD MOVER · MOUSE MIRAR · ESPAÇO ESQUIVA · Q HABILIDADE · E ESPECIAL · P PAUSA', cx, 300, { align: 'center', scale: 1, color: '#5a5470' });
-    drawText(ctx, 'FAN GAME SEM FINS LUCRATIVOS · v1.0', cx, 344, { align: 'center', scale: 1, color: '#3a3350' });
+      drawText(ctx, 'PRESSIONE ENTER OU CLIQUE PARA COMEÇAR', cx, 258, { align: 'center', scale: 1, color: '#ffd94a', shadow: true });
+
+    if (UI.button('fs', cx - 70, 282, 140, 18, 'TELA CHEIA [F]', { color: '#4dd8ff' })) toggleFullscreen();
+
+    drawText(ctx, 'WASD MOVER · MOUSE MIRAR · ESPAÇO ESQUIVA · Q HABILIDADE · E ESPECIAL · P PAUSA', cx, 316, { align: 'center', scale: 1, color: '#5a5470' });
+    drawText(ctx, 'FAN GAME SEM FINS LUCRATIVOS · v1.1', cx, 344, { align: 'center', scale: 1, color: '#3a3350' });
   }
 }

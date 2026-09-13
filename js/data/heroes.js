@@ -76,13 +76,16 @@ function fallbackHero(color) {
   return p;
 }
 
-export function loadHeroArt() {
+export function loadHeroArt(onProgress) {
   if (typeof Image === 'undefined') {
     for (const h of HEROES) reg('hero_' + h.id, fallbackHero(h.color));
+    onProgress && onProgress(HEROES.length, HEROES.length);
     return Promise.resolve();
   }
+  let done = 0;
   return Promise.all(HEROES.map((h) => new Promise((res) => {
     const img = new Image();
+    const finish = () => { done++; onProgress && onProgress(done, HEROES.length); res(); };
     img.onload = () => {
       const c = document.createElement('canvas');
       c.width = img.width; c.height = img.height;
@@ -96,9 +99,9 @@ export function loadHeroArt() {
       g.imageSmoothingEnabled = false;
       g.drawImage(img, 0, 0, b.width, b.height);
       reg('hero_' + h.id + '_big', b);
-      res();
+      finish();
     };
-    img.onerror = () => { reg('hero_' + h.id, fallbackHero(h.color)); reg('hero_' + h.id + '_big', fallbackHero(h.color)); res(); };
+    img.onerror = () => { reg('hero_' + h.id, fallbackHero(h.color)); reg('hero_' + h.id + '_big', fallbackHero(h.color)); finish(); };
     img.src = 'assets/sprites/heroes/' + h.id + '.png';
   })));
 }

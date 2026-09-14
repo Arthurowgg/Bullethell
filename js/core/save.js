@@ -12,7 +12,7 @@ export const DEFAULT_SAVE = {
   accountXp: 0,
   accountLevel: 1,
   nexusNodes: {},        // nexus core purchased nodes: id -> rank
-  heroesUnlocked: { arachnid: true },
+  heroesUnlocked: { arachnid: true, stormgod: true, ironknight: true, merc: true, claws: true, mystic: true },
   heroSelected: 'arachnid',
   raidsCleared: {},      // raidId -> { bestTime, wins }
   bossesDefeated: {},    // bossId -> count
@@ -39,6 +39,8 @@ export const Save = {
     let parsed = null;
     if (raw) { try { parsed = JSON.parse(raw); } catch { parsed = null; } }
     this.data = deepMerge(structuredClone(DEFAULT_SAVE), parsed || {});
+    // migration: all heroes always unlocked
+    for (const h of ['arachnid', 'stormgod', 'ironknight', 'merc', 'claws', 'mystic']) this.data.heroesUnlocked[h] = true;
     return this.data;
   },
 

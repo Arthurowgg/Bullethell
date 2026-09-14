@@ -10,7 +10,7 @@ import { VIEW_W, VIEW_H } from './arena.js';
 const makeBullet = () => ({
   x: 0, y: 0, vx: 0, vy: 0, r: 3, dmg: 1, life: 4,
   sprite: 'b_enemy', pierce: 0, bounce: 0, homing: 0, friendly: false,
-  hitIds: null, wobble: 0, dead: false, trail: null,
+  hitIds: null, wobble: 0, dead: false, trail: null, fx: null, age: 0,
 });
 
 export class BulletSystem {
@@ -38,6 +38,7 @@ export class BulletSystem {
   update(dt, arena, targetsForHoming) {
     const bnd = arena.bounds;
     const upd = (b) => {
+      b.age = (b.age || 0) + dt;
       b.life -= dt;
       if (b.life <= 0) { b.dead = true; return; }
       if (b.homing && targetsForHoming && targetsForHoming.length) {
@@ -90,7 +91,56 @@ export class BulletSystem {
     }
     for (const b of this.player.live) {
       const s = SPR[b.sprite];
-      if (s) drawSprite(ctx, s, b.x, b.y);
+      const a = Math.atan2(b.vy, b.vx);
+      if (!s) continue;
+      if (b.fx === 'arachnid') {
+        // silk threads trailing the web dart
+        ctx.strokeStyle = '#ff2b2b88';
+        ctx.beginPath();
+        ctx.moveTo(b.x - Math.cos(a) * 14 + Math.sin(a) * 2, b.y - Math.sin(a) * 14 - Math.cos(a) * 2);
+        ctx.lineTo(b.x, b.y);
+        ctx.moveTo(b.x - Math.cos(a) * 14 - Math.sin(a) * 2, b.y - Math.sin(a) * 14 + Math.cos(a) * 2);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+        drawSprite(ctx, s, b.x, b.y, { rot: a });
+      } else if (b.fx === 'stormgod') {
+        // zigzag zap tail
+        ctx.strokeStyle = '#9feaffaa';
+        ctx.beginPath();
+        let px = b.x, py = b.y;
+        ctx.moveTo(px, py);
+        for (let i = 1; i <= 3; i++) {
+          const d = i * 5;
+          const j = ((i + Math.floor(b.age * 20)) % 2 ? 2 : -2);
+          px = b.x - Math.cos(a) * d + Math.sin(a) * j;
+          py = b.y - Math.sin(a) * d - Math.cos(a) * j;
+          ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+        drawSprite(ctx, s, b.x, b.y, { rot: a });
+      } else if (b.fx === 'ironknight') {
+        ctx.globalAlpha = 0.35;
+        ctx.fillStyle = '#4dd8ff';
+        ctx.beginPath(); ctx.arc(b.x, b.y, 6 + Math.sin(b.age * 30) * 1, 0, TAU); ctx.fill();
+        ctx.globalAlpha = 1;
+        drawSprite(ctx, s, b.x, b.y);
+      } else if (b.fx === 'merc') {
+        ctx.strokeStyle = '#ffd94a66';
+        ctx.beginPath();
+        ctx.moveTo(b.x - Math.cos(a) * 12, b.y - Math.sin(a) * 12);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+        drawSprite(ctx, s, b.x, b.y, { rot: b.age * 25 });
+      } else if (b.fx === 'claws') {
+        drawSprite(ctx, s, b.x, b.y, { rot: a, alpha: Math.min(1, b.life * 4) });
+      } else if (b.fx === 'mystic') {
+        const ra = b.age * 6;
+        ctx.fillStyle = '#ffd94a';
+        ctx.fillRect(b.x + Math.cos(ra) * 7 - 1, b.y + Math.sin(ra) * 7 - 1, 2, 2);
+        drawSprite(ctx, s, b.x, b.y, { rot: ra * 0.5 });
+      } else {
+        drawSprite(ctx, s, b.x, b.y);
+      }
     }
   }
 }

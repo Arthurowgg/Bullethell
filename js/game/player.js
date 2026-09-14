@@ -327,6 +327,7 @@ export class Player {
       if (b) {
         if (this.shotSprite) b.sprite = this.shotSprite;
         else if (SPR[this.shotKey]) b.sprite = this.shotKey;
+        b.fx = this.hero.id;
         if (bcol) b.tint = bcol;
       }
       return b;
@@ -375,6 +376,7 @@ export class Player {
           if (b) {
             if (this.shotSprite) b.sprite = this.shotSprite;
             else if (SPR[this.shotKey]) b.sprite = this.shotKey;
+            b.fx = this.hero.id;
             if (bcol) b.tint = bcol;
           }
         }

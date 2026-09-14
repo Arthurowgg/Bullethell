@@ -49,6 +49,14 @@ export function loadSheetArt(onProgress) {
   for (const b of ['ultron', 'loki', 'hela', 'devourer', 'thanos']) {
     load(`assets/sprites/bosses/${b}.png`, (img) => { SPR['boss_' + b] = cnv(img, 1); });
   }
+  // per-hero walk loops + ability icons
+  for (const h of HEROES) {
+    for (let i = 0; i < 4; i++) {
+      load(`assets/sprites/heroes_anim/${h.id}_w${i}.png`, (img) => { SPR['hero_' + h.id + '_w' + i] = cnv(img, 1); });
+    }
+    load(`assets/sprites/ui/abil_${h.id}_q.png`, (img) => { SPR['abil_' + h.id + '_q'] = cnv(img, 1); });
+    load(`assets/sprites/ui/abil_${h.id}_e.png`, (img) => { SPR['abil_' + h.id + '_e'] = cnv(img, 1); });
+  }
   // enemy walk-animation B frames
   for (const e of ['drone', 'chitauri', 'symbiote', 'sorcerer', 'sentinel', 'spectre', 'jotun', 'chaos']) {
     load(`assets/sprites/enemies/${e}_b.png`, (img) => { SPR['en_' + e + '_b'] = cnv(img, 1); });

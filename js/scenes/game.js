@@ -137,7 +137,7 @@ export class GameScene extends Scene {
         else if (side === 2) { x = b.x + 10; y = rand(b.y + 10, b.y + b.h - 10); }
         else { x = b.x + b.w - 10; y = rand(b.y + 10, b.y + b.h - 10); }
       } else {
-        x = rand(60, 580); y = rand(50, 160);
+        [x, y] = G.arena.randomWalkable();
       }
       const e = makeEnemy(def, x, y, this.formationSlot++);
       G.enemies.push(e);

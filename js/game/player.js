@@ -582,8 +582,11 @@ export class Player {
       ctx.fillRect(-2, -2, 4, 4);
       ctx.restore();
     }
-    // hero emblem sprite — static (head/mask emblem, no frame animation)
-    const spr = SPR[this.base] || SPR['hero_' + this.hero.id];
+    // hero sprite: looping walk animation from per-hero sheet (0,1,2,1)
+    const moving = Math.abs(this.vx) + Math.abs(this.vy) > 4;
+    const seq = [0, 1, 2, 1];
+    const wf = moving ? seq[Math.floor(this.walk * 7) % 4] : 0;
+    const spr = SPR[this.base + '_w' + wf] || SPR[this.base] || SPR['hero_' + this.hero.id];
     const bob = 0;
     const blink = this.iframes > 0 && Math.floor(this.iframes * 14) % 2 === 0;
     if (spr) {

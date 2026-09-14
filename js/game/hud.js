@@ -45,17 +45,18 @@ export function drawHud(ctx, G) {
   drawSprite(ctx, SPR.fragment, VIEW_W / 2 + 26, 27, { scale: 0.8 });
   drawText(ctx, String(G.runFragments), VIEW_W / 2 + 36, 26, { color: '#9feaff' });
 
-  // top-left: round ladder + current world icon
+  // top-right: round ladder + current world icon
   if (G.waves) {
     const r = G.waves.cur ? G.waves.cur() : null;
     const tid = G.arena && G.arena.themeId;
     const ic = SPR['wicon_' + tid] || SPR.ui_burst;
-    if (ic) drawSprite(ctx, ic, 16, 16, { scale: 1.2 });
     const bossish = r && r.t === 'boss';
-    drawText(ctx, `ROUND ${G.waves.round + 1}/${12}`, 28, 8, { scale: 1, color: bossish ? '#ff8c8c' : '#c8c2e8', shadow: true });
+    const label = `ROUND ${G.waves.round + 1}/${12}`;
+    drawText(ctx, label, VIEW_W - 26, 8, { align: 'right', scale: 1, color: bossish ? '#ff8c8c' : '#c8c2e8', shadow: true });
+    if (ic) drawSprite(ctx, ic, VIEW_W - 14, 14, { scale: 1.2 });
     const WLABEL = { wakanda: 'REINO DE VIBRANIUM', asgard: 'PONTE DO ARCO-ÍRIS', newyork: 'CRUZAMENTO DOS HERÓIS',
       boss_ultron: 'SOKOVIA SUSPENSA', boss_loki: 'SALÃO DAS ILUSÕES', boss_hela: 'REINO DOS MORTOS', boss_devourer: 'VAZIO CÓSMICO', boss_thanos: 'MUNDO EM CINZAS' };
-    if (WLABEL[tid]) drawText(ctx, WLABEL[tid], 28, 17, { scale: 1, color: '#5a5480', shadow: true });
+    if (WLABEL[tid]) drawText(ctx, WLABEL[tid], VIEW_W - 8, 17, { align: 'right', scale: 1, color: '#5a5480', shadow: true });
   }
   if (G.banner) {
     ctx.globalAlpha = Math.min(1, G.banner.t);
@@ -63,11 +64,10 @@ export function drawHud(ctx, G) {
     ctx.globalAlpha = 1;
   }
 
-  // -- bottom-left: abilities --
-  drawAbility(ctx, 14, 322, 'Q', P.hero.ability.name, P.abilityCd, P.hero.ability.cd * st.cdr, P.hero.color, P.abilityCd <= 0);
-  drawAbility(ctx, 52, 322, 'E', P.hero.special.name, 100 - P.charge, 100, '#ffd94a', P.charge >= 100, P.charge >= 100 ? 'PRONTO!' : null);
-  // dash pip
-  drawAbility(ctx, 90, 322, 'ESP', 'ESQUIVA', P.dashCd, st.dashCd, '#ffffff', P.dashCd <= 0);
+  // -- bottom-left: abilities with hero icons + custom borders --
+  drawAbility(ctx, 14, 320, 'Q', P.hero.ability.name, P.abilityCd, P.hero.ability.cd * st.cdr, P.hero.color, P.abilityCd <= 0, null, SPR['abil_' + P.hero.id + '_q'], P.hero.id);
+  drawAbility(ctx, 52, 320, 'E', P.hero.special.name, 100 - P.charge, 100, '#ffd94a', P.charge >= 100, P.charge >= 100 ? 'PRONTO!' : null, SPR['abil_' + P.hero.id + '_e'], P.hero.id);
+  drawAbility(ctx, 90, 320, 'ESP', 'ESQUIVA', P.dashCd, st.dashCd, '#ffffff', P.dashCd <= 0, null, SPR.ui_bolt, P.hero.id);
 
   // -- boss bar: custom AI frame sprite + code fill --
   if (G.boss && !G.boss.dead) {
@@ -122,7 +122,7 @@ export function drawHud(ctx, G) {
   }
 }
 
-function drawAbility(ctx, x, y, key, name, cd, cdMax, color, ready, readyLabel) {
+function drawAbility(ctx, x, y, key, name, cd, cdMax, color, ready, readyLabel, icon, heroId) {
   const s = 26;
   ctx.fillStyle = '#100818cc';
   ctx.fillRect(x, y, s, s);
@@ -134,7 +134,14 @@ function drawAbility(ctx, x, y, key, name, cd, cdMax, color, ready, readyLabel) 
     ctx.fillStyle = '#000000aa';
     ctx.fillRect(x, y, s, Math.round(s * f));
   }
-  drawText(ctx, key, x + 2, y + 2, { scale: 1, color: ready ? '#ffffff' : '#8a84a8' });
+  // custom per-hero border (same usable size, border changes)
+  const HB = { arachnid: '#ff4d4d', stormgod: '#9feaff', ironknight: '#ffd94a', merc: '#ff8c8c', claws: '#ffd94a', mystic: '#b06bff' };
+  ctx.strokeStyle = HB[heroId] || color;
+  ctx.strokeRect(x - 1.5, y - 1.5, s + 3, s + 3);
+  ctx.strokeStyle = '#000000';
+  ctx.strokeRect(x - 2.5, y - 2.5, s + 5, s + 5);
+  if (icon) drawSprite(ctx, icon, x + s / 2, y + s / 2 - 2, { scale: 16 / Math.max(icon.width, icon.height) });
+  drawText(ctx, key, x + 2, y + s - 8, { scale: 1, color: ready ? '#ffffff' : '#8a84a8' });
   if (ready && readyLabel) drawText(ctx, readyLabel, x + s / 2, y + 12, { scale: 1, align: 'center', color });
   // ready pulse
   if (ready) {

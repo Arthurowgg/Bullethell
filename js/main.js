@@ -107,7 +107,12 @@ export function createGame(canvas) {
     if (Input.pressed('KeyF')) toggleFullscreen();
     let steps = 0;
     while (acc >= STEP && steps < 4) {
-      G.scene.update(STEP, G);
+      try {
+        G.scene.update(STEP, G);
+      } catch (err) {
+        G.__err = err;
+        console.error('[update]', err);
+      }
       acc -= STEP;
       steps++;
     }
@@ -116,7 +121,19 @@ export function createGame(canvas) {
     ctx.imageSmoothingEnabled = false;
     ctx.clearRect(0, 0, VIEW_W, VIEW_H);
     setCtx(ctx);
-    G.scene.draw(ctx, G);
+    try {
+      G.scene.draw(ctx, G);
+    } catch (err) {
+      G.__err = err;
+      console.error('[draw]', err);
+    }
+    if (G.__err) {
+      ctx.fillStyle = '#ff2b2b';
+      ctx.fillRect(4, VIEW_H - 26, VIEW_W - 8, 22);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '10px monospace';
+      ctx.fillText('ERRO: ' + String(G.__err.message || G.__err).slice(0, 90), 8, VIEW_H - 12);
+    }
     document.title = 'MARVEL NEXUS — ' + G.sceneName.toUpperCase();
     Input.endFrame();
   }

@@ -18,12 +18,13 @@ export class Arena {
     this.rng = new RNG(seed * 131 + 17);
     this.bounds = { x: WALL, y: WALL, w: VIEW_W - WALL * 2, h: VIEW_H - WALL * 2 };
     this.obstacles = this._makeObstacles();
+    this.blocked = this._makeBlocked();
     this.bg = this._renderBg();
   }
 
-  // push a circle out of every obstacle rect (hitbox do mapa)
+  // invisible walkable mask: blocked rects = "fora do mapa"
   resolveCircle(x, y, r) {
-    for (const o of this.obstacles) {
+    for (const o of this.blocked) {
       const cx = Math.max(o.x, Math.min(x, o.x + o.w));
       const cy = Math.max(o.y, Math.min(y, o.y + o.h));
       const dx = x - cx, dy = y - cy;
@@ -33,29 +34,54 @@ export class Arena {
         x = cx + (dx / d) * r;
         y = cy + (dy / d) * r;
       } else if (d2 <= 0.0001) {
-        y = o.y - r; // degenerate: push up
+        y = o.y - r;
       }
     }
     return [x, y];
   }
 
-  _makeObstacles() {
-    const obs = [];
-    const n = this.rng.int(2, 4);
-    for (let i = 0; i < n; i++) {
-      const w = 16, h = 16;
-      const x = this.rng.range(60, VIEW_W - 76);
-      const y = this.rng.range(56, VIEW_H - 72);
-      // keep center clear for the player spawn
-      if (Math.hypot(x - VIEW_W / 2, y - VIEW_H / 2) < 90) continue;
-      obs.push({ x, y, w, h });
-    }
-    return obs;
+  inWalk(x, y) {
+    if (x < this.bounds.x || x > this.bounds.x + this.bounds.w || y < this.bounds.y || y > this.bounds.y + this.bounds.h) return false;
+    for (const o of this.blocked) if (x > o.x && x < o.x + o.w && y > o.y && y < o.y + o.h) return false;
+    return true;
   }
+
+  randomWalkable(margin = 14) {
+    for (let i = 0; i < 24; i++) {
+      const x = rand(this.bounds.x + margin, this.bounds.x + this.bounds.w - margin);
+      const y = rand(this.bounds.y + margin, this.bounds.y + this.bounds.h - margin);
+      if (this.inWalk(x, y)) return [x, y];
+    }
+    return [VIEW_W / 2, VIEW_H / 2];
+  }
+
+  _makeBlocked() {
+    // per-world invisible "out of bounds" shapes (props/edges of the art)
+    const B = (x, y, w, h) => ({ x, y, w, h });
+    const t = this.themeId;
+    const c = [];
+    const corner = 46; // all worlds: soft corner cuts
+    c.push(B(0, 0, corner, 26), B(0, 0, 26, corner));
+    c.push(B(VIEW_W - corner, 0, corner, 26), B(VIEW_W - 26, 0, 26, corner));
+    c.push(B(0, VIEW_H - 26, corner, 26), B(0, VIEW_H - corner, 26, corner));
+    c.push(B(VIEW_W - corner, VIEW_H - 26, corner, 26), B(VIEW_W - 26, VIEW_H - corner, 26, corner));
+    if (t === 'wakanda') { c.push(B(20, 20, 60, 44), B(VIEW_W - 84, 20, 64, 40), B(24, VIEW_H - 62, 56, 42), B(VIEW_W - 80, VIEW_H - 60, 60, 40)); }
+    if (t === 'asgard') { c.push(B(0, 0, 90, 60), B(VIEW_W - 90, 0, 90, 60), B(0, VIEW_H - 60, 90, 60), B(VIEW_W - 90, VIEW_H - 60, 90, 60)); }
+    if (t === 'newyork') { c.push(B(0, 0, 120, 70), B(VIEW_W - 120, 0, 120, 70), B(0, VIEW_H - 70, 120, 70), B(VIEW_W - 120, VIEW_H - 70, 120, 70)); }
+    if (t === 'boss_ultron') { c.push(B(0, 0, 140, 90), B(VIEW_W - 140, 0, 140, 90), B(0, VIEW_H - 80, 140, 80), B(VIEW_W - 140, VIEW_H - 80, 140, 80)); }
+    if (t === 'boss_loki') { c.push(B(0, 0, 120, 80), B(VIEW_W - 120, 0, 120, 80), B(0, VIEW_H - 80, 120, 80), B(VIEW_W - 120, VIEW_H - 80, 120, 80)); }
+    if (t === 'boss_hela') { c.push(B(0, 0, 130, 84), B(VIEW_W - 130, 0, 130, 84), B(0, VIEW_H - 84, 130, 84), B(VIEW_W - 130, VIEW_H - 84, 130, 84)); }
+    if (t === 'boss_devourer') { c.push(B(0, 0, 150, 100), B(VIEW_W - 150, 0, 150, 100), B(0, VIEW_H - 100, 150, 100), B(VIEW_W - 150, VIEW_H - 100, 150, 100)); }
+    if (t === 'boss_thanos') { c.push(B(0, 0, 130, 90), B(VIEW_W - 130, 0, 130, 90), B(0, VIEW_H - 80, 130, 80), B(VIEW_W - 130, VIEW_H - 80, 130, 80)); }
+    return c;
+  }
+
+  _makeObstacles() { return []; }
 
   setTheme(themeId) {
     this.themeId = themeId;
     this.theme = THEMES[themeId] || this.theme;
+    this.blocked = this._makeBlocked();
     this.bg = this._renderBg();
   }
 
@@ -68,18 +94,6 @@ export class Arena {
     const wimg = SPR['world_' + this.themeId];
     if (wimg) {
       g.drawImage(wimg, 0, 0, VIEW_W, VIEW_H);
-      // visible hitbox props (rocks/cover) drawn over the art
-      for (const o of this.obstacles) {
-        g.fillStyle = '#00000066';
-        g.fillRect(o.x + 2, o.y + o.h - 2, o.w, 4);
-        const wall = this.theme.wallTop || '#6b7285';
-        g.fillStyle = this.theme.wall || '#343a48';
-        g.fillRect(o.x, o.y + 3, o.w, o.h - 3);
-        g.fillStyle = wall;
-        g.fillRect(o.x, o.y, o.w, 4);
-        g.fillStyle = '#00000033';
-        g.fillRect(o.x + 2, o.y + 6, o.w - 4, o.h - 10);
-      }
       return c;
     }
     // floor tiles

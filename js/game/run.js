@@ -18,7 +18,7 @@ export function newRunStats(hero, save) {
     shield: 0, revives: 0, upChoices: 3, fragGain: 1,
     level: 1, xp: 0,
   };
-  if (save) applyNexus(save, s);
+  if (save) applyNexus(save, s, hero.id);
   // hero passives
   switch (hero.id) {
     case 'arachnid': s.speed *= 1.15; s.dashCd *= 0.8; break;

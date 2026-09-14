@@ -8,9 +8,13 @@ import { SPR, drawSprite } from '../core/pixel.js';
 import { drawText } from '../core/font.js';
 
 export class Player {
-  constructor(hero, stats) {
+  constructor(hero, stats, skin = null) {
     this.hero = hero;
     this.stats = stats;
+    this.skin = skin;
+    this.base = skin ? 'skin_' + skin.id : 'hero_' + hero.id;
+    this.shotSprite = skin && skin.fx.shot ? skin.fx.shot : null;
+    this.shotTint = skin && skin.fx.shotTint ? skin.fx.shotTint : null;
     this.x = 320; this.y = 220;
     this.vx = 0; this.vy = 0;
     this.r = 7;
@@ -41,10 +45,8 @@ export class Player {
     this.walk = 0;
     this.alt = false; // dual weapons alternation
     this.fireAnim = 0;
-    this.trailColor = null;
-    this.bulletColor = null;
-    this.tint = null;
-    this.auraColor = null;
+    this.trailColor = skin && skin.fx.trail ? skin.fx.trail : null;
+    this.auraColor = skin && skin.fx.aura ? skin.fx.aura : null;
   }
 
   get speed() {
@@ -297,11 +299,6 @@ export class Player {
     return pts;
   }
 
-  bulletSprite() {
-    if (this.bulletColor) return null; // custom color drawn as tinted orb
-    return this.hero.id === 'ironknight' || this.hero.id === 'merc' ? 'b_player2' : 'b_player';
-  }
-
   doAttack(G) {
     const st = this.stats;
     const atk = this.hero.attack;
@@ -311,7 +308,7 @@ export class Player {
       if (Math.random() < st.crit) return d * 2;
       return d;
     };
-    const bcol = this.bulletColor;
+    const bcol = this.shotTint;
     const mk = (angle, o = {}) => {
       const b = G.bullets.spawnPlayer({
         x: this.x + Math.cos(angle) * 8,
@@ -322,6 +319,7 @@ export class Player {
         bounce: st.bounce,
       });
       Object.assign(b || {}, o);
+      if (b && this.shotSprite) b.sprite = this.shotSprite;
       if (b && bcol) b.tint = bcol;
       return b;
     };
@@ -366,6 +364,7 @@ export class Player {
             vy: Math.sin(a + off) * atk.speed * st.projSpeed,
             dmg: dmg(atk.dmg), bounce: st.bounce, r: 3, sprite: 'b_tracer',
           });
+          if (b && this.shotSprite) b.sprite = this.shotSprite;
           if (bcol && b) b.tint = bcol;
         }
         G.audio.sfx('shoot');
@@ -576,18 +575,16 @@ export class Player {
       ctx.restore();
     }
     // hero emblem sprite with frame animation (idle/idle-alt/attack/hurt)
-    const id = this.hero.id;
     let idx = 0;
     if (this.hurtFlash > 0) idx = 3;
     else if (this.fireAnim > 0 || this.slashT > 0) idx = 2;
     else idx = Math.floor(this.walk * 0.6) & 1;
-    const spr = SPR['hero_' + id + '_f' + idx] || SPR['hero_' + id];
+    const spr = SPR[this.base + '_f' + idx] || SPR[this.base] || SPR['hero_' + this.hero.id];
     const bob = Math.round(Math.sin(this.walk) * 1);
     const blink = this.iframes > 0 && Math.floor(this.iframes * 14) % 2 === 0;
     if (spr) {
       drawSprite(ctx, spr, this.x, this.y + bob, {
         alpha: blink ? 0.35 : 1,
-        tint: this.tint || undefined,
         scale: 1,
       });
     }

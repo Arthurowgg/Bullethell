@@ -70,19 +70,19 @@ const STEP = 1 / 60;
   console.log('draw ok: title');
 }
 
-// ---- lobby: every tab ----
+// ---- lobby: tabs + shop sections + overlays ----
 {
   const s = new LobbyScene(); const G = freshG();
   s.enter(G, {});
-  for (let tab = 0; tab < 8; tab++) {
-    s.tab = tab;
-    for (let i = 0; i < 10; i++) { s.update(STEP, G); UI.beginFrame(); setCtx(ctx); s.draw(ctx, G); Input.endFrame(); }
-  }
-  // shop interactions
-  s.tab = 2; s.selectedItem = 'tr_cosmico';
-  UI.beginFrame(); setCtx(ctx); s.draw(ctx, G);
-  s.selectedItem = 'at_void'; UI.beginFrame(); setCtx(ctx); s.draw(ctx, G);
-  console.log('draw ok: lobby (8 tabs + shop preview)');
+  s.tab = 0;
+  for (let i = 0; i < 10; i++) { s.update(STEP, G); UI.beginFrame(); setCtx(ctx); s.draw(ctx, G); Input.endFrame(); }
+  s.tab = 1; s.shopSec = 'nexus';
+  for (let i = 0; i < 5; i++) { s.update(STEP, G); UI.beginFrame(); setCtx(ctx); s.draw(ctx, G); Input.endFrame(); }
+  s.shopSec = 'cos'; s.skinSel = 'venom';
+  for (let i = 0; i < 5; i++) { s.update(STEP, G); UI.beginFrame(); setCtx(ctx); s.draw(ctx, G); Input.endFrame(); }
+  s.raidsOpen = true; UI.beginFrame(); setCtx(ctx); s.draw(ctx, G);
+  s.raidsOpen = false; s.cfgOpen = true; UI.beginFrame(); setCtx(ctx); s.draw(ctx, G);
+  console.log('draw ok: lobby (jogar + loja nexus/cosmetica + overlays)');
 }
 
 // ---- game: run + overlays ----

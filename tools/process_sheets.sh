@@ -56,5 +56,19 @@ half "$SRC/bosses_b.png" R "$OUT/bosses/devourer.png" 48x48
 key "$SRC/thanos.png" /tmp/th.png
 convert /tmp/th.png -filter box -resize 60x64 "$OUT/bosses/thanos.png"
 
+# ---- skins: 4-frame strips ----
+mkdir -p $OUT/skins $OUT/skins_big
+for f in venom crimson midnight; do
+  key "$SRC/skin_$f.png" /tmp/strip.png
+  read W H <<< "$(dims /tmp/strip.png)"
+  FW=$((W / 4))
+  for i in 0 1 2 3; do
+    convert /tmp/strip.png -crop ${FW}x${H}+$((i * FW))+0 +repage \
+      -trim +repage -filter box -resize 24x24 \
+      -gravity center -background none -extent 28x28 "$OUT/skins/${f}_f$i.png"
+  done
+  convert "$OUT/skins/${f}_f0.png" -filter point -resize 400% "$OUT/skins_big/$f.png"
+done
+
 echo OK
 identify $OUT/heroes/arachnid_f0.png $OUT/enemies/drone.png $OUT/bosses/thanos.png | awk '{print $1, $3}'

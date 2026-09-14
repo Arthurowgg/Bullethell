@@ -10,7 +10,6 @@ import { buildAllSprites } from './data/sprites.js';
 import { loadHeroArt, HEROES } from './data/heroes.js';
 import { loadSheetArt } from './data/sheetArt.js';
 import { ENEMIES, enemyById } from './data/enemies.js';
-import { itemById } from './data/shop.js';
 import { UI, setCtx, toggleFullscreen } from './scenes/scene.js';
 import { TitleScene } from './scenes/title.js';
 import { LobbyScene } from './scenes/lobby.js';
@@ -21,7 +20,6 @@ import { VIEW_W, VIEW_H } from './game/arena.js';
 // global lookups used by scenes (kept off window when headless)
 const g = typeof window !== 'undefined' ? window : globalThis;
 g.__nx_enemy = (id) => ENEMIES[id];
-g.__nx_item = (id) => itemById(id);
 
 export function createGame(canvas) {
   const ctx = canvas.getContext('2d');

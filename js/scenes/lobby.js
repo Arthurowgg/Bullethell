@@ -1,6 +1,7 @@
 // ---------------------------------------------------------------------------
 // MARVEL NEXUS — scenes/lobby.js
-// The hero base lobby with 8 functional tabs. Pixel-art room, not a website.
+// Lobby enxuto e premium: abas JOGAR e LOJA (NEXUS / COSMÉTICA) + configurações
+// como ícone discreto. Pixel art moderna, inspirado em lojas de jogos atuais.
 // ---------------------------------------------------------------------------
 import { Scene, UI, toggleFullscreen } from './scene.js';
 import { drawText, textWidth } from '../core/font.js';
@@ -11,525 +12,370 @@ import { Save, xpForLevel } from '../core/save.js';
 import { VIEW_W, VIEW_H } from '../game/arena.js';
 import { THEMES } from '../data/sprites.js';
 import { HEROES, heroById } from '../data/heroes.js';
-import { ENEMIES } from '../data/enemies.js';
 import { BOSSES } from '../data/bosses.js';
 import { RAIDS, raidUnlocked } from '../data/raids.js';
-import { NEXUS_NODES, nodeCost } from '../data/nexuscore.js';
-import { SHOP_ITEMS, CATEGORIES, RARITY_SHOP, itemById } from '../data/shop.js';
+import { HERO_NODES, nodeCost } from '../data/nexuscore.js';
+import { SKINS, skinById, RARITY_SHOP } from '../data/shop.js';
 import { MISSIONS, HERO_UNLOCK_COST } from '../data/missions.js';
-import { clamp, fmtTime, RNG } from '../core/util.js';
+import { clamp, fmtTime } from '../core/util.js';
 
-const TABS = ['JOGAR', 'HERÓIS', 'LOJA', 'NEXUS CORE', 'INCURSÕES', 'COLEÇÃO', 'MISSÕES', 'CONFIG'];
+const TABS = ['JOGAR', 'LOJA'];
 
 export class LobbyScene extends Scene {
   enter(G, params) {
     this.t = 0;
-    this.tab = (params && params.tab) || 0;
-    this.shopCat = 'traje';
-    this.shopScroll = 0;
-    this.selectedItem = null;
-    this.search = '';
-    this.searchFocus = false;
-    this.heroView = Save.data.heroSelected;
-    this.raidSel = 0;
+    this.tab = 0;
+    this.shopSec = 'cos';      // 'nexus' | 'cos'
+    this.cfgOpen = false;
+    this.raidsOpen = false;
+    this.skinSel = SKINS[0].id;
     Audio.playTrack('lobby');
-    this.rng = new RNG(42);
   }
 
-  update(dt, G) {
-    this.t += dt;
-    const s = Save.data;
-    // search capture
-    if (this.searchFocus) {
-      for (const k of Input.pressedKeys) {
-        if (k === 'Escape') { this.searchFocus = false; continue; }
-        if (k === 'Backspace') { this.search = this.search.slice(0, -1); continue; }
-        if (k.startsWith('Key')) this.search = (this.search + k.slice(3)).slice(0, 14);
-        if (k.startsWith('Digit')) this.search = (this.search + k.slice(5)).slice(0, 14);
-        if (k === 'Space') this.search += ' ';
-      }
+  update(dt, G) { this.t += dt; }
+
+  // ------------------------------------------------------------- helpers ---
+  wrap(ctx, txt, x, y, w, color, lh = 9) {
+    let line = '', ly = y;
+    for (const wd of String(txt).split(' ')) {
+      if (textWidth(line + wd) > w) { drawText(ctx, line, x, ly, { color }); ly += lh; line = ''; }
+      line += (line ? ' ' : '') + wd;
     }
+    if (line) { drawText(ctx, line, x, ly, { color }); ly += lh; }
+    return ly;
   }
 
+  emblem(ctx, base, fallbackHeroId, x, y, scale = 1, frame = 0) {
+    const s = SPR[base + '_f' + frame] || SPR[base] || SPR['hero_' + fallbackHeroId];
+    if (s) drawSprite(ctx, s, x, y, { scale });
+  }
+
+  drawGear(ctx, x, y, active) {
+    ctx.fillStyle = active ? '#ffd94a' : '#8a84a8';
+    ctx.fillRect(x + 2, y, 4, 8); ctx.fillRect(x, y + 2, 8, 4);
+    ctx.fillStyle = '#0d0a1e';
+    ctx.fillRect(x + 3, y + 3, 2, 2);
+  }
+
+  // ---------------------------------------------------------------- draw ---
   draw(ctx, G) {
     const s = Save.data;
-    // ---- room background ----
     this.drawRoom(ctx);
 
-    // ---- header ----
+    // header
     ctx.fillStyle = '#0d0a1ecc';
     ctx.fillRect(0, 0, VIEW_W, 22);
-    drawText(ctx, 'MARVEL', 6, 4, { scale: 1, color: '#e8e0ff' });
-    drawText(ctx, 'NEXUS', 40, 4, { scale: 1, color: '#ff4d4d' });
-    // account
+    drawText(ctx, 'MARVEL', 6, 4, { color: '#e8e0ff' });
+    drawText(ctx, 'NEXUS', 40, 4, { color: '#ff4d4d' });
     drawText(ctx, `NV ${s.accountLevel}`, 92, 7, { color: '#b06bff' });
-    ctx.fillStyle = '#1d1740';
-    ctx.fillRect(120, 8, 60, 4);
+    ctx.fillStyle = '#1d1740'; ctx.fillRect(118, 8, 60, 4);
     ctx.fillStyle = '#b06bff';
-    ctx.fillRect(120, 8, Math.round(60 * clamp(s.accountXp / xpForLevel(s.accountLevel + 1), 0, 1)), 4);
-    drawSprite(ctx, SPR.fragment, 470, 12, { scale: 0.9 });
-    drawText(ctx, String(s.fragments), 480, 7, { color: '#9feaff' });
-    drawSprite(ctx, SPR.credit, 540, 12, { scale: 0.9 });
-    drawText(ctx, String(s.credits), 550, 7, { color: '#ffe9a0' });
+    ctx.fillRect(118, 8, Math.round(60 * clamp(s.accountXp / xpForLevel(s.accountLevel + 1), 0, 1)), 4);
+    drawSprite(ctx, SPR.fragment, 480, 12, { scale: 0.9 });
+    drawText(ctx, String(s.fragments), 490, 7, { color: '#9feaff' });
+    drawSprite(ctx, SPR.credit, 552, 12, { scale: 0.9 });
+    drawText(ctx, String(s.credits), 562, 7, { color: '#ffe9a0' });
+    // gear icon (discreet settings)
+    const gHov = UI.hit(616, 6, 16, 14);
+    this.drawGear(ctx, 620, 8, gHov);
+    if (gHov) { UI.hoverId = 'gear'; if (UI.anyClick) { this.cfgOpen = true; Audio.sfx('ui'); } }
 
-    // ---- tabs ----
-    const tw = VIEW_W / TABS.length;
+    // tabs
+    const tw = 110;
     TABS.forEach((t, i) => {
-      if (UI.tab('tab' + i, i * tw, 22, tw, 16, t, this.tab === i)) this.tab = i;
+      if (UI.tab('tab' + i, 8 + i * (tw + 6), 24, tw, 16, t, this.tab === i)) { this.tab = i; this.raidsOpen = false; }
     });
 
     ctx.fillStyle = '#0d0a1e99';
-    ctx.fillRect(0, 38, VIEW_W, VIEW_H - 38);
+    ctx.fillRect(0, 40, VIEW_W, VIEW_H - 40);
 
-    switch (this.tab) {
-      case 0: this.drawPlay(ctx, G); break;
-      case 1: this.drawHeroes(ctx, G); break;
-      case 2: this.drawShop(ctx, G); break;
-      case 3: this.drawNexus(ctx, G); break;
-      case 4: this.drawRaids(ctx, G); break;
-      case 5: this.drawCollection(ctx, G); break;
-      case 6: this.drawMissions(ctx, G); break;
-      case 7: this.drawConfig(ctx, G); break;
-    }
+    if (this.tab === 0) this.drawPlay(ctx, G);
+    else this.drawShop(ctx, G);
+
+    if (this.raidsOpen) this.drawRaidsOverlay(ctx, G);
+    if (this.cfgOpen) this.drawConfigOverlay(ctx, G);
   }
 
   drawRoom(ctx) {
-    const themeId = (() => {
-      const eq = Save.data.cosmeticsEquipped.tema;
-      const it = eq ? itemById(eq) : null;
-      return it ? it.fx.lobby : 'nexus';
-    })();
-    const theme = THEMES[themeId] || THEMES.nexus;
-    // floor
-    const f0 = SPR['floor_' + themeId + '_0'], f1 = SPR['floor_' + themeId + '_1'];
+    const theme = THEMES.nexus;
+    const f0 = SPR.floor_nexus_0, f1 = SPR.floor_nexus_1;
     for (let y = 60; y < VIEW_H; y += 16)
       for (let x = 0; x < VIEW_W; x += 16)
         ctx.drawImage(((x / 16 + y / 16) % 2 === 0) ? f0 : f1, x, y);
-    // back wall
-    ctx.fillStyle = theme.wall;
-    ctx.fillRect(0, 38, VIEW_W, 26);
-    ctx.fillStyle = theme.wallTop;
-    ctx.fillRect(0, 62, VIEW_W, 2);
-    // props
-    ctx.drawImage(SPR['portal_' + themeId], 30, 42);
-    ctx.drawImage(SPR['console_' + themeId], 560, 46);
-    ctx.drawImage(SPR['console_' + themeId], 100, 46);
-    ctx.drawImage(SPR['banner_' + themeId], 300, 40);
-    ctx.drawImage(SPR['banner_' + themeId], 340, 40);
-    // animated portal glow
+    ctx.fillStyle = theme.wall; ctx.fillRect(0, 40, VIEW_W, 24);
+    ctx.fillStyle = theme.wallTop; ctx.fillRect(0, 62, VIEW_W, 2);
+    ctx.drawImage(SPR.portal_nexus, 30, 44);
+    ctx.drawImage(SPR.console_nexus, 566, 46);
+    ctx.drawImage(SPR.banner_nexus, 300, 42);
     ctx.globalAlpha = 0.3 + Math.sin(this.t * 3) * 0.15;
-    ctx.fillStyle = theme.accent;
-    ctx.fillRect(36, 48, 12, 16);
+    ctx.fillStyle = theme.accent; ctx.fillRect(36, 50, 12, 16);
     ctx.globalAlpha = 1;
   }
 
-  // ============================ JOGAR ======================================
+  // ============================================================ JOGAR ======
   drawPlay(ctx, G) {
     const s = Save.data;
     const hero = heroById(s.heroSelected);
-    // hero pedestal
-    const spr = SPR['hero_' + hero.id + '_big'];
-    if (spr) drawSprite(ctx, spr, 140, 190 + Math.round(Math.sin(this.t * 2) * 2), { scale: 1 });
-    ctx.fillStyle = '#00000066';
-    ctx.beginPath(); ctx.ellipse(140, 250, 40, 8, 0, 0, Math.PI * 2); ctx.fill();
 
-    UI.panel(240, 60, 380, 200, { title: 'HERÓI SELECIONADO' });
-    drawText(ctx, hero.name, 254, 84, { scale: 2, color: hero.color, shadow: true });
-    drawText(ctx, hero.role, 254, 102, { color: '#9a93c8' });
-    const wrap = (txt, x, y, w, color) => {
-      let line = '', ly = y;
-      for (const wd of txt.split(' ')) {
-        if (textWidth(line + wd) > w) { drawText(ctx, line, x, ly, { color }); ly += 9; line = ''; }
-        line += (line ? ' ' : '') + wd;
-      }
-      if (line) drawText(ctx, line, x, ly, { color });
-      return ly + 9;
-    };
-    let y = wrap(hero.desc, 254, 118, 350, '#cfc8f2');
-    y = wrap('ATAQUE: ' + hero.ability.name, 254, y + 4, 350, '#8a84a8');
-    y = wrap('ESPECIAL: ' + hero.special.name, 254, y, 350, '#8a84a8');
-    y = wrap('PASSIVA: ' + hero.passive.name, 254, y, 350, '#8a84a8');
-    // stat bars
-    const bar = (label, val, max, yy, col) => {
-      drawText(ctx, label, 254, yy, { color: '#9a93c8' });
-      ctx.fillStyle = '#1d1740'; ctx.fillRect(320, yy + 1, 120, 5);
-      ctx.fillStyle = col; ctx.fillRect(320, yy + 1, Math.round(120 * clamp(val / max, 0, 1)), 5);
-    };
-    bar('VIDA', hero.hp, 140, y + 6, '#ff4d6b');
-    bar('VELOCIDADE', hero.speed, 140, y + 16, '#4dd8ff');
-
-    if (UI.button('start', 254, 222, 170, 30, 'INICIAR PARTIDA', { color: '#4dff88', accent: true })) {
-      G.startGame({ mode: 'run', heroId: hero.id });
-    }
-    if (UI.button('raids', 434, 222, 170, 30, 'INCURSÕES', { color: '#b06bff' })) { this.tab = 4; }
-    drawText(ctx, 'SOBREVIVA ÀS ONDAS E DERROTE O CHEFE FINAL', 254, 262, { color: '#5a5470' });
-
-    // mission teaser
-    const next = MISSIONS.find((m) => { const [c, mx] = m.check(s); return c < mx && !s.missionsClaimed[m.id]; });
-    if (next) drawText(ctx, 'MISSÃO ATIVA: ' + next.name, 20, 344, { color: '#ffd94a' });
-  }
-
-  // ============================ HERÓIS =====================================
-  drawHeroes(ctx, G) {
-    const s = Save.data;
-    UI.panel(8, 46, 400, 306, { title: 'ESQUADRÃO' });
+    // squad selector
+    UI.panel(8, 48, 150, 304, { title: 'ESQUADRÃO' });
     HEROES.forEach((h, i) => {
-      const x = 20 + (i % 3) * 130, y = 70 + ((i / 3) | 0) * 140;
+      const x = 16 + (i % 2) * 72, y = 70 + ((i / 2) | 0) * 78;
       const unlocked = s.heroesUnlocked[h.id];
       const sel = s.heroSelected === h.id;
-      const hov = UI.hit(x, y, 120, 128);
+      const hov = UI.hit(x, y, 66, 70);
       if (hov) UI.hoverId = 'h' + i;
       ctx.fillStyle = hov ? '#241b52' : '#171233';
-      ctx.fillRect(x, y, 120, 128);
-      ctx.strokeStyle = sel ? h.color : hov ? '#7b5cff' : '#3a3350';
-      ctx.strokeRect(x + 0.5, y + 0.5, 119, 127);
-      const spr = SPR['hero_' + h.id + '_big'];
-      if (spr) drawSprite(ctx, spr, x + 60, y + 52, { alpha: unlocked ? 1 : 0.35 });
-      drawText(ctx, h.name, x + 60, y + 100, { align: 'center', color: unlocked ? '#ffffff' : '#5a5470', shadow: true });
-      drawText(ctx, h.role, x + 60, y + 112, { align: 'center', color: '#8a84a8' });
+      ctx.fillRect(x, y, 66, 70);
+      ctx.strokeStyle = sel ? h.color : hov ? '#7b5cff' : '#2a2450';
+      ctx.strokeRect(x + 0.5, y + 0.5, 65, 69);
+      const frame = Math.floor(this.t * 2) % 2;
+      this.emblem(ctx, 'hero_' + h.id, h.id, x + 33, y + 26, 1, unlocked ? frame : 0);
       if (!unlocked) {
-        drawSprite(ctx, SPR.lock, x + 104, y + 10, { scale: 0.9 });
-        drawText(ctx, String(HERO_UNLOCK_COST[h.id]), x + 60, y + 86, { align: 'center', color: '#4dd8ff' });
+        ctx.fillStyle = '#000000aa'; ctx.fillRect(x, y, 66, 70);
+        drawSprite(ctx, SPR.lock, x + 33, y + 22, { scale: 0.9 });
+        drawText(ctx, String(HERO_UNLOCK_COST[h.id]), x + 33, y + 40, { align: 'center', color: '#4dd8ff' });
       }
+      drawText(ctx, h.name.split(' ')[0], x + 33, y + 56, { align: 'center', color: unlocked ? (sel ? '#ffffff' : '#8a84a8') : '#5a5470' });
       if (hov && UI.anyClick) {
-        if (unlocked) { s.heroSelected = h.id; this.heroView = h.id; Save.save(); Audio.sfx('buy'); }
+        if (unlocked) { s.heroSelected = h.id; Save.save(); Audio.sfx('ui'); }
         else if (s.fragments >= HERO_UNLOCK_COST[h.id]) {
           s.fragments -= HERO_UNLOCK_COST[h.id];
-          s.heroesUnlocked[h.id] = true;
-          s.heroSelected = h.id;
+          s.heroesUnlocked[h.id] = true; s.heroSelected = h.id;
           Save.save(); Audio.sfx('buy');
         } else Audio.sfx('deny');
       }
     });
-    // side detail
-    const h = heroById(this.heroView || s.heroSelected);
-    UI.panel(416, 46, 216, 306, { title: 'DOSSIÊ' });
-    const big = SPR['hero_' + h.id + '_big'];
-    if (big) drawSprite(ctx, big, 524, 140);
-    drawText(ctx, h.name, 524, 200, { align: 'center', scale: 1, color: h.color, shadow: true });
-    let y = 220;
-    const wrap = (txt, col) => {
-      let line = '';
-      for (const wd of txt.split(' ')) {
-        if (textWidth(line + wd) > 190) { drawText(ctx, line, 426, y, { color: col }); y += 9; line = ''; }
-        line += (line ? ' ' : '') + wd;
-      }
-      if (line) { drawText(ctx, line, 426, y, { color: col }); y += 9; }
+
+    // hero showcase
+    UI.panel(166, 48, 292, 304, { title: 'HERÓI' });
+    const eqSkin = skinById(s.cosmeticsEquipped[hero.id]);
+    const base = eqSkin && eqSkin.hero === hero.id ? 'skin_' + eqSkin.id : 'hero_' + hero.id;
+    const frame = Math.floor(this.t * 3) % 2;
+    // glow pedestal
+    ctx.globalAlpha = 0.25 + Math.sin(this.t * 2) * 0.08;
+    ctx.fillStyle = hero.color;
+    ctx.beginPath(); ctx.ellipse(312, 216, 46, 10, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+    this.emblem(ctx, base, hero.id, 312, 150, 3, frame);
+    drawText(ctx, eqSkin ? eqSkin.name : hero.name, 312, 200, { align: 'center', scale: 2, color: eqSkin ? RARITY_SHOP[eqSkin.rarity].color : hero.color, shadow: true });
+    drawText(ctx, hero.role, 312, 220, { align: 'center', color: '#9a93c8' });
+    const bar = (label, val, max, yy, col) => {
+      drawText(ctx, label, 186, yy, { color: '#9a93c8' });
+      ctx.fillStyle = '#1d1740'; ctx.fillRect(266, yy + 1, 120, 5);
+      ctx.fillStyle = col; ctx.fillRect(266, yy + 1, Math.round(120 * clamp(val / max, 0, 1)), 5);
     };
-    wrap('ESP: ' + h.special.desc, '#9a93c8');
-    y += 4;
-    wrap('PASSIVA: ' + h.passive.desc, '#9a93c8');
-  }
+    bar('VIDA', hero.hp, 140, 238, '#ff4d6b');
+    bar('VELOCIDADE', hero.speed, 140, 250, '#4dd8ff');
+    bar('DANO', hero.attack.dmg, 16, 262, '#ffd94a');
+    let y = this.wrap(ctx, 'HABILIDADE: ' + hero.ability.desc, 186, 282, 252, '#8a84a8', 8);
+    y = this.wrap(ctx, 'ESPECIAL: ' + hero.special.desc, 186, y + 2, 252, '#8a84a8', 8);
+    this.wrap(ctx, 'PASSIVA: ' + hero.passive.desc, 186, y + 2, 252, '#8a84a8', 8);
 
-  // ============================ LOJA =======================================
-  itemIcon(ctx, item, x, y) {
-    // tiny procedural pixel glyph per category
-    const c = RARITY_SHOP[item.rarity].color;
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.fillStyle = c;
-    const px = (a, b, w = 2, h = 2) => ctx.fillRect(a, b, w, h);
-    switch (item.cat) {
-      case 'traje': px(6, 2, 4, 2); px(4, 4, 8, 8); px(2, 4, 2, 5); px(12, 4, 2, 5); break;
-      case 'mascara': px(4, 3, 8, 7); ctx.fillStyle = '#fff'; px(5, 5, 2, 2); px(9, 5, 2, 2); break;
-      case 'ataque': px(7, 1, 2, 4); px(7, 11, 2, 4); px(1, 7, 4, 2); px(11, 7, 4, 2); px(6, 6, 4, 4); break;
-      case 'habilidade': px(6, 2, 4, 4); px(4, 6, 8, 4); px(6, 10, 4, 3); break;
-      case 'rastro': px(2, 10, 2, 2); px(5, 7, 2, 2); px(8, 4, 2, 2); px(11, 1, 2, 2); break;
-      case 'entrada': px(3, 2, 2, 12); px(11, 2, 2, 12); px(6, 5, 4, 6); break;
-      case 'vitoria': px(4, 2, 8, 6); px(6, 8, 4, 3); px(4, 11, 8, 2); break;
-      case 'moldura': ctx.strokeStyle = c; ctx.strokeRect(2.5, 2.5, 11, 11); px(6, 6, 4, 4); break;
-      case 'icone': px(4, 4, 8, 8); ctx.fillStyle = '#fff'; px(7, 7, 2, 2); break;
-      case 'tema': px(2, 2, 5, 5); px(9, 2, 5, 5); px(2, 9, 5, 5); px(9, 9, 5, 5); break;
+    // actions
+    UI.panel(466, 48, 166, 304, { title: 'OPERAÇÕES' });
+    if (UI.button('start', 478, 74, 142, 42, 'INICIAR PARTIDA', { color: '#4dff88', accent: true, scale: 1 })) {
+      G.startGame({ mode: 'run', heroId: hero.id });
     }
-    ctx.restore();
+    if (UI.button('raids', 478, 124, 142, 26, 'INCURSÕES', { color: '#b06bff' })) this.raidsOpen = true;
+    ctx.fillStyle = '#3a3350'; ctx.fillRect(478, 162, 142, 1);
+    drawText(ctx, 'CONTROLES', 478, 172, { color: '#9a93c8' });
+    this.wrap(ctx, 'WASD MOVER · MOUSE MIRAR', 478, 184, 142, '#5a5470', 8);
+    this.wrap(ctx, 'ESPAÇO ESQUIVA · Q HABILIDADE', 478, 208, 142, '#5a5470', 8);
+    this.wrap(ctx, 'E ESPECIAL · P PAUSA · F TELA CHEIA', 478, 232, 142, '#5a5470', 8);
+    const next = MISSIONS.find((m) => { const [c, mx] = m.check(s); return c < mx && !s.missionsClaimed[m.id]; });
+    if (next) {
+      ctx.fillStyle = '#3a3350'; ctx.fillRect(478, 268, 142, 1);
+      drawText(ctx, 'MISSÃO ATIVA', 478, 278, { color: '#ffd94a' });
+      this.wrap(ctx, next.name + ': ' + next.desc, 478, 290, 142, '#8a84a8', 8);
+    }
   }
 
+  // ============================================================ LOJA =======
   drawShop(ctx, G) {
     const s = Save.data;
-    // header
-    drawText(ctx, 'NEXUS STORE', 320, 46, { align: 'center', scale: 2, color: '#ffd94a', shadow: true });
-    drawText(ctx, 'CATÁLOGO PERMANENTE', 320, 62, { align: 'center', color: '#5a5470' });
-    // categories (left, 2 cols)
-    CATEGORIES.forEach((c, i) => {
-      const x = 8 + (i % 2) * 78, y = 76 + ((i / 2) | 0) * 24;
-      if (UI.button('cat' + c.id, x, y, 74, 20, c.name, { scale: 1, color: this.shopCat === c.id ? '#ffd94a' : '#3a3350', silent: false, textColor: this.shopCat === c.id ? '#ffffff' : undefined })) {
-        this.shopCat = c.id; this.shopScroll = 0; this.selectedItem = null;
-      }
-    });
-    // search
-    ctx.fillStyle = this.searchFocus ? '#241b52' : '#171233';
-    ctx.fillRect(8, 200, 152, 16);
-    ctx.strokeStyle = this.searchFocus ? '#ffd94a' : '#3a3350';
-    ctx.strokeRect(8.5, 200.5, 151, 15);
-    drawText(ctx, this.search ? this.search : 'PESQUISAR...', 14, 204, { color: this.search ? '#ffffff' : '#5a5470' });
-    if (UI.hit(8, 200, 152, 16) && UI.anyClick) this.searchFocus = true;
-    else if (UI.anyClick && !UI.hit(8, 200, 152, 16)) this.searchFocus = false;
+    // section switch
+    if (UI.tab('secN', 8, 48, 120, 18, 'NEXUS', this.shopSec === 'nexus')) this.shopSec = 'nexus';
+    if (UI.tab('secC', 134, 48, 120, 18, 'COSMÉTICA', this.shopSec === 'cos')) this.shopSec = 'cos';
+    drawText(ctx, this.shopSec === 'nexus' ? 'UPGRADES PERMANENTES POR HERÓI' : 'VISUAIS EXCLUSIVOS DOS HERÓIS', 268, 53, { color: '#5a5470' });
 
-    // item grid
-    let items = SHOP_ITEMS.filter((i) => i.cat === this.shopCat);
-    if (this.search) items = SHOP_ITEMS.filter((i) => i.name.includes(this.search.toUpperCase()) || i.cat.includes(this.search));
-    UI.panel(168, 72, 290, 280, {});
-    const cols = 4;
-    const cell = 66;
-    const gx = 178, gy = 82;
-    const viewH = 260;
-    UI.setWheelZone((m) => m.x > 168 && m.x < 458);
-    const totalH = Math.ceil(items.length / cols) * (cell + 6);
-    const off = UI.scrollbar(450, 82, viewH, viewH, totalH, this.shopScroll, (v) => (this.shopScroll = v));
-    items.forEach((item, i) => {
-      const x = gx + (i % cols) * (cell + 4);
-      const y = gy + ((i / cols) | 0) * (cell + 6) - off;
-      if (y < 76 || y > 340) return;
-      const owned = s.cosmeticsOwned[item.id] || item.price === 0;
-      const equipped = Object.values(s.cosmeticsEquipped).includes(item.id);
-      const fav = s.favorites[item.id];
-      const sel = this.selectedItem === item.id;
-      const hov = UI.hit(x, y, cell, cell);
-      if (hov) UI.hoverId = 'it' + item.id;
-      ctx.fillStyle = hov || sel ? '#241b52' : '#120e2a';
-      ctx.fillRect(x, y, cell, cell);
-      ctx.strokeStyle = sel ? '#ffffff' : RARITY_SHOP[item.rarity].color;
-      ctx.strokeRect(x + 0.5, y + 0.5, cell - 1, cell - 1);
-      this.itemIcon(ctx, item, x + cell / 2 - 8, y + 8);
-      if (fav) { ctx.fillStyle = '#ff4d6b'; ctx.fillRect(x + 4, y + 4, 3, 3); }
-      if (equipped) drawSprite(ctx, SPR.check, x + cell - 10, y + 8, { scale: 0.8 });
-      drawText(ctx, item.price === 0 ? '—' : String(item.price), x + cell / 2, y + cell - 12, { align: 'center', color: item.currency === 'cred' ? '#ffe9a0' : '#9feaff' });
-      if (!owned) drawSprite(ctx, SPR.lock, x + cell - 12, y + cell - 14, { scale: 0.7 });
-      if (hov && UI.anyClick) { this.selectedItem = item.id; Audio.sfx('ui'); }
-    });
-
-    // preview panel
-    UI.panel(466, 72, 166, 280, { title: 'PRÉ-VISUALIZAÇÃO' });
-    const item = this.selectedItem ? itemById(this.selectedItem) : null;
-    const hero = heroById(s.heroSelected);
-    // stage
-    ctx.fillStyle = '#0d0a1e';
-    ctx.fillRect(476, 92, 146, 120);
-    ctx.strokeStyle = '#3a3350';
-    ctx.strokeRect(476.5, 92.5, 145, 119);
-    // themed backdrop
-    const themeId = 'nexus';
-    ctx.drawImage(SPR['floor_' + themeId + '_0'], 476, 180);
-    ctx.drawImage(SPR['floor_' + themeId + '_1'], 492, 180);
-    ctx.drawImage(SPR['floor_' + themeId + '_0'], 508, 180);
-    const big = SPR['hero_' + hero.id + '_big'];
-    if (big) {
-      const tint = item && item.fx.tint ? item.fx.tint : (s.cosmeticsEquipped.traje ? (itemById(s.cosmeticsEquipped.traje) || {}).fx?.tint : null);
-      drawSprite(ctx, big, 549, 160, { tint: tint || undefined });
-      // bullet preview color
-      const bc = item && item.fx.bullet ? item.fx.bullet : null;
-      ctx.fillStyle = bc || '#4dd8ff';
-      ctx.fillRect(500, 130, 4, 4); ctx.fillRect(590, 130, 4, 4);
-      ctx.fillRect(500 + ((this.t * 60) % 40), 130, 3, 3);
-    }
-    if (item) {
-      drawText(ctx, item.name, 482, 218, { color: RARITY_SHOP[item.rarity].color });
-      drawText(ctx, RARITY_SHOP[item.rarity].name, 626, 218, { align: 'right', color: RARITY_SHOP[item.rarity].color });
-      let y = 234;
-      let line = '';
-      for (const wd of item.desc.split(' ')) {
-        if (textWidth(line + wd) > 146) { drawText(ctx, line, 482, y, { color: '#9a93c8' }); y += 9; line = ''; }
-        line += (line ? ' ' : '') + wd;
-      }
-      if (line) drawText(ctx, line, 482, y, { color: '#9a93c8' });
-      const owned = s.cosmeticsOwned[item.id] || item.price === 0;
-      const equipped = Object.values(s.cosmeticsEquipped).includes(item.id);
-      if (!owned) {
-        if (UI.button('buy', 476, 300, 146, 22, `COMPRAR ${item.price} ${item.currency === 'cred' ? 'CR' : 'FR'}`, { color: '#4dff88' })) {
-          const ok = item.currency === 'cred' ? Save.spendCredits(item.price) : Save.spendFragments(item.price);
-          if (ok) { s.cosmeticsOwned[item.id] = true; Audio.sfx('buy'); }
-          else Audio.sfx('deny');
-        }
-      } else {
-        if (UI.button('equip', 476, 300, 96, 22, equipped ? 'EQUIPADO' : 'EQUIPAR', { color: equipped ? '#5a5470' : '#7b5cff' })) {
-          if (!equipped) { s.cosmeticsEquipped[item.cat] = item.id; Audio.sfx('buy'); }
-        }
-        if (UI.button('fav', 578, 300, 44, 22, s.favorites[item.id] ? '★' : '☆', { color: '#ff4d6b' })) {
-          s.favorites[item.id] = !s.favorites[item.id]; Audio.sfx('ui');
-        }
-      }
-      drawText(ctx, 'COSMÉTICO — SEM VANTAGEM DE COMBATE', 482, 332, { color: '#3a3350' });
-    } else {
-      drawText(ctx, 'SELECIONE UM ITEM', 549, 260, { align: 'center', color: '#5a5470' });
-    }
+    if (this.shopSec === 'nexus') this.drawNexus(ctx, G);
+    else this.drawCosmetics(ctx, G);
   }
 
-  // ============================ NEXUS CORE =================================
+  // ---- NEXUS: permanent hero evolution ----
   drawNexus(ctx, G) {
     const s = Save.data;
-    drawText(ctx, 'NEXUS CORE', 320, 46, { align: 'center', scale: 2, color: '#b06bff', shadow: true });
-    drawText(ctx, 'MELHORIAS PERMANENTES — FRAGMENTOS DO NEXUS', 320, 62, { align: 'center', color: '#5a5470' });
-    // connection lines
-    ctx.strokeStyle = '#2a2450';
-    NEXUS_NODES.forEach((n) => {
-      const x = 90 + n.col * 150, y = 110 + n.row * 80;
-      NEXUS_NODES.forEach((m) => {
-        if (m.row === n.row + 1 && Math.abs(m.col - n.col) <= 1) {
-          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(90 + m.col * 150, 110 + m.row * 80); ctx.stroke();
+    HEROES.forEach((h, hi) => {
+      const nodes = HERO_NODES.filter((n) => n.hero === h.id);
+      const x = 8 + (hi % 3) * 210, y = 74 + ((hi / 3) | 0) * 140;
+      UI.panel(x, y, 202, 132, {});
+      this.emblem(ctx, 'hero_' + h.id, h.id, x + 22, y + 20, 0.8, 0);
+      drawText(ctx, h.name, x + 42, y + 8, { color: h.color, shadow: true });
+      nodes.forEach((n, ni) => {
+        const ny = y + 36 + ni * 48;
+        const rank = s.nexusNodes[n.id] || 0;
+        const maxed = rank >= n.max;
+        const cost = maxed ? 0 : nodeCost(n, rank);
+        const hov = UI.hit(x + 8, ny, 186, 44);
+        if (hov) UI.hoverId = 'n' + n.id;
+        ctx.fillStyle = hov ? '#241b52' : '#120e2a';
+        ctx.fillRect(x + 8, ny, 186, 44);
+        ctx.strokeStyle = maxed ? '#ffd94a' : rank > 0 ? '#b06bff' : '#2a2450';
+        ctx.strokeRect(x + 8.5, ny + 0.5, 185, 43);
+        drawText(ctx, n.name, x + 14, ny + 4, { color: '#ffffff' });
+        for (let i = 0; i < n.max; i++) {
+          ctx.fillStyle = i < rank ? '#b06bff' : '#2a2450';
+          ctx.fillRect(x + 14 + i * 8, ny + 15, 6, 6);
+        }
+        drawText(ctx, maxed ? 'MÁXIMO' : cost + ' FR', x + 188, ny + 4, { align: 'right', color: maxed ? '#ffd94a' : s.fragments >= cost ? '#9feaff' : '#5a5470' });
+        this.wrap(ctx, n.desc, x + 14, ny + 27, 174, '#8a84a8', 8);
+        if (hov && UI.anyClick && !maxed) {
+          if (Save.spendFragments(cost)) { s.nexusNodes[n.id] = rank + 1; Audio.sfx('buy'); }
+          else Audio.sfx('deny');
         }
       });
     });
-    NEXUS_NODES.forEach((n) => {
-      const x = 90 + n.col * 150, y = 110 + n.row * 80;
-      const rank = s.nexusNodes[n.id] || 0;
-      const maxed = rank >= n.max;
-      const cost = maxed ? 0 : nodeCost(n, rank);
-      const hov = UI.hit(x - 34, y - 22, 68, 44);
-      if (hov) UI.hoverId = 'n' + n.id;
-      ctx.fillStyle = hov ? '#241b52' : '#171233';
-      ctx.fillRect(x - 34, y - 22, 68, 44);
-      ctx.strokeStyle = maxed ? '#ffd94a' : rank > 0 ? '#b06bff' : '#3a3350';
-      ctx.strokeRect(x - 33.5, y - 21.5, 67, 43);
-      drawText(ctx, n.name, x, y - 14, { align: 'center', color: '#ffffff', shadow: true });
-      // rank pips
-      for (let i = 0; i < n.max; i++) {
-        ctx.fillStyle = i < rank ? '#b06bff' : '#2a2450';
-        ctx.fillRect(x - (n.max * 5) / 2 + i * 6, y + 2, 4, 4);
-      }
-      drawText(ctx, maxed ? 'MÁX' : cost + ' FR', x, y + 10, { align: 'center', color: maxed ? '#ffd94a' : s.fragments >= cost ? '#9feaff' : '#5a5470' });
-      if (hov) {
-        UI.panel(200, 300, 240, 44, {});
-        let yy = 308;
-        let line = '';
-        for (const wd of n.desc.split(' ')) {
-          if (textWidth(line + wd) > 220) { drawText(ctx, line, 208, yy, { color: '#cfc8f2' }); yy += 9; line = ''; }
-          line += (line ? ' ' : '') + wd;
-        }
-        if (line) drawText(ctx, line, 208, yy, { color: '#cfc8f2' });
-      }
-      if (hov && UI.anyClick && !maxed) {
-        if (Save.spendFragments(cost)) { s.nexusNodes[n.id] = rank + 1; Audio.sfx('buy'); }
+  }
+
+  // ---- COSMÉTICA: 3 premium skins ----
+  drawCosmetics(ctx, G) {
+    const s = Save.data;
+    // list
+    SKINS.forEach((sk, i) => {
+      const y = 74 + i * 94;
+      const sel = this.skinSel === sk.id;
+      const owned = s.cosmeticsOwned[sk.id];
+      const equipped = s.cosmeticsEquipped[sk.hero] === sk.id;
+      const hov = UI.hit(8, y, 200, 86);
+      if (hov) UI.hoverId = 'sk' + sk.id;
+      ctx.fillStyle = hov || sel ? '#241b52' : '#171233';
+      ctx.fillRect(8, y, 200, 86);
+      ctx.strokeStyle = sel ? RARITY_SHOP[sk.rarity].color : '#2a2450';
+      ctx.strokeRect(8.5, y + 0.5, 199, 85);
+      ctx.fillStyle = RARITY_SHOP[sk.rarity].color;
+      ctx.fillRect(8, y, 200, 2);
+      this.emblem(ctx, 'skin_' + sk.id, sk.hero, 44, y + 40, 1.4, Math.floor(this.t * 3) % 2);
+      drawText(ctx, sk.name, 78, y + 12, { color: '#ffffff', shadow: true });
+      drawText(ctx, RARITY_SHOP[sk.rarity].name, 78, y + 26, { color: RARITY_SHOP[sk.rarity].color });
+      drawText(ctx, heroById(sk.hero).name, 78, y + 40, { color: '#8a84a8' });
+      drawText(ctx, owned ? (equipped ? 'EQUIPADO' : 'ADQUIRIDO') : sk.price + ' FR', 78, y + 62, { color: owned ? (equipped ? '#4dff88' : '#9feaff') : '#ffd94a' });
+      if (hov && UI.anyClick) { this.skinSel = sk.id; Audio.sfx('ui'); }
+    });
+
+    // preview stage
+    const sk = skinById(this.skinSel);
+    const hero = heroById(sk.hero);
+    UI.panel(216, 74, 416, 278, { title: 'PRÉ-VISUALIZAÇÃO' });
+    // stage backdrop
+    ctx.fillStyle = '#0b0817';
+    ctx.fillRect(228, 96, 392, 176);
+    ctx.strokeStyle = RARITY_SHOP[sk.rarity].color + '66';
+    ctx.strokeRect(228.5, 96.5, 391, 175);
+    const f0 = SPR['floor_' + 'nexus_0'], f1 = SPR['floor_nexus_1'];
+    for (let x = 228; x < 620; x += 16) ctx.drawImage((x / 16) % 2 ? f0 : f1, x, 256);
+    // animated emblem (cycles idle frames, attack flash)
+    const cyc = this.t % 2.4;
+    const frame = cyc < 1.6 ? (Math.floor(this.t * 3) % 2) : 2;
+    ctx.globalAlpha = 0.3 + Math.sin(this.t * 2) * 0.1;
+    ctx.fillStyle = sk.fx.aura;
+    ctx.beginPath(); ctx.ellipse(424, 250, 54, 10, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+    this.emblem(ctx, 'skin_' + sk.id, sk.hero, 424, 180, 4, frame);
+    // fx showcase: trail dots + shot orb
+    for (let i = 0; i < 5; i++) {
+      const tx = 424 - 70 + ((this.t * 90 + i * 30) % 140);
+      ctx.globalAlpha = 0.5 - i * 0.08;
+      ctx.fillStyle = sk.fx.trail;
+      ctx.fillRect(tx, 236, 2, 2);
+    }
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = sk.fx.shotTint;
+    ctx.fillRect(560 + Math.round(Math.sin(this.t * 4) * 6), 120, 4, 4);
+    drawText(ctx, 'EFEITO DE TIRO', 560, 132, { align: 'center', color: '#5a5470' });
+
+    // info + actions
+    drawText(ctx, sk.name, 228, 282, { scale: 2, color: RARITY_SHOP[sk.rarity].color, shadow: true });
+    drawText(ctx, RARITY_SHOP[sk.rarity].name + ' · ' + hero.name, 228, 302, { color: '#9a93c8' });
+    this.wrap(ctx, sk.desc, 228, 316, 392, '#cfc8f2', 9);
+
+    const owned = s.cosmeticsOwned[sk.id];
+    const equipped = s.cosmeticsEquipped[sk.hero] === sk.id;
+    if (!owned) {
+      if (UI.button('buy', 228, 336, 180, 22, `COMPRAR · ${sk.price} FR`, { color: '#4dff88', accent: true })) {
+        if (Save.spendFragments(sk.price)) { s.cosmeticsOwned[sk.id] = true; s.cosmeticsEquipped[sk.hero] = sk.id; Audio.sfx('buy'); }
         else Audio.sfx('deny');
       }
-    });
+    } else {
+      if (UI.button('equip', 228, 336, 120, 22, equipped ? 'EQUIPADO' : 'EQUIPAR', { color: equipped ? '#5a5470' : '#7b5cff' })) {
+        if (!equipped) { s.cosmeticsEquipped[sk.hero] = sk.id; Audio.sfx('buy'); }
+      }
+      if (equipped && UI.button('std', 354, 336, 110, 22, 'PADRÃO')) {
+        delete s.cosmeticsEquipped[sk.hero];
+        Save.save(); Audio.sfx('uiBack');
+      }
+    }
+    drawText(ctx, 'COSMÉTICO — SEM VANTAGEM DE COMBATE', 620, 344, { align: 'right', color: '#3a3350' });
   }
 
-  // ============================ INCURSÕES ==================================
-  drawRaids(ctx, G) {
+  // ---- overlays ----
+  drawRaidsOverlay(ctx, G) {
     const s = Save.data;
-    drawText(ctx, 'INCURSÕES', 320, 46, { align: 'center', scale: 2, color: '#ff4d4d', shadow: true });
+    ctx.fillStyle = 'rgba(5,4,10,0.85)';
+    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    UI.panel(90, 44, 460, 280, { title: 'INCURSÕES', titleColor: '#ff4d4d' });
     RAIDS.forEach((r, i) => {
-      const y = 70 + i * 56;
+      const y = 68 + i * 48;
       const unlocked = raidUnlocked(r, s);
       const cleared = s.raidsCleared[r.id];
-      const sel = this.raidSel === i;
-      const hov = UI.hit(20, y, 600, 50);
-      if (hov) UI.hoverId = 'r' + i;
-      ctx.fillStyle = hov || sel ? '#241b52' : '#171233';
-      ctx.fillRect(20, y, 600, 50);
-      ctx.strokeStyle = sel ? '#ff4d4d' : '#3a3350';
-      ctx.strokeRect(20.5, y + 0.5, 599, 49);
+      ctx.fillStyle = '#171233';
+      ctx.fillRect(102, y, 436, 42);
+      ctx.strokeStyle = unlocked ? '#3a3350' : '#221c3d';
+      ctx.strokeRect(102.5, y + 0.5, 435, 41);
       const bs = SPR[BOSSES[r.boss].sprite];
-      if (bs) drawSprite(ctx, bs, 52, y + 26, { scale: 0.8, alpha: unlocked ? 1 : 0.3 });
-      drawText(ctx, r.name, 86, y + 8, { color: unlocked ? '#ffffff' : '#5a5470', shadow: true });
-      drawText(ctx, r.desc.slice(0, 78), 86, y + 22, { color: '#8a84a8' });
-      // stars
-      for (let st = 0; st < 5; st++) {
-        drawSprite(ctx, SPR.star, 86 + st * 10, y + 40, { scale: 0.7, alpha: st < r.stars ? 1 : 0.2 });
-      }
-      if (cleared) {
-        drawText(ctx, 'CONCLUÍDA x' + cleared.wins + ' · MELHOR ' + fmtTime(cleared.bestTime), 400, y + 34, { color: '#4dff88' });
-      }
+      if (bs) drawSprite(ctx, bs, 128, y + 21, { scale: 0.55, alpha: unlocked ? 1 : 0.3 });
+      drawText(ctx, r.name, 158, y + 6, { color: unlocked ? '#ffffff' : '#5a5470' });
+      for (let st = 0; st < 5; st++) drawSprite(ctx, SPR.star, 158 + st * 9, y + 28, { scale: 0.6, alpha: st < r.stars ? 1 : 0.2 });
+      if (cleared) drawText(ctx, 'x' + cleared.wins + ' · ' + fmtTime(cleared.bestTime), 380, y + 14, { align: 'right', color: '#4dff88' });
       if (!unlocked) {
-        drawSprite(ctx, SPR.lock, 590, y + 24, { scale: 1 });
-        drawText(ctx, 'NV ' + r.unlockLevel, 570, y + 20, { align: 'right', color: '#5a5470' });
-      } else if (UI.button('go' + i, 500, y + 12, 100, 26, 'INICIAR', { color: '#ff4d4d' })) {
+        drawSprite(ctx, SPR.lock, 516, y + 20, { scale: 0.9 });
+        drawText(ctx, 'NV ' + r.unlockLevel, 500, y + 16, { align: 'right', color: '#5a5470' });
+      } else if (UI.button('go' + i, 448, y + 8, 80, 26, 'INICIAR', { color: '#ff4d4d' })) {
         G.startGame({ mode: 'raid', raidId: r.id, heroId: s.heroSelected });
       }
-      if (hov && UI.anyClick) this.raidSel = i;
     });
+    if (UI.button('closeR', 280, 330, 80, 18, 'FECHAR')) this.raidsOpen = false;
   }
 
-  // ============================ COLEÇÃO ====================================
-  drawCollection(ctx, G) {
+  drawConfigOverlay(ctx, G) {
     const s = Save.data;
-    UI.panel(8, 46, 310, 306, { title: 'AMEAÇAS CATALOGADAS' });
-    const types = Object.values(ENEMIES);
-    types.forEach((e, i) => {
-      const x = 22 + (i % 3) * 100, y = 72 + ((i / 3) | 0) * 66;
-      const disc = s.discovered.enemies[e.id];
-      const spr = SPR[e.sprite];
-      if (spr) drawSprite(ctx, spr, x + 14, y + 16, { alpha: disc ? 1 : 0.15, tint: disc ? undefined : '#000000' });
-      drawText(ctx, disc ? e.name : '???', x + 30, y + 10, { color: disc ? '#cfc8f2' : '#3a3350' });
-      if (disc) drawText(ctx, e.desc.slice(0, 26), x + 30, y + 22, { color: '#5a5470' });
-    });
-    UI.panel(326, 46, 306, 180, { title: 'CHEFES' });
-    Object.values(BOSSES).forEach((b, i) => {
-      const x = 340 + (i % 3) * 100, y = 74 + ((i / 3) | 0) * 78;
-      const disc = s.discovered.bosses[b.id];
-      const kills = s.bossesDefeated[b.id] || 0;
-      const spr = SPR[b.sprite];
-      if (spr) drawSprite(ctx, spr, x + 20, y + 26, { scale: 0.7, alpha: disc ? 1 : 0.15 });
-      drawText(ctx, disc ? b.name : '???', x + 44, y + 8, { color: disc ? '#ff8c8c' : '#3a3350' });
-      if (disc) drawText(ctx, 'ABATIDOS: ' + kills, x + 44, y + 46, { color: '#8a84a8' });
-    });
-    UI.panel(326, 234, 306, 118, { title: 'COSMÉTICOS' });
-    const owned = Object.keys(s.cosmeticsOwned).length;
-    drawText(ctx, `ITENS ADQUIRIDOS: ${owned}/${SHOP_ITEMS.length}`, 340, 258, { color: '#cfc8f2' });
-    drawText(ctx, `FRAGMENTOS: ${s.fragments}`, 340, 274, { color: '#9feaff' });
-    drawText(ctx, `CRÉDITOS: ${s.credits}`, 340, 290, { color: '#ffe9a0' });
-    drawText(ctx, `PARTIDAS: ${s.stats.runs} · VITÓRIAS: ${s.stats.wins}`, 340, 306, { color: '#8a84a8' });
-    drawText(ctx, `ABATES: ${s.stats.kills} · DESVIOS: ${s.stats.bulletsDodged}`, 340, 322, { color: '#8a84a8' });
-  }
-
-  // ============================ MISSÕES ====================================
-  drawMissions(ctx, G) {
-    const s = Save.data;
-    drawText(ctx, 'MISSÕES', 320, 46, { align: 'center', scale: 2, color: '#ffd94a', shadow: true });
-    MISSIONS.forEach((m, i) => {
-      const y = 68 + i * 28;
-      const [cur, max] = m.check(s);
-      const done = cur >= max;
-      const claimed = s.missionsClaimed[m.id];
-      ctx.fillStyle = claimed ? '#120e2a' : '#171233';
-      ctx.fillRect(60, y, 520, 24);
-      ctx.strokeStyle = done && !claimed ? '#4dff88' : '#3a3350';
-      ctx.strokeRect(60.5, y + 0.5, 519, 23);
-      drawText(ctx, m.name, 68, y + 4, { color: claimed ? '#5a5470' : '#ffffff' });
-      drawText(ctx, m.desc, 68, y + 13, { color: '#8a84a8' });
-      ctx.fillStyle = '#1d1740'; ctx.fillRect(400, y + 9, 100, 5);
-      ctx.fillStyle = done ? '#4dff88' : '#ffd94a';
-      ctx.fillRect(400, y + 9, Math.round(100 * clamp(cur / max, 0, 1)), 5);
-      drawText(ctx, `${Math.min(cur, max)}/${max}`, 508, y + 7, { color: '#cfc8f2' });
-      if (done && !claimed && UI.button('cl' + m.id, 540, y + 3, 34, 18, 'OK', { color: '#4dff88' })) {
-        s.missionsClaimed[m.id] = true;
-        if (m.reward.frag) s.fragments += m.reward.frag;
-        if (m.reward.cred) s.credits += m.reward.cred;
-        Save.save(); Audio.sfx('buy');
-      }
-      if (claimed) drawSprite(ctx, SPR.check, 552, y + 8, { scale: 0.9 });
-    });
-  }
-
-  // ============================ CONFIG =====================================
-  drawConfig(ctx, G) {
-    const s = Save.data;
-    UI.panel(180, 60, 280, 260, { title: 'CONFIGURAÇÕES' });
-    const row = (label, y) => drawText(ctx, label, 196, y, { color: '#9a93c8' });
-    row('VOLUME MÚSICA', 92);
-    if (UI.button('cm-', 320, 88, 20, 14, '-')) s.music = clamp(s.music - 0.1, 0, 1);
-    ctx.fillStyle = '#1d1740'; ctx.fillRect(348, 91, 60, 6);
-    ctx.fillStyle = '#b06bff'; ctx.fillRect(348, 91, Math.round(60 * s.music), 6);
-    if (UI.button('cm+', 416, 88, 20, 14, '+')) s.music = clamp(s.music + 0.1, 0, 1);
-    row('VOLUME SFX', 114);
-    if (UI.button('cs-', 320, 110, 20, 14, '-')) s.sfx = clamp(s.sfx - 0.1, 0, 1);
-    ctx.fillStyle = '#1d1740'; ctx.fillRect(348, 113, 60, 6);
-    ctx.fillStyle = '#4dd8ff'; ctx.fillRect(348, 113, Math.round(60 * s.sfx), 6);
-    if (UI.button('cs+', 416, 110, 20, 14, '+')) s.sfx = clamp(s.sfx + 0.1, 0, 1);
-    if (UI.button('t1', 196, 136, 240, 18, 'VIBRAÇÃO DE TELA: ' + (s.screenshake ? 'ON' : 'OFF'))) s.screenshake = !s.screenshake;
-    if (UI.button('t2', 196, 158, 240, 18, 'NÚMEROS DE DANO: ' + (s.dmgNumbers ? 'ON' : 'OFF'))) s.dmgNumbers = !s.dmgNumbers;
-    if (UI.button('t3', 196, 180, 240, 18, 'MIRA AUTOMÁTICA: ' + (s.autofire ? 'ON' : 'OFF'))) s.autofire = !s.autofire;
-    if (UI.button('t4', 196, 202, 240, 18, 'ESCALA INTEIRA DE PIXEL: ' + (s.integerScale ? 'ON' : 'OFF'))) { s.integerScale = !s.integerScale; G.resize && G.resize(); }
-    if (UI.button('fs', 196, 224, 240, 18, 'TELA CHEIA [F]')) toggleFullscreen();
-    if (UI.button('tut', 196, 246, 240, 18, 'REEXIBIR TUTORIAL')) s.tutorialDone = false;
-    if (UI.button('reset', 196, 276, 240, 20, 'APAGAR SAVE (CLIQUE 2x)', { color: '#ff4d4d' })) {
+    ctx.fillStyle = 'rgba(5,4,10,0.85)';
+    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    UI.panel(190, 52, 260, 264, { title: 'CONFIGURAÇÕES' });
+    const row = (label, y) => drawText(ctx, label, 204, y, { color: '#9a93c8' });
+    row('MÚSICA', 82);
+    if (UI.button('cm-', 300, 78, 18, 14, '-')) s.music = clamp(s.music - 0.1, 0, 1);
+    ctx.fillStyle = '#1d1740'; ctx.fillRect(324, 81, 60, 6);
+    ctx.fillStyle = '#b06bff'; ctx.fillRect(324, 81, Math.round(60 * s.music), 6);
+    if (UI.button('cm+', 392, 78, 18, 14, '+')) s.music = clamp(s.music + 0.1, 0, 1);
+    row('SFX', 102);
+    if (UI.button('cs-', 300, 98, 18, 14, '-')) s.sfx = clamp(s.sfx - 0.1, 0, 1);
+    ctx.fillStyle = '#1d1740'; ctx.fillRect(324, 101, 60, 6);
+    ctx.fillStyle = '#4dd8ff'; ctx.fillRect(324, 101, Math.round(60 * s.sfx), 6);
+    if (UI.button('cs+', 392, 98, 18, 14, '+')) s.sfx = clamp(s.sfx + 0.1, 0, 1);
+    if (UI.button('t1', 204, 122, 232, 16, 'VIBRAÇÃO DE TELA: ' + (s.screenshake ? 'ON' : 'OFF'))) s.screenshake = !s.screenshake;
+    if (UI.button('t2', 204, 142, 232, 16, 'NÚMEROS DE DANO: ' + (s.dmgNumbers ? 'ON' : 'OFF'))) s.dmgNumbers = !s.dmgNumbers;
+    if (UI.button('t3', 204, 162, 232, 16, 'MIRA AUTOMÁTICA: ' + (s.autofire ? 'ON' : 'OFF'))) s.autofire = !s.autofire;
+    if (UI.button('t4', 204, 182, 232, 16, 'ESCALA INTEIRA DE PIXEL: ' + (s.integerScale ? 'ON' : 'OFF'))) { s.integerScale = !s.integerScale; G.resize && G.resize(); }
+    if (UI.button('fs', 204, 202, 232, 16, 'TELA CHEIA [F]')) toggleFullscreen();
+    if (UI.button('tut', 204, 222, 232, 16, 'REEXIBIR TUTORIAL')) s.tutorialDone = false;
+    if (UI.button('reset', 204, 250, 232, 18, 'APAGAR SAVE (CLIQUE 2x)', { color: '#ff4d4d' })) {
       if (this._resetArm) { Save.reset(); Audio.sfx('defeat'); this._resetArm = false; }
-      else { this._resetArm = true; }
+      else this._resetArm = true;
     }
-    if (this._resetArm) drawText(ctx, 'CLIQUE NOVAMENTE PARA CONFIRMAR', 320, 302, { align: 'center', color: '#ff4d4d' });
+    if (this._resetArm) drawText(ctx, 'CLIQUE NOVAMENTE PARA CONFIRMAR', 320, 274, { align: 'center', color: '#ff4d4d' });
+    if (UI.button('closeC', 280, 292, 80, 18, 'FECHAR')) this.cfgOpen = false;
     Audio.setVolumes({ music: s.music, sfx: s.sfx, master: s.master });
     Save.save();
-    drawText(ctx, 'MARVEL NEXUS v1.0 — FAN GAME PIXEL ART', 320, 330, { align: 'center', color: '#3a3350' });
-    drawText(ctx, 'SEM AFILIAÇÃO COM A MARVEL. SEM FINS LUCRATIVOS.', 320, 342, { align: 'center', color: '#3a3350' });
   }
 }

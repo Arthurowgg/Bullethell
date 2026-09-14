@@ -35,13 +35,15 @@ Gamepad suportado (analógico esquerdo move, direito mira, A/B/X/Y mapeados).
   poços de gravidade, perseguição).
 - **Partida padrão** com ondas crescentes, mini-eventos, XP + escolha de
   upgrades (30+ upgrades, incluindo builds específicas por herói) e chefe final.
-- **Lobby** com 8 abas funcionais: JOGAR, HERÓIS, LOJA, NEXUS CORE, INCURSÕES,
-  COLEÇÃO, MISSÕES e CONFIG.
-- **Loja permanente (NEXUS STORE)**: 10 categorias de cosméticos, raridades,
-  preços em Fragmentos/Créditos, favoritos, pesquisa, pré-visualização e equip.
-- **Progressão permanente (NEXUS CORE)**: árvore de melhorias, nível de conta,
-  desbloqueio de heróis e incursões, missões com recompensas, conquistas de
-  coleção — tudo salvo em `localStorage`.
+- **Lobby enxuto**: abas JOGAR (seleção de herói + partida + incursões) e
+  LOJA com duas seções — **NEXUS** (upgrades permanentes customizados por
+  herói) e **COSMÉTICA** (visuais exclusivos) — e configurações atrás de um
+  ícone de engrenagem discreto.
+- **Cosmética (escopo inicial, 3 skins premium)**: ARANHA VENOM (emblema
+  negro bio-elétrico, teias viram descargas), TEMPESTADE RUBRA (Thor carmesim)
+  e PROTÓTIPO MEIA-NOITE (Iron Man preto-ouro com plasma âmbar). Cada uma com
+  sheet animado próprio, efeitos de tiro/rastro/aura distintos — sem vantagem
+  de combate.
 - **Áudio 100% sintetizado** (WebAudio): SFX e trilhas chiptune de lobby/combate/boss.
 - **HUD** discreta: vida, XP, nível, cooldowns, especial, cronômetro, abates,
   fragmentos e barra de boss com marcas de fase.

@@ -15,6 +15,7 @@ import { Boss } from '../game/boss.js';
 import { WaveDirector, RUN_LENGTH } from '../game/waves.js';
 import { newRunStats, gainXp, xpNeed } from '../game/run.js';
 import { rollUpgradeChoices, RARITY } from '../data/upgrades.js';
+import { skinById } from '../data/shop.js';
 import { heroById } from '../data/heroes.js';
 import { raidById } from '../data/raids.js';
 import { bossById } from '../data/bosses.js';
@@ -39,8 +40,9 @@ export class GameScene extends Scene {
     G.particles = new Particles();
     G.audio = Audio;
     G.runStats = newRunStats(this.hero, this.save);
-    G.player = new Player(this.hero, G.runStats);
-    this.applyCosmetics(G);
+    const skinId = this.save.cosmeticsEquipped[this.hero.id];
+    const skin = skinById(skinId);
+    G.player = new Player(this.hero, G.runStats, skin && skin.hero === this.hero.id ? skin : null);
     G.enemies = [];
     G.boss = null;
     G.time = 0;
@@ -73,15 +75,6 @@ export class GameScene extends Scene {
     Audio.playTrack(this.mode === 'raid' ? 'boss' : 'combat');
     this.save.stats.runs++;
     Save.save();
-  }
-
-  applyCosmetics(G) {
-    const eq = this.save.cosmeticsEquipped;
-    const get = (slot) => (eq[slot] ? (typeof window !== 'undefined' ? window : globalThis).__nx_item(eq[slot]) : null);
-    const tr = get('traje'); if (tr && tr.fx.tint) G.player.tint = tr.fx.tint;
-    const at = get('ataque'); if (at && at.fx.bullet) G.player.bulletColor = at.fx.bullet;
-    const ra = get('rastro'); if (ra && ra.fx.trail) G.player.trailColor = ra.fx.trail;
-    const hb = get('habilidade'); if (hb && hb.fx.aura) G.player.auraColor = hb.fx.aura;
   }
 
   // ---- the G api passed around --------------------------------------------

@@ -49,6 +49,16 @@ export function loadSheetArt(onProgress) {
   for (const b of ['ultron', 'loki', 'hela', 'devourer', 'thanos']) {
     load(`assets/sprites/bosses/${b}.png`, (img) => { SPR['boss_' + b] = cnv(img, 1); });
   }
+  // skin emblem frames
+  for (const s of ['venom', 'crimson', 'midnight']) {
+    for (let i = 0; i < 4; i++) {
+      load(`assets/sprites/skins/${s}_f${i}.png`, (img) => {
+        SPR['skin_' + s + '_f' + i] = cnv(img, 1);
+        if (i === 0) SPR['skin_' + s] = cnv(img, 1);
+      });
+    }
+    load(`assets/sprites/skins_big/${s}.png`, (img) => { SPR['skin_' + s + '_big'] = cnv(img, 1); });
+  }
 
   let done = 0;
   const total = jobs.length;

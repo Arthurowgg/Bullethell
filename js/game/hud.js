@@ -13,7 +13,7 @@ export function drawHud(ctx, G) {
   const P = G.player;
 
   // -- top-left: hp + xp --
-  drawSprite(ctx, SPR['hero_' + P.hero.id], 16, 18, { scale: 0.6 });
+  drawSprite(ctx, SPR[P.base] || SPR['hero_' + P.hero.id], 16, 18, { scale: 0.6 });
   // hp bar
   const hbx = 28, hby = 10, hbw = 110, hbh = 7;
   ctx.fillStyle = '#100818';

@@ -45,6 +45,16 @@ export const BOSSES = {
     ],
     intro: 'A DIMENSÃO COLAPSA SOBRE VOCÊ',
   },
+  kang: {
+    id: 'kang', shot: 'shot_boss_kang', name: 'KANG, O CONQUISTADOR', sprite: 'boss_kang',
+    hp: 2100, radius: 16, speed: 46, contact: 20, theme: 'boss_kang',
+    phases: [
+      { until: 1.0, attacks: ['blink', 'ringBurst', 'laserSweep'] },
+      { until: 0.55, attacks: ['gravityWell', 'spiralArms', 'blink', 'daggerRain'] },
+      { until: 0.0, attacks: ['gauntletSpiral', 'laserSweep', 'shockwave', 'blink'] },
+    ],
+    intro: 'O CONQUISTADOR DO TEMPO DESCENDE',
+  },
   thanos: {
     id: 'thanos', shot: 'shot_boss_thanos', name: 'THANOS CORROMPIDO', sprite: 'boss_thanos',
     hp: 3000, radius: 18, speed: 36, contact: 22, theme: 'throne',

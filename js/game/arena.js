@@ -19,6 +19,7 @@ export class Arena {
     this.bounds = { x: WALL, y: WALL, w: VIEW_W - WALL * 2, h: VIEW_H - WALL * 2 };
     this.obstacles = this._makeObstacles();
     this.blocked = this._makeBlocked();
+    this._makeZones();
     this.bg = this._renderBg();
   }
 
@@ -65,6 +66,7 @@ export class Arena {
     c.push(B(VIEW_W - corner, 0, corner, 26), B(VIEW_W - 26, 0, 26, corner));
     c.push(B(0, VIEW_H - 26, corner, 26), B(0, VIEW_H - corner, 26, corner));
     c.push(B(VIEW_W - corner, VIEW_H - 26, corner, 26), B(VIEW_W - 26, VIEW_H - corner, 26, corner));
+    if (t === 'skydeck') { c.push(B(0, 0, VIEW_W, 116)); } // céu: só voadores
     if (t === 'wakanda') { c.push(B(20, 20, 60, 44), B(VIEW_W - 84, 20, 64, 40), B(24, VIEW_H - 62, 56, 42), B(VIEW_W - 80, VIEW_H - 60, 60, 40)); }
     if (t === 'asgard') { c.push(B(0, 0, 90, 60), B(VIEW_W - 90, 0, 90, 60), B(0, VIEW_H - 60, 90, 60), B(VIEW_W - 90, VIEW_H - 60, 90, 60)); }
     if (t === 'newyork') { c.push(B(0, 0, 120, 70), B(VIEW_W - 120, 0, 120, 70), B(0, VIEW_H - 70, 120, 70), B(VIEW_W - 120, VIEW_H - 70, 120, 70)); }
@@ -76,12 +78,89 @@ export class Arena {
     return c;
   }
 
-  _makeObstacles() { return []; }
+  _makeObstacles() {
+    const t = this.themeId;
+    const O = (x, y, w, h) => ({ x, y, w, h });
+    if (t === 'ruins') {
+      // collapsed buildings: an S-shaped street between rubble walls
+      return [O(196, 0, 44, 224), O(400, 136, 44, 224), O(60, 150, 60, 34), O(520, 150, 60, 34)];
+    }
+    if (t === 'nexuscore') {
+      // four energy pylons guarding the core chamber
+      return [O(150, 108, 26, 26), O(464, 108, 26, 26), O(150, 226, 26, 26), O(464, 226, 26, 26)];
+    }
+    if (t === 'skydeck') {
+      // deck equipment at the sides of the playable deck
+      return [O(20, 130, 40, 40), O(580, 130, 40, 40), O(20, 280, 40, 40), O(580, 280, 40, 40)];
+    }
+    return [];
+  }
+
+  // playable-area design: not everything on screen is walkable
+  _makeZones() {
+    const t = this.themeId;
+    const b = this.bounds;
+    this.play = { ...b };                       // where the PLAYER may move
+    this.skyZone = null;                        // flying-only region (enemies/bullets)
+    this.danger = [];                           // pulsing hazard zones (player damage)
+    if (t === 'skydeck') {
+      // huge sky strip on top: visual + flying enemies, NOT walkable
+      this.skyZone = { x: b.x, y: b.y, w: b.w, h: 104 };
+      this.play = { x: b.x, y: 128, w: b.w, h: b.y + b.h - 128 };
+    }
+    if (t === 'nexuscore') {
+      // unstable core vents pulse damage in the mid lanes
+      this.danger = [
+        { x: 320, y: 120, r: 34, period: 6, on: 2.2, dmg: 7, color: '#b06bff' },
+        { x: 320, y: 240, r: 34, period: 6, on: 2.2, dmg: 7, color: '#4dd8ff', off: 3 },
+      ];
+    }
+    if (t === 'ruins') {
+      this.danger = [
+        { x: 96, y: 96, r: 26, period: 7, on: 2.4, dmg: 6, color: '#ff8c3b' },
+        { x: 544, y: 264, r: 26, period: 7, on: 2.4, dmg: 6, color: '#ff8c3b', off: 3.5 },
+      ];
+    }
+  }
+
+  dangerActive(z, t) {
+    const ph = (t + (z.off || 0)) % z.period;
+    return ph > z.period - z.on;
+  }
+
+  drawZones(ctx, t) {
+    for (const z of this.danger) {
+      const ph = (t + (z.off || 0)) % z.period;
+      const active = ph > z.period - z.on;
+      const warn = ph > z.period - z.on - 1.2 && !active;
+      ctx.globalAlpha = active ? 0.34 : warn ? 0.1 + (Math.sin(t * 16) * 0.5 + 0.5) * 0.12 : 0.07;
+      ctx.fillStyle = z.color;
+      ctx.beginPath(); ctx.arc(z.x, z.y, z.r, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = active ? 0.9 : 0.35;
+      ctx.strokeStyle = z.color;
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(z.x, z.y, z.r, 0, Math.PI * 2); ctx.stroke();
+      if (active) {
+        ctx.beginPath(); ctx.arc(z.x, z.y, z.r * (0.4 + ((t * 2) % 1) * 0.6), 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+    // sky strip edge (skydeck): the deck railing — readable, not arbitrary
+    if (this.skyZone) {
+      const y = this.play.y - 6;
+      ctx.fillStyle = '#0b0a14cc';
+      ctx.fillRect(this.bounds.x, y, this.bounds.w, 6);
+      ctx.fillStyle = '#4dd8ff55';
+      for (let x = this.bounds.x; x < this.bounds.x + this.bounds.w; x += 16) ctx.fillRect(x, y + 2, 8, 2);
+    }
+  }
 
   setTheme(themeId) {
     this.themeId = themeId;
     this.theme = THEMES[themeId] || this.theme;
+    this.obstacles = this._makeObstacles();
     this.blocked = this._makeBlocked();
+    this._makeZones();
     this.bg = this._renderBg();
   }
 
@@ -147,9 +226,10 @@ export class Arena {
     else { ctx.fillStyle = this.theme.floor; ctx.fillRect(0, 0, VIEW_W, VIEW_H); }
   }
 
-  /** clamp a point inside playable area (radius aware) */
-  clamp(x, y, r) {
-    const b = this.bounds;
+  /** clamp a point inside a rect (radius aware). Default = player play-area;
+   *  pass arena.bounds for flying/hostile actors that may roam the whole scene. */
+  clamp(x, y, r, rect) {
+    const b = rect || this.play;
     return [
       Math.min(b.x + b.w - r, Math.max(b.x + r, x)),
       Math.min(b.y + b.h - r, Math.max(b.y + r, y)),

@@ -12,7 +12,8 @@ import { Pickups } from '../game/pickups.js';
 import { Player } from '../game/player.js';
 import { makeEnemy, updateEnemy, drawEnemy } from '../game/enemy.js';
 import { Boss } from '../game/boss.js';
-import { WaveDirector, ROUNDS } from '../game/waves.js';
+import { WaveDirector } from '../game/waves.js';
+import { WORLD_LABEL, TOTAL_WAVES } from '../data/campaign.js';
 import { ComicUI } from '../game/comic.js';
 import { newRunStats, gainXp, xpNeed } from '../game/run.js';
 import { rollUpgradeChoices, RARITY } from '../data/upgrades.js';
@@ -76,14 +77,11 @@ export class GameScene extends Scene {
       this.curWorld = null;
     } else {
       G.waves = new WaveDirector();
-      const sr = params.startRound || 1;
-      if (sr > 1) {
-        G.waves.round = sr - 1;
-        G.waves.durT = null;
-      }
-      this.curWorld = this.worldForRound(sr);
+      const sr = params.startRound || 1;   // dev: onda inicial (1..24)
+      if (sr > 1) G.waves.jumpToWave(sr, G);
+      const seg0 = G.waves.curSeg();
+      this.curWorld = (seg0 && seg0.map) || 'wakanda';
       G.arena.setTheme(this.curWorld);
-      G.comic.push('round', 'ROUND ' + sr, this.WORLD_LABEL[this.curWorld], 'burst', '#ffd94a', { world: this.curWorld });
     }
 
     Audio.playTrack(this.mode === 'raid' ? 'boss' : 'combat');
@@ -121,21 +119,23 @@ export class GameScene extends Scene {
       collect: (p) => self.collect(G, p),
       startIncursion: (id, fin) => self.startIncursion(G, id, fin),
       openPortal: (id, fin) => self.openPortal(G, id, fin),
-      setWorldForRound: (n) => self.setWorldForRound(G, n),
-      comicRound: (n) => G.comic.push('round', 'ROUND ' + n, self.WORLD_LABEL[self.curWorld] || '', 'burst', '#ffd94a', { world: self.curWorld }),
+      setMap: (id) => self.setMap(G, id),
       get comic() { return G.comic; },
       get transition() { return self.transition; },
     };
   }
 
   // ---- helpers ------------------------------------------------------------
-  summon(G, type, n = 1, edges = false) {
+  summon(G, type, n = 1, elite = false, zone = null) {
     let def = (typeof window !== 'undefined' ? window : globalThis).__nx_enemy(type);
     if (!def) def = (typeof window !== 'undefined' ? window : globalThis).__nx_enemy && ((typeof window !== 'undefined' ? window : globalThis).__nx_enemy('drone'));
     if (!def) { console.warn('[summon] no def for', type); return; }
     for (let i = 0; i < n; i++) {
       let x, y;
-      if (edges) {
+      if (zone === 'sky' && G.arena.skyZone) {
+        const z = G.arena.skyZone;
+        x = rand(z.x + 12, z.x + z.w - 12); y = rand(z.y + 10, z.y + z.h - 10);
+      } else if (elite) {
         const side = (Math.random() * 4) | 0;
         const b = G.arena.bounds;
         if (side === 0) { x = rand(b.x + 10, b.x + b.w - 10); y = b.y + 10; }
@@ -146,9 +146,15 @@ export class GameScene extends Scene {
         [x, y] = G.arena.randomWalkable();
       }
       const e = makeEnemy(def, x, y, this.formationSlot++);
+      if (zone === 'sky') e.sky = true;
+      if (elite) {
+        e.isElite = true;
+        e.maxHp = Math.round(e.maxHp * 2.2); e.hp = e.maxHp;
+        e.speed *= 1.1; e.r += 1;
+      }
       G.enemies.push(e);
       this.save.discovered.enemies[type] = true;
-      G.particles.burst(x, y, '#b06bff', 6, 50, 0.4);
+      G.particles.burst(x, y, elite ? '#ffd94a' : zone === 'sky' ? '#4dd8ff' : '#b06bff', 6, 50, 0.4);
     }
   }
 
@@ -275,11 +281,7 @@ export class GameScene extends Scene {
     }
   }
 
-  WORLD_LABEL = {
-    wakanda: 'REINO DE VIBRANIUM', asgard: 'PONTE DO ARCO-ÍRIS', newyork: 'CRUZAMENTO DOS HERÓIS',
-    boss_ultron: 'SOKOVIA SUSPENSA', boss_loki: 'SALÃO DAS ILUSÕES', boss_hela: 'REINO DOS MORTOS',
-    boss_devourer: 'VAZIO CÓSMICO', boss_thanos: 'MUNDO EM CINZAS',
-  };
+  WORLD_LABEL = WORLD_LABEL;
 
   // ---- reality tear / portal to boss worlds -------------------------------
   openPortal(G, bossId, final) {
@@ -289,19 +291,11 @@ export class GameScene extends Scene {
     Audio.sfx('port');
   }
 
-  worldForRound(n) {
-    if (n <= 3) return 'wakanda';
-    if (n <= 7) return 'asgard';
-    return 'newyork';
-  }
-
-  setWorldForRound(G, n) {
-    const w = this.worldForRound(n);
-    if (w && w !== this.curWorld) {
-      this.curWorld = w;
-      if (this.transition && this.transition.phase === 'out') this.transition.to = w;
-      else { G.arena.setTheme(w); G.particles.addFlash('#ffffff', 0.35); }
-    }
+  setMap(G, id) {
+    if (!id || id === this.curWorld) return;
+    this.curWorld = id;
+    if (this.transition && this.transition.phase === 'out') this.transition.to = id;
+    else { G.arena.setTheme(id); G.particles.addFlash('#ffffff', 0.35); G.particles.addShake(3); }
   }
 
   drawPortal(ctx, G) {
@@ -310,6 +304,7 @@ export class GameScene extends Scene {
     const pul = 1 + Math.sin(t * 5) * 0.08;
     ctx.save();
     ctx.translate(Math.round(p.x), Math.round(p.y));
+    if (SPR.fx_tear) { ctx.globalAlpha = 0.85; drawSprite(ctx, SPR.fx_tear, 0, 0, { scaleX: (p.r * 2.6) / SPR.fx_tear.width, scaleY: (p.r * 3.2) / SPR.fx_tear.height }); ctx.globalAlpha = 1; }
     // outer glow
     ctx.globalAlpha = 0.25 + Math.sin(t * 5) * 0.08;
     ctx.fillStyle = '#b06bff';
@@ -350,6 +345,13 @@ export class GameScene extends Scene {
       ctx.beginPath();
       ctx.arc(VIEW_W / 2, VIEW_H / 2, Math.max(1, R - i * 60), 0, TAU);
       ctx.stroke();
+    }
+    const ringSpr = tr.phase === 'in' ? SPR.fx_portalring : SPR.fx_collapse;
+    if (ringSpr) {
+      const rr2 = 60 + 260 * (tr.phase === 'in' ? e : 1 - e);
+      ctx.globalAlpha = 0.9;
+      drawSprite(ctx, ringSpr, VIEW_W / 2, VIEW_H / 2, { scaleX: rr2 / ringSpr.width, scaleY: rr2 / ringSpr.height });
+      ctx.globalAlpha = 1;
     }
     // streaks toward center
     ctx.fillStyle = `rgba(255,255,255,${0.5 * e})`;
@@ -505,6 +507,13 @@ export class GameScene extends Scene {
 
       G.hazards.update(sdt);
       for (const dmg of G.hazards.playerHits(G.player.x, G.player.y, G.player.r)) G.player.hurt(G, dmg);
+      // environmental hazard zones (nexuscore vents / ruins fires)
+      for (const z of G.arena.danger || []) {
+        if (G.arena.dangerActive(z, G.time) && (G.player.x - z.x) ** 2 + (G.player.y - z.y) ** 2 < (z.r + G.player.r * 0.5) ** 2) {
+          if ((this._dzT || 0) <= 0) { this._dzT = 0.8; G.player.hurt(G, z.dmg); }
+        }
+      }
+      this._dzT = Math.max(0, (this._dzT || 0) - sdt);
 
       G.pickups.update(sdt, api);
       G.particles.update(dt, this.save.settings.screenshake);
@@ -663,6 +672,7 @@ export class GameScene extends Scene {
     if (G.particles.shake && this.save.settings.screenshake) ctx.translate(G.particles.shakeX, G.particles.shakeY);
 
     G.arena.draw(ctx);
+    if (G.arena.drawZones) G.arena.drawZones(ctx, G.time);
     G.pickups.draw(ctx);
     for (const e of G.enemies) drawEnemy(ctx, e);
     if (G.boss) G.boss.draw(ctx);
@@ -770,7 +780,7 @@ export class GameScene extends Scene {
     if (UI.button('restart', bx, 154, bw, 26, 'REINICIAR PARTIDA')) { G.restartGame(); return; }
     if (UI.button('quit', bx, 188, bw, 26, 'SAIR PARA O LOBBY')) { G.gotoLobby(); return; }
     // live telemetry (helps diagnose stalls from a screenshot)
-    drawText(ctx, `t=${G.time.toFixed(0)}s round=${G.waves ? G.waves.round + 1 : '-'} mobs=${G.enemies.length} boss=${G.boss ? G.boss.def.id : '-'} portal=${G.portal ? 'Y' : '-'} world=${G.arena.themeId}`, VIEW_W / 2, 236, { align: 'center', color: '#5a5470' });
+    drawText(ctx, `t=${G.time.toFixed(0)}s wave=${G.waves ? G.waves.wave : '-'}/${TOTAL_WAVES} phase=${G.waves ? G.waves.phase : '-'} mobs=${G.enemies.length} boss=${G.boss ? G.boss.def.id : '-'} portal=${G.portal ? 'Y' : '-'} world=${G.arena.themeId}`, VIEW_W / 2, 236, { align: 'center', color: '#5a5470' });
     if (G.__err) drawText(ctx, 'ERR: ' + String(G.__err.message || G.__err).slice(0, 60), VIEW_W / 2, 250, { align: 'center', color: '#ff4d4d' });
     // volumes
     const s = this.save.settings;

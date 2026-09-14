@@ -207,8 +207,13 @@ export function updateEnemy(e, dt, G) {
   e.vx = mvx * sp; e.vy = mvy * sp;
   e.x += e.vx * dt;
   e.y += e.vy * dt;
-  [e.x, e.y] = arena.clamp(e.x, e.y, e.r);
-  [e.x, e.y] = arena.resolveCircle(e.x, e.y, e.r);
+  if (e.sky && arena.skyZone) {
+    // flying actors hover in the sky strip — outside the player's reach
+    [e.x, e.y] = arena.clamp(e.x, e.y, e.r, arena.skyZone);
+  } else {
+    [e.x, e.y] = arena.clamp(e.x, e.y, e.r, arena.bounds);
+    [e.x, e.y] = arena.resolveCircle(e.x, e.y, e.r);
+  }
   if (e.def.behavior !== 'wander') [e.x, e.y] = [e.x, e.y];
   else {
     // bounce
@@ -259,6 +264,15 @@ export function drawEnemy(ctx, e) {
   if (e.def.variantColor) {
     ctx.fillStyle = e.def.variantColor;
     ctx.fillRect(e.x - 1, e.y - e.r - 5, 3, 3);
+  }
+  // elite / miniboss markers
+  if (e.isElite || e.isMiniboss) {
+    ctx.strokeStyle = e.isMiniboss ? '#ff9a3c' : '#ffd94a';
+    ctx.globalAlpha = 0.6 + Math.sin(e.t * 6) * 0.3;
+    ctx.strokeRect(e.x - e.r - 2, e.y - e.r - 2, e.r * 2 + 4, e.r * 2 + 4);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = e.isMiniboss ? '#ff9a3c' : '#ffd94a';
+    ctx.fillRect(e.x - 1, e.y - e.r - (e.def.variantColor ? 9 : 5), 3, 3);
   }
   // elite hp bar
   if (e.maxHp >= 100 && e.hp < e.maxHp) {

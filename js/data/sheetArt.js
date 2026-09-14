@@ -46,7 +46,7 @@ export function loadSheetArt(onProgress) {
     load(`assets/sprites/enemies/${e}.png`, (img) => { SPR['en_' + e] = cnv(img, 1); });
   }
   // bosses
-  for (const b of ['ultron', 'loki', 'hela', 'devourer', 'thanos']) {
+  for (const b of ['ultron', 'loki', 'hela', 'devourer', 'thanos', 'kang']) {
     load(`assets/sprites/bosses/${b}.png`, (img) => { SPR['boss_' + b] = cnv(img, 1); });
   }
   // per-hero walk loops + ability icons
@@ -68,12 +68,12 @@ export function loadSheetArt(onProgress) {
   for (const w of ['wakanda', 'asgard', 'newyork', 'boss_ultron', 'boss_loki', 'boss_hela', 'boss_devourer', 'boss_thanos']) {
     load(`assets/sprites/ui/wicon_${w}.png`, (img) => { SPR['wicon_' + w] = cnv(img, 1); });
   }
-  for (const b of ['ultron', 'loki', 'hela', 'devourer', 'thanos']) {
+  for (const b of ['ultron', 'loki', 'hela', 'devourer', 'thanos', 'kang']) {
     load(`assets/sprites/ui/portrait_${b}.png`, (img) => { SPR['portrait_' + b] = cnv(img, 1); });
     load(`assets/sprites/ui/bar_${b}.png`, (img) => { SPR['bar_' + b] = cnv(img, 1); });
   }
   // world backgrounds (3 main worlds + 5 boss-exclusive worlds)
-  for (const w of ['wakanda', 'asgard', 'newyork', 'boss_ultron', 'boss_loki', 'boss_hela', 'boss_devourer', 'boss_thanos']) {
+  for (const w of ['wakanda', 'asgard', 'newyork', 'skydeck', 'ruins', 'nexuscore', 'boss_ultron', 'boss_loki', 'boss_hela', 'boss_devourer', 'boss_thanos', 'boss_kang']) {
     load(`assets/sprites/worlds/${w}.png`, (img) => { SPR['world_' + w] = cnv(img, 1); });
   }
   // skin emblem frames
@@ -107,8 +107,15 @@ export function loadSheetArt(onProgress) {
     'fx_repul', 'fx_missile', 'fx_boom', 'fx_reticle',
     'fx_tracer', 'fx_knife', 'fx_slashx', 'fx_arc',
     'fx_claw3', 'fx_clawarc', 'fx_rage', 'fx_clawblades',
-    'fx_sigil', 'fx_portal', 'fx_rune', 'fx_dart']) {
+    'fx_sigil', 'fx_portal', 'fx_rune', 'fx_dart',
+    'fx_tear', 'fx_portalring', 'fx_collapse']) {
     load(`assets/sprites/fx/${f}.png`, (img) => { SPR[f] = cnv(img, 1); });
+  }
+  // HUD frames + Nexus event icons (campaign rework)
+  for (const k of ['hud_hp', 'hud_avatar', 'hud_abil', 'hud_wave', 'hud_timer',
+    'ev_wave', 'ev_elite', 'ev_miniboss', 'ev_incursion', 'ev_tear', 'ev_swarm',
+    'ev_reward', 'ev_diff', 'ev_bossin', 'ev_bossdown', 'ev_return', 'ev_upgrade']) {
+    load(`assets/sprites/ui/${k}.png`, (img) => { SPR[k] = cnv(img, 1); });
   }
   // Nexus lobby hub art
   for (const l of ['bg', 'core', 'portal_shop', 'portal_cos', 'portal_worlds',

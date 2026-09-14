@@ -340,6 +340,10 @@ export const THEMES = {
   throne: { floor: '#200a12', floorAlt: '#2a0d18', line: '#451526', wall: '#3a1020', wallTop: '#7a2440', accent: '#ffd94a' },
   wakanda: { floor: '#12281a', floorAlt: '#163420', line: '#1f5a38', wall: '#1d4a2c', wallTop: '#3fa06e', accent: '#b06bff' },
   newyork: { floor: '#1d2027', floorAlt: '#242832', line: '#3a4050', wall: '#343a48', wallTop: '#6b7285', accent: '#4dd8ff' },
+  skydeck: { floor: '#202a38', floorAlt: '#273344', line: '#3a4a60', wall: '#33405a', wallTop: '#6b7f9e', accent: '#4dd8ff' },
+  ruins: { floor: '#241d18', floorAlt: '#2c241d', line: '#4a3a2a', wall: '#3a2d20', wallTop: '#7a5c3a', accent: '#ff8c3b' },
+  nexuscore: { floor: '#1a1030', floorAlt: '#221540', line: '#3d2a6a', wall: '#2b1d52', wallTop: '#5a3fa0', accent: '#b06bff' },
+  boss_kang: { floor: '#0d2020', floorAlt: '#102828', line: '#1f4a44', wall: '#16383a', wallTop: '#3fa08e', accent: '#4dff88' },
   boss_ultron: { floor: '#23262e', floorAlt: '#282c36', line: '#3a3f4c', wall: '#3c414e', wallTop: '#6b7285', accent: '#ff4d4d' },
   boss_loki: { floor: '#0d1a12', floorAlt: '#10241a', line: '#1f5a38', wall: '#1d4a2c', wallTop: '#d8b64c', accent: '#4dff88' },
   boss_hela: { floor: '#0a1410', floorAlt: '#0d1c14', line: '#1f4a30', wall: '#16301f', wallTop: '#3fa07e', accent: '#4dff88' },
@@ -460,5 +464,14 @@ export function buildAllSprites() {
     reg('banner_' + id, banner(theme));
   }
   reg('crate', crate());
+
+  // world chips for the new campaign maps (AI sheets override when loaded)
+  reg('wicon_skydeck', (() => { const p = new Pix(20, 20); p.rect(2, 12, 16, 4, '#33405a'); p.rect(4, 10, 12, 2, '#6b7f9e'); p.rect(8, 4, 4, 6, '#4dd8ff'); p.px(9, 5, '#eaffff'); p.rect(2, 16, 16, 1, '#4dd8ff'); return p; })());
+  reg('wicon_ruins', (() => { const p = new Pix(20, 20); p.rect(3, 8, 5, 9, '#3a2d20'); p.rect(9, 5, 5, 12, '#4a3a2a'); p.rect(15, 10, 3, 7, '#3a2d20'); p.px(10, 7, '#ff8c3b'); p.px(4, 10, '#ff8c3b'); p.rect(2, 17, 16, 1, '#7a5c3a'); return p; })());
+  reg('wicon_nexuscore', (() => { const p = new Pix(20, 20); p.diamond(10, 10, 6, '#2b1d52'); p.diamond(10, 10, 4, '#5a3fa0'); p.diamond(10, 10, 2, '#b06bff'); p.px(10, 10, '#ffffff'); return p; })());
+  reg('wicon_boss_kang', (() => { const p = new Pix(20, 20); p.rect(7, 3, 6, 3, '#3fa08e'); p.tri(6, 6, 14, 6, 10, 11, '#4dff88'); p.tri(6, 17, 14, 17, 10, 12, '#4dff88'); p.px(10, 10, '#ffffff'); return p; })());
+  // procedural Kang fallbacks (overridden by AI sheets)
+  reg('boss_kang', (() => { const p = new Pix(24, 26); p.rect(9, 2, 6, 5, '#3fa08e'); p.rect(8, 7, 8, 10, '#16383a'); p.rect(6, 8, 2, 7, '#16383a'); p.rect(16, 8, 2, 7, '#16383a'); p.rect(9, 17, 2, 7, '#102828'); p.rect(13, 17, 2, 7, '#102828'); p.px(10, 4, '#4dff88'); p.px(13, 4, '#4dff88'); p.rect(8, 9, 8, 1, '#4dff88'); return p; })());
+  reg('shot_boss_kang', (() => { const p = new Pix(8, 8); p.diamond(3, 3, 2, '#4dff88'); p.px(3, 3, '#ffffff'); p.px(0, 3, '#3fa08e'); p.px(6, 3, '#3fa08e'); return p; })());
   return SPR;
 }

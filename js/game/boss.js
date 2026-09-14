@@ -148,9 +148,11 @@ export class Boss {
       case 'necroWave': G.summon('spectre', 3); break;
       case 'spectreCall': G.summon('spectre', 2); break;
       case 'blink': {
+        if (this.def.id === 'kang' && SPR.fx_tclock) (this.vfx = this.vfx || []).push({ spr: SPR.fx_tclock, x: this.x, y: this.y, t: 0 });
         G.particles.burst(this.x, this.y, '#4dff88', 16, 120, 0.5);
         this.x = rand(90, 550); this.y = rand(60, 160);
         G.particles.burst(this.x, this.y, '#4dff88', 16, 120, 0.5);
+        if (this.def.id === 'kang' && SPR.fx_tclock) (this.vfx = this.vfx || []).push({ spr: SPR.fx_tclock, x: this.x, y: this.y, t: 0 });
         G.audio.sfx('port');
         break;
       }
@@ -162,7 +164,7 @@ export class Boss {
       case 'spiralArms': this.spirals.push(new Spiral(this.x, this.y, { arms: 2, step: 0.1, speed: 85, rot: 2.8, b: { sprite: this.SH } }), new Spiral(this.x, this.y, { arms: 2, step: 0.1, speed: 70, rot: -2.2, b: { sprite: this.SH } })); this.spirals[0].life = 2.2; this.spirals[1].life = 2.2; break;
       case 'mirrorSpiral': { const s = new Spiral(this.x, this.y, { arms: 3, step: 0.11, speed: 80, rot: 3, b: { sprite: this.SH } }); s.life = 2.4; this.spirals.push(s); break; }
       case 'voidSpiral': { const s = new Spiral(this.x, this.y, { arms: 3, step: 0.09, speed: 90, rot: 3.4, b: { sprite: this.SH } }); s.life = 2.6; this.spirals.push(s); break; }
-      case 'gauntletSpiral': { const s = new Spiral(this.x, this.y, { arms: 6, step: 0.14, speed: 75, rot: 2.2, b: { sprite: this.SH } }); s.life = 2.6; this.spirals.push(s); break; }
+      case 'gauntletSpiral': { const s = new Spiral(this.x, this.y, { arms: 6, step: 0.14, speed: 75, rot: 2.2, b: { sprite: this.SH } }); s.life = 2.6; this.spirals.push(s); if (this.def.id === 'kang' && SPR.fx_gauntlet) (this.vfx = this.vfx || []).push({ spr: SPR.fx_gauntlet, x: this.x, y: this.y, t: 0 }); break; }
     }
   }
 
@@ -276,7 +278,7 @@ export class Boss {
     const spr = SPR[this.def.sprite];
     const bob = 0; // static sprite
     // presence aura: ground glow + pulsing ring (color per villain)
-    const aura = { ultron: '#ff4d4d', loki: '#4dff88', hela: '#4dff88', devourer: '#4dd8ff', thanos: '#b06bff' }[this.def.id] || '#ff4d4d';
+    const aura = { ultron: '#ff4d4d', loki: '#4dff88', hela: '#4dff88', devourer: '#4dd8ff', thanos: '#b06bff', kang: '#4dff88' }[this.def.id] || '#ff4d4d';
     ctx.save();
     ctx.globalAlpha = 0.22 + Math.sin(this.walk * 2) * 0.06;
     ctx.fillStyle = aura;
@@ -329,6 +331,7 @@ export class Boss {
     // gravity well draw
     if (this.grav) {
       const g = this.grav;
+      if (SPR.fx_gravwell) { ctx.globalAlpha = 0.8; drawSprite(ctx, SPR.fx_gravwell, g.x, g.y, { scaleX: 96 / SPR.fx_gravwell.width, scaleY: 96 / SPR.fx_gravwell.height, rot: this.walk }); ctx.globalAlpha = 1; }
       ctx.globalAlpha = 0.4;
       ctx.strokeStyle = '#b06bff';
       for (let i = 0; i < 3; i++) {
@@ -338,6 +341,18 @@ export class Boss {
         ctx.stroke();
       }
       ctx.globalAlpha = 1;
+    }
+    // transient boss vfx decals (kang time effects)
+    if (this.vfx && this.vfx.length) {
+      for (const v of this.vfx) {
+        v.t += 1 / 60;
+        const a = 1 - v.t / 0.6;
+        if (a <= 0) continue;
+        ctx.globalAlpha = a;
+        drawSprite(ctx, v.spr, v.x, v.y, { scaleX: (40 + v.t * 60) / v.spr.width, scaleY: (40 + v.t * 60) / v.spr.height });
+        ctx.globalAlpha = 1;
+      }
+      this.vfx = this.vfx.filter((v) => v.t < 0.6);
     }
   }
 }

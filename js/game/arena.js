@@ -3,7 +3,7 @@
 // Fixed top-down arena (640x360 internal). Static background is pre-rendered
 // once per theme into an offscreen canvas.
 // ---------------------------------------------------------------------------
-import { SPR } from '../core/pixel.js';
+import { SPR, drawSprite } from '../core/pixel.js';
 import { THEMES } from '../data/sprites.js';
 import { RNG, rand, pick } from '../core/util.js';
 
@@ -111,14 +111,14 @@ export class Arena {
     if (t === 'nexuscore') {
       // unstable core vents pulse damage in the mid lanes
       this.danger = [
-        { x: 320, y: 120, r: 34, period: 6, on: 2.2, dmg: 7, color: '#b06bff' },
-        { x: 320, y: 240, r: 34, period: 6, on: 2.2, dmg: 7, color: '#4dd8ff', off: 3 },
+        { x: 320, y: 120, r: 34, period: 6, on: 2.2, dmg: 7, color: '#b06bff', spr: 'dz_vent' },
+        { x: 320, y: 240, r: 34, period: 6, on: 2.2, dmg: 7, color: '#4dd8ff', off: 3, spr: 'dz_vent' },
       ];
     }
     if (t === 'ruins') {
       this.danger = [
-        { x: 96, y: 96, r: 26, period: 7, on: 2.4, dmg: 6, color: '#ff8c3b' },
-        { x: 544, y: 264, r: 26, period: 7, on: 2.4, dmg: 6, color: '#ff8c3b', off: 3.5 },
+        { x: 96, y: 96, r: 26, period: 7, on: 2.4, dmg: 6, color: '#ff8c3b', spr: 'dz_fire' },
+        { x: 544, y: 264, r: 26, period: 7, on: 2.4, dmg: 6, color: '#ff8c3b', off: 3.5, spr: 'dz_fire' },
       ];
     }
   }
@@ -143,6 +143,11 @@ export class Arena {
       if (active) {
         ctx.beginPath(); ctx.arc(z.x, z.y, z.r * (0.4 + ((t * 2) % 1) * 0.6), 0, Math.PI * 2); ctx.stroke();
       }
+      const zs = z.spr && SPR[z.spr];
+      if (zs) {
+        ctx.globalAlpha = active ? 0.95 : warn ? 0.45 : 0.22;
+        drawSprite(ctx, zs, z.x, z.y, { scaleX: (z.r * 2.1) / zs.width, scaleY: (z.r * 2.1) / zs.height });
+      }
       ctx.globalAlpha = 1;
     }
     // sky strip edge (skydeck): the deck railing — readable, not arbitrary
@@ -150,8 +155,12 @@ export class Arena {
       const y = this.play.y - 6;
       ctx.fillStyle = '#0b0a14cc';
       ctx.fillRect(this.bounds.x, y, this.bounds.w, 6);
-      ctx.fillStyle = '#4dd8ff55';
-      for (let x = this.bounds.x; x < this.bounds.x + this.bounds.w; x += 16) ctx.fillRect(x, y + 2, 8, 2);
+      if (SPR.tile_rail) {
+        for (let x = this.bounds.x; x < this.bounds.x + this.bounds.w; x += 64) drawSprite(ctx, SPR.tile_rail, x + 32, y + 3, { scaleX: 1, scaleY: 1 });
+      } else {
+        ctx.fillStyle = '#4dd8ff55';
+        for (let x = this.bounds.x; x < this.bounds.x + this.bounds.w; x += 16) ctx.fillRect(x, y + 2, 8, 2);
+      }
     }
   }
 
@@ -210,8 +219,8 @@ export class Arena {
     if (ban) for (let x = 60; x < VIEW_W - 40; x += 90) if (this.rng.next() < 0.6) g.drawImage(ban, x, 13);
     const por = SPR['portal_' + this.themeId];
     if (por) g.drawImage(por, VIEW_W / 2 - 12, 16);
-    const crate = SPR.crate;
-    for (const o of this.obstacles) if (crate) g.drawImage(crate, o.x, o.y);
+    const crate = SPR['obs_' + this.themeId] || SPR.crate;
+    for (const o of this.obstacles) if (crate) g.drawImage(crate, o.x, o.y, o.w, o.h);
     // vignette
     const grad = g.createRadialGradient(VIEW_W / 2, VIEW_H / 2, 120, VIEW_W / 2, VIEW_H / 2, 380);
     grad.addColorStop(0, 'rgba(0,0,0,0)');

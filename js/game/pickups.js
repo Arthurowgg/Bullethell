@@ -49,7 +49,7 @@ export class Pickups {
     for (const p of this.pool.live) {
       const blink = p.t > 15 && Math.floor(p.t * 6) % 2 === 0;
       if (blink) continue;
-      const s = p.kind === 'xp' ? SPR.gem : p.kind === 'heart' ? SPR.heart : SPR.fragment;
+      const s = SPR['pk_' + p.kind] || (p.kind === 'xp' ? SPR.gem : p.kind === 'heart' ? SPR.heart : SPR.fragment);
       if (s) drawSprite(ctx, s, p.x, p.y + Math.round(Math.sin(p.t * 5) * 1));
     }
   }

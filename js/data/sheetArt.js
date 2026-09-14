@@ -65,7 +65,7 @@ export function loadSheetArt(onProgress) {
     }
   }
   // world icons, boss portraits and custom boss bar frames
-  for (const w of ['wakanda', 'asgard', 'newyork', 'boss_ultron', 'boss_loki', 'boss_hela', 'boss_devourer', 'boss_thanos']) {
+  for (const w of ['wakanda', 'asgard', 'newyork', 'skydeck', 'ruins', 'nexuscore', 'boss_ultron', 'boss_loki', 'boss_hela', 'boss_devourer', 'boss_thanos', 'boss_kang']) {
     load(`assets/sprites/ui/wicon_${w}.png`, (img) => { SPR['wicon_' + w] = cnv(img, 1); });
   }
   for (const b of ['ultron', 'loki', 'hela', 'devourer', 'thanos', 'kang']) {
@@ -96,7 +96,7 @@ export function loadSheetArt(onProgress) {
     load(`assets/sprites/shots/hero_${h}.png`, (img) => { SPR['shot_hero_' + h] = cnv(img, 1); });
   for (const e of ['drone', 'chitauri', 'symbiote', 'sorcerer', 'sentinel', 'spectre', 'jotun', 'chaos'])
     load(`assets/sprites/shots/en_${e}.png`, (img) => { SPR['shot_en_' + e] = cnv(img, 1); });
-  for (const b of ['ultron', 'loki', 'hela', 'devourer', 'thanos', 'cosmic'])
+  for (const b of ['ultron', 'loki', 'hela', 'devourer', 'thanos', 'cosmic', 'kang'])
     load(`assets/sprites/shots/boss_${b}.png`, (img) => { SPR['shot_boss_' + b] = cnv(img, 1); });
   // comic UI icons
   for (const u of ['swarm', 'elite', 'frags', 'alarm', 'burst', 'shield', 'bolt', 'portal'])
@@ -111,6 +111,11 @@ export function loadSheetArt(onProgress) {
     'fx_tear', 'fx_portalring', 'fx_collapse']) {
     load(`assets/sprites/fx/${f}.png`, (img) => { SPR[f] = cnv(img, 1); });
   }
+  // campaign props: obstacle tops, hazard vents, deck tiles, kang vfx, pickups
+  for (const k of ['obs_skydeck', 'obs_ruins', 'obs_nexuscore', 'tile_rail', 'tile_hazard', 'pk_xp', 'pk_heart', 'pk_frag'])
+    load(`assets/sprites/ui/${k}.png`, (img) => { SPR[k] = cnv(img, 1); });
+  for (const k of ['dz_fire', 'dz_vent', 'fx_gravwell', 'fx_gauntlet', 'fx_tclock'])
+    load(`assets/sprites/fx/${k}.png`, (img) => { SPR[k] = cnv(img, 1); });
   // HUD frames + Nexus event icons (campaign rework)
   for (const k of ['hud_hp', 'hud_avatar', 'hud_abil', 'hud_wave', 'hud_timer',
     'ev_wave', 'ev_elite', 'ev_miniboss', 'ev_incursion', 'ev_tear', 'ev_swarm',

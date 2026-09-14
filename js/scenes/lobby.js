@@ -1,38 +1,37 @@
 // ---------------------------------------------------------------------------
 // MARVEL NEXUS — scenes/lobby.js
-// Lobby enxuto e premium: abas JOGAR e LOJA (NEXUS / COSMÉTICA) + configurações
-// como ícone discreto. Pixel art moderna, inspirado em lojas de jogos atuais.
+// The Nexus hub: a living command deck, not a dashboard. Central holographic
+// core, hero emblems in orbit, themed portals for shops/worlds, holo-chips
+// for missions/collection/dev, discreet gear for settings.
 // ---------------------------------------------------------------------------
 import { Scene, UI, toggleFullscreen } from './scene.js';
 import { drawText, textWidth } from '../core/font.js';
 import { SPR, drawSprite } from '../core/pixel.js';
-import { Input } from '../core/input.js';
 import { Audio } from '../core/audio.js';
 import { Save, xpForLevel } from '../core/save.js';
 import { VIEW_W, VIEW_H } from '../game/arena.js';
-import { THEMES } from '../data/sprites.js';
 import { HEROES, heroById } from '../data/heroes.js';
+import { bossById } from '../data/bosses.js';
 import { HERO_NODES, nodeCost } from '../data/nexuscore.js';
 import { SKINS, skinById, RARITY_SHOP } from '../data/shop.js';
 import { MISSIONS, HERO_UNLOCK_COST } from '../data/missions.js';
+import { ENEMIES } from '../data/enemies.js';
 import { clamp } from '../core/util.js';
-
-const TABS = ['JOGAR', 'LOJA', 'DEV'];
 
 export class LobbyScene extends Scene {
   enter(G, params) {
     this.t = 0;
-    this.tab = 0;
-    this.shopSec = 'cos';      // 'nexus' | 'cos'
-    this.cfgOpen = false;
-    this.raidsOpen = false;
+    this.overlay = null;      // null | nexus | cos | worlds | missions | collection | dev | cfg
+    this.shopSec = 'cos';
     this.skinSel = SKINS[0].id;
+    this.transT = 0;          // portal transition anim
+    this._resetArm = false; this._resetArm2 = false;
     Audio.playTrack('lobby');
   }
 
-  update(dt, G) { this.t += dt; }
+  update(dt, G) { this.t += dt; this.transT = Math.max(0, this.transT - dt); }
 
-  // ------------------------------------------------------------- helpers ---
+  // ------------------------------------------------------------ helpers ----
   wrap(ctx, txt, x, y, w, color, lh = 9) {
     let line = '', ly = y;
     for (const wd of String(txt).split(' ')) {
@@ -43,24 +42,72 @@ export class LobbyScene extends Scene {
     return ly;
   }
 
-  emblem(ctx, base, fallbackHeroId, x, y, scale = 1, frame = 0) {
-    const s = SPR[base + '_f' + frame] || SPR[base] || SPR['hero_' + fallbackHeroId];
-    if (s) drawSprite(ctx, s, x, y, { scale });
+  // comic-tech panel frame
+  frame(ctx, x, y, w, h, color) {
+    ctx.fillStyle = '#000000aa';
+    ctx.fillRect(x + 2, y + 3, w, h);
+    ctx.fillStyle = '#0d0a1ef2';
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = '#000000';
+    ctx.strokeRect(x - 0.5, y - 0.5, w + 1, h + 1);
+    ctx.strokeStyle = color || '#7b5cff';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#ffffff22';
+    ctx.strokeRect(x + 3.5, y + 3.5, w - 7, h - 7);
+    ctx.fillStyle = color || '#7b5cff';
+    ctx.fillRect(x, y, 4, 1); ctx.fillRect(x + w - 4, y, 4, 1);
+    ctx.fillRect(x, y + h - 1, 4, 1); ctx.fillRect(x + w - 4, y + h - 1, 4, 1);
   }
 
-  drawGear(ctx, x, y, active) {
-    ctx.fillStyle = active ? '#ffd94a' : '#8a84a8';
-    ctx.fillRect(x + 2, y, 4, 8); ctx.fillRect(x, y + 2, 8, 4);
-    ctx.fillStyle = '#0d0a1e';
-    ctx.fillRect(x + 3, y + 3, 2, 2);
+  // procedural currency glyphs (tiny pixel icons)
+  glyphFrag(ctx, x, y) {
+    ctx.fillStyle = '#4dd8ff';
+    ctx.fillRect(x + 2, y - 4, 2, 8); ctx.fillRect(x, y - 2, 6, 4);
+    ctx.fillStyle = '#9feaff';
+    ctx.fillRect(x + 2, y - 2, 2, 2);
+  }
+  glyphCred(ctx, x, y) {
+    ctx.fillStyle = '#ffd94a';
+    ctx.fillRect(x, y - 3, 6, 6);
+    ctx.fillStyle = '#fff2b8';
+    ctx.fillRect(x + 1, y - 2, 2, 2);
+    ctx.fillStyle = '#8a6a10';
+    ctx.fillRect(x + 2, y, 3, 1);
+  }
+
+  open(id) { this.overlay = id; this.transT = 0.35; Audio.sfx('port'); }
+
+  holo(ctx, id, x, y, icon, label, color) {
+    const hov = UI.hit(x - 12, y - 12, 24, 30);
+    if (hov) UI.hoverId = id;
+    ctx.globalAlpha = hov ? 1 : 0.85;
+    if (SPR[icon]) drawSprite(ctx, SPR[icon], x, y, { scale: 1.2 });
+    ctx.globalAlpha = 1;
+    drawText(ctx, label, x, y + 12, { align: 'center', scale: 1, color: hov ? '#ffffff' : color || '#9a93c8', shadow: true });
+    if (hov && UI.anyClick) return true;
+    return false;
   }
 
   // ---------------------------------------------------------------- draw ---
   draw(ctx, G) {
     const s = Save.data;
-    this.drawRoom(ctx);
+    // living background
+    const bg = SPR['lobby_bg'];
+    if (bg) ctx.drawImage(bg, 0, 0, VIEW_W, VIEW_H);
+    else { ctx.fillStyle = '#0b0918'; ctx.fillRect(0, 0, VIEW_W, VIEW_H); }
+    // ambient particles
+    for (let i = 0; i < 24; i++) {
+      const px = (i * 97 + this.t * (6 + (i % 5) * 3)) % VIEW_W;
+      const py = (i * 53) % VIEW_H;
+      ctx.globalAlpha = 0.25 + (i % 3) * 0.12;
+      ctx.fillStyle = i % 2 ? '#7b5cff' : '#4dd8ff';
+      ctx.fillRect(VIEW_W - px, py, i % 5 === 0 ? 2 : 1, 1);
+    }
+    ctx.globalAlpha = 1;
 
-    // header
+    // header strip
     ctx.fillStyle = '#0d0a1ecc';
     ctx.fillRect(0, 0, VIEW_W, 22);
     drawText(ctx, 'MARVEL', 6, 4, { color: '#e8e0ff' });
@@ -69,71 +116,90 @@ export class LobbyScene extends Scene {
     ctx.fillStyle = '#1d1740'; ctx.fillRect(118, 8, 60, 4);
     ctx.fillStyle = '#b06bff';
     ctx.fillRect(118, 8, Math.round(60 * clamp(s.accountXp / xpForLevel(s.accountLevel + 1), 0, 1)), 4);
-    drawSprite(ctx, SPR.fragment, 480, 12, { scale: 0.9 });
-    drawText(ctx, String(s.fragments), 490, 7, { color: '#9feaff' });
-    drawSprite(ctx, SPR.credit, 552, 12, { scale: 0.9 });
-    drawText(ctx, String(s.credits), 562, 7, { color: '#ffe9a0' });
-    // gear icon (discreet settings)
-    const gHov = UI.hit(616, 6, 16, 14);
-    this.drawGear(ctx, 620, 8, gHov);
-    if (gHov) { UI.hoverId = 'gear'; if (UI.anyClick) { this.cfgOpen = true; Audio.sfx('ui'); } }
+    this.glyphFrag(ctx, 472, 11);
+    drawText(ctx, String(s.fragments), 482, 7, { color: '#9feaff' });
+    this.glyphCred(ctx, 544, 11);
+    drawText(ctx, String(s.credits), 554, 7, { color: '#ffe9a0' });
+    if (this.holo(ctx, 'gear', 618, 11, 'lobby_nav_gear', '', '#8a84a8')) this.open('cfg');
 
-    // tabs
-    const tw = 110;
-    TABS.forEach((t, i) => {
-      if (UI.tab('tab' + i, 8 + i * (tw + 6), 24, tw, 16, t, this.tab === i)) { this.tab = i; this.raidsOpen = false; }
-    });
+    this.drawCore(ctx, G);
+    this.drawHeroesOrbit(ctx, G);
+    this.drawPortals(ctx, G);
+    this.drawPlayPad(ctx, G);
+    this.drawChips(ctx, G);
 
-    ctx.fillStyle = '#0d0a1e99';
-    ctx.fillRect(0, 40, VIEW_W, VIEW_H - 40);
+    if (this.overlay) this.drawOverlay(ctx, G);
 
-    if (this.tab === 0) this.drawPlay(ctx, G);
-    else if (this.tab === 1) this.drawShop(ctx, G);
-    else this.drawDev(ctx, G);
-
-    if (this.cfgOpen) this.drawConfigOverlay(ctx, G);
+    // portal transition
+    if (this.transT > 0) {
+      const q = this.transT / 0.35;
+      ctx.globalAlpha = q * 0.6;
+      ctx.strokeStyle = '#b06bff';
+      for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.arc(VIEW_W / 2, VIEW_H / 2, 60 + (1 - q) * 400 + i * 40, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
   }
 
-  drawRoom(ctx) {
-    const theme = THEMES.nexus;
-    const f0 = SPR.floor_nexus_0, f1 = SPR.floor_nexus_1;
-    for (let y = 60; y < VIEW_H; y += 16)
-      for (let x = 0; x < VIEW_W; x += 16)
-        ctx.drawImage(((x / 16 + y / 16) % 2 === 0) ? f0 : f1, x, y);
-    ctx.fillStyle = theme.wall; ctx.fillRect(0, 40, VIEW_W, 24);
-    ctx.fillStyle = theme.wallTop; ctx.fillRect(0, 62, VIEW_W, 2);
-    ctx.drawImage(SPR.portal_nexus, 30, 44);
-    ctx.drawImage(SPR.console_nexus, 566, 46);
-    ctx.drawImage(SPR.banner_nexus, 300, 42);
-    ctx.globalAlpha = 0.3 + Math.sin(this.t * 3) * 0.15;
-    ctx.fillStyle = theme.accent; ctx.fillRect(36, 50, 12, 16);
-    ctx.globalAlpha = 1;
-  }
-
-  // ============================================================ JOGAR ======
-  drawPlay(ctx, G) {
+  // central holographic core + selected hero -------------------------------
+  drawCore(ctx, G) {
     const s = Save.data;
     const hero = heroById(s.heroSelected);
+    const cx = VIEW_W / 2, cy = 150;
+    // rotating rings
+    for (let i = 0; i < 3; i++) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(this.t * (0.4 + i * 0.25) * (i % 2 ? -1 : 1));
+      ctx.strokeStyle = i === 1 ? '#4dd8ff' : '#7b5cff';
+      ctx.globalAlpha = 0.5;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 62 + i * 10, 20 + i * 4, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+    const core = SPR['lobby_core'];
+    if (core) drawSprite(ctx, core, cx, cy - 6, { scale: 0.9 + Math.sin(this.t * 2) * 0.04 });
+    const eq = skinById(s.cosmeticsEquipped[hero.id]);
+    const base = eq && eq.hero === hero.id ? 'skin_' + eq.id : 'hero_' + hero.id;
+    const big = SPR[base + '_big'] || SPR[base];
+    if (big) drawSprite(ctx, big, cx, cy - 6, { scale: 56 / big.height });
+    drawText(ctx, eq ? eq.name : hero.name, cx, cy + 42, { align: 'center', scale: 2, color: eq ? RARITY_SHOP[eq.rarity].color : hero.color, shadow: true });
+    drawText(ctx, hero.role, cx, cy + 60, { align: 'center', color: '#9a93c8', shadow: true });
+  }
 
-    // squad selector
-    UI.panel(8, 48, 150, 304, { title: 'ESQUADRÃO' });
+  // hero emblems in orbit ---------------------------------------------------
+  drawHeroesOrbit(ctx, G) {
+    const s = Save.data;
+    const cx = VIEW_W / 2, cy = 150;
     HEROES.forEach((h, i) => {
-      const x = 16 + (i % 2) * 72, y = 70 + ((i / 2) | 0) * 78;
+      const a = -Math.PI / 2 + (i - 2.5) * 0.52;
+      const x = cx + Math.cos(a) * 150;
+      const y = cy + Math.sin(a) * 92 + 6;
       const unlocked = s.heroesUnlocked[h.id];
       const sel = s.heroSelected === h.id;
-      const hov = UI.hit(x, y, 66, 70);
-      if (hov) UI.hoverId = 'h' + i;
-      ctx.fillStyle = hov ? '#241b52' : '#171233';
-      ctx.fillRect(x, y, 66, 70);
+      const hov = UI.hit(x - 17, y - 17, 34, 34);
+      if (hov) UI.hoverId = 'h' + h.id;
+      // slot
+      ctx.fillStyle = sel ? '#241b52' : '#120e2acc';
+      ctx.beginPath(); ctx.arc(x, y, 16, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = sel ? h.color : hov ? '#7b5cff' : '#2a2450';
-      ctx.strokeRect(x + 0.5, y + 0.5, 65, 69);
-      this.emblem(ctx, 'hero_' + h.id, h.id, x + 33, y + 26, 1, 0); // static emblem
+      ctx.lineWidth = sel ? 2 : 1;
+      ctx.beginPath(); ctx.arc(x, y, 16, 0, Math.PI * 2); ctx.stroke();
+      ctx.lineWidth = 1;
+      const em = SPR['hero_' + h.id];
+      if (em) drawSprite(ctx, em, x, y, { alpha: unlocked ? 1 : 0.3 });
       if (!unlocked) {
-        ctx.fillStyle = '#000000aa'; ctx.fillRect(x, y, 66, 70);
-        drawSprite(ctx, SPR.lock, x + 33, y + 22, { scale: 0.9 });
-        drawText(ctx, String(HERO_UNLOCK_COST[h.id]), x + 33, y + 40, { align: 'center', color: '#4dd8ff' });
+        ctx.fillStyle = '#8a84a8';
+        ctx.fillRect(x - 3, y - 6, 6, 5);
+        ctx.fillStyle = '#0d0a1e';
+        ctx.fillRect(x - 1, y - 5, 2, 3);
+        drawText(ctx, String(HERO_UNLOCK_COST[h.id]), x, y + 8, { align: 'center', color: '#4dd8ff' });
       }
-      drawText(ctx, h.name.split(' ')[0], x + 33, y + 56, { align: 'center', color: unlocked ? (sel ? '#ffffff' : '#8a84a8') : '#9a93c8' });
       if (hov && UI.anyClick) {
         if (unlocked) { s.heroSelected = h.id; Save.save(); Audio.sfx('ui'); }
         else if (s.fragments >= HERO_UNLOCK_COST[h.id]) {
@@ -143,91 +209,108 @@ export class LobbyScene extends Scene {
         } else Audio.sfx('deny');
       }
     });
-
-    // hero showcase
-    UI.panel(166, 48, 292, 304, { title: 'HERÓI' });
-    const eqSkin = skinById(s.cosmeticsEquipped[hero.id]);
-    const base = eqSkin && eqSkin.hero === hero.id ? 'skin_' + eqSkin.id : 'hero_' + hero.id;
-    const frame = 0; // static emblem
-    // glow pedestal
-    ctx.globalAlpha = 0.25 + Math.sin(this.t * 2) * 0.08;
-    ctx.fillStyle = hero.color;
-    ctx.beginPath(); ctx.ellipse(312, 216, 46, 10, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.globalAlpha = 1;
-    const big = SPR[base + '_big'] || SPR[base + '_f0'];
-    if (big) drawSprite(ctx, big, 312, 150, { scale: 96 / big.height });
-    drawText(ctx, eqSkin ? eqSkin.name : hero.name, 312, 200, { align: 'center', scale: 2, color: eqSkin ? RARITY_SHOP[eqSkin.rarity].color : hero.color, shadow: true });
-    drawText(ctx, hero.role, 312, 220, { align: 'center', color: '#9a93c8' });
-    const bar = (label, val, max, yy, col) => {
-      drawText(ctx, label, 186, yy, { color: '#9a93c8' });
-      ctx.fillStyle = '#1d1740'; ctx.fillRect(266, yy + 1, 120, 5);
-      ctx.fillStyle = col; ctx.fillRect(266, yy + 1, Math.round(120 * clamp(val / max, 0, 1)), 5);
-    };
-    bar('VIDA', hero.hp, 140, 238, '#ff4d6b');
-    bar('VELOCIDADE', hero.speed, 140, 250, '#4dd8ff');
-    bar('DANO', hero.attack.dmg, 16, 262, '#ffd94a');
-    let y = this.wrap(ctx, 'HABILIDADE: ' + hero.ability.desc, 186, 282, 252, '#8a84a8', 8);
-    y = this.wrap(ctx, 'ESPECIAL: ' + hero.special.desc, 186, y + 2, 252, '#8a84a8', 8);
-    this.wrap(ctx, 'PASSIVA: ' + hero.passive.desc, 186, y + 2, 252, '#8a84a8', 8);
-
-    // actions
-    UI.panel(466, 48, 166, 304, { title: 'OPERAÇÕES' });
-    if (UI.button('start', 478, 74, 142, 42, 'INICIAR PARTIDA', { color: '#4dff88', accent: true, scale: 1 })) {
-      const sr = (s.dev && s.dev.startRound > 1) ? s.dev.startRound : undefined;
-      G.startGame({ mode: 'run', heroId: hero.id, startRound: sr });
-    }
-    ctx.fillStyle = '#7a74a0'; ctx.fillRect(478, 162, 142, 1);
-    drawText(ctx, 'CONTROLES', 478, 172, { color: '#9a93c8' });
-    this.wrap(ctx, 'WASD MOVER · MOUSE MIRAR', 478, 184, 142, '#9a93c8', 8);
-    this.wrap(ctx, 'ESPAÇO ESQUIVA · Q HABILIDADE', 478, 208, 142, '#9a93c8', 8);
-    this.wrap(ctx, 'E ESPECIAL · P PAUSA · F TELA CHEIA', 478, 232, 142, '#9a93c8', 8);
-    const next = MISSIONS.find((m) => { const [c, mx] = m.check(s); return c < mx && !s.missionsClaimed[m.id]; });
-    if (next) {
-      ctx.fillStyle = '#7a74a0'; ctx.fillRect(478, 268, 142, 1);
-      drawText(ctx, 'MISSÃO ATIVA', 478, 278, { color: '#ffd94a' });
-      this.wrap(ctx, next.name + ': ' + next.desc, 478, 290, 142, '#8a84a8', 8);
-    }
   }
 
-  // ============================================================ LOJA =======
-  drawShop(ctx, G) {
+  // side portals + worlds ---------------------------------------------------
+  drawPortals(ctx, G) {
+    const p1 = SPR['lobby_portal_shop'], p2 = SPR['lobby_portal_cos'], p3 = SPR['lobby_portal_worlds'];
+    const pulse = Math.sin(this.t * 3) * 2;
+    const hovL = UI.hit(38, 120, 64, 84);
+    if (p1) drawSprite(ctx, p1, 70, 158 + pulse * 0.4, { scale: 1 });
+    drawText(ctx, 'LOJA NEXUS', 70, 196, { align: 'center', color: hovL ? '#ffffff' : '#d8b64c', shadow: true });
+    if (hovL) { UI.hoverId = 'pshop'; if (UI.anyClick) this.open('nexus'); }
+    const hovR = UI.hit(538, 120, 64, 84);
+    if (p2) drawSprite(ctx, p2, 570, 158 - pulse * 0.4, { scale: 1 });
+    drawText(ctx, 'COSMÉTICA', 570, 196, { align: 'center', color: hovR ? '#ffffff' : '#ff5df2', shadow: true });
+    if (hovR) { UI.hoverId = 'pcos'; if (UI.anyClick) this.open('cos'); }
+    const hovW = UI.hit(278, 30, 84, 54);
+    if (p3) drawSprite(ctx, p3, 320, 54, { scale: 0.8 });
+    drawText(ctx, 'MUNDOS E INCURSÕES', 320, 88, { align: 'center', color: hovW ? '#ffffff' : '#4dd8ff', shadow: true });
+    if (hovW) { UI.hoverId = 'pworlds'; if (UI.anyClick) this.open('worlds'); }
+  }
+
+  // main play pad ------------------------------------------------------------
+  drawPlayPad(ctx, G) {
     const s = Save.data;
-    // section switch
-    if (UI.tab('secN', 8, 48, 120, 18, 'NEXUS', this.shopSec === 'nexus')) this.shopSec = 'nexus';
-    if (UI.tab('secC', 134, 48, 120, 18, 'COSMÉTICA', this.shopSec === 'cos')) this.shopSec = 'cos';
-    drawText(ctx, this.shopSec === 'nexus' ? 'UPGRADES PERMANENTES POR HERÓI' : 'VISUAIS EXCLUSIVOS DOS HERÓIS', 268, 53, { color: '#9a93c8' });
-
-    if (this.shopSec === 'nexus') this.drawNexus(ctx, G);
-    else this.drawCosmetics(ctx, G);
+    const x = VIEW_W / 2 - 90, y = 300, w = 180, h = 36;
+    const hov = UI.hit(x, y, w, h);
+    if (hov) UI.hoverId = 'play';
+    const pul = 1 + Math.sin(this.t * 4) * 0.02;
+    ctx.save();
+    ctx.translate(VIEW_W / 2, y + h / 2);
+    ctx.scale(pul, pul);
+    ctx.translate(-VIEW_W / 2, -(y + h / 2));
+    ctx.fillStyle = '#000000aa'; ctx.fillRect(x + 2, y + 3, w, h);
+    ctx.fillStyle = hov ? '#1d3a24' : '#12281a';
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = '#4dff88';
+    ctx.lineWidth = 2; ctx.strokeRect(x + 1, y + 1, w - 2, h - 2); ctx.lineWidth = 1;
+    ctx.strokeStyle = '#ffffff33'; ctx.strokeRect(x + 3.5, y + 3.5, w - 7, h - 7);
+    if (SPR.lobby_nav_play) drawSprite(ctx, SPR.lobby_nav_play, x + 18, y + h / 2, { scale: 1.3 });
+    drawText(ctx, 'JOGAR', VIEW_W / 2 + 8, y + 10, { align: 'center', scale: 2, color: '#4dff88', shadow: true });
+    ctx.restore();
+    if (hov && UI.anyClick) {
+      const sr = (s.dev && s.dev.startRound > 1) ? s.dev.startRound : undefined;
+      Audio.sfx('ui');
+      G.startGame({ mode: 'run', heroId: s.heroSelected, startRound: sr });
+    }
   }
 
-  // ---- NEXUS: permanent hero evolution ----
+  // bottom holo chips ---------------------------------------------------------
+  drawChips(ctx, G) {
+    if (this.holo(ctx, 'mis', 26, 336, 'lobby_nav_mis', 'MISSÕES', '#4dff88')) this.open('missions');
+    if (this.holo(ctx, 'col', 78, 336, 'lobby_nav_col', 'COLEÇÃO', '#4dd8ff')) this.open('collection');
+    if (this.holo(ctx, 'dev', 130, 336, 'lobby_nav_dev', 'DEV', '#ff8c3b')) this.open('dev');
+  }
+
+  // ============================================================ overlays ====
+  drawOverlay(ctx, G) {
+    ctx.fillStyle = 'rgba(5,4,10,0.82)';
+    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    const T = { nexus: 'NEXUS CORE', cos: 'COSMÉTICA', worlds: 'MUNDOS E INCURSÕES', missions: 'MISSÕES', collection: 'COLEÇÃO', dev: 'CONSOLE DEV', cfg: 'CONFIGURAÇÕES' };
+    const C = { nexus: '#d8b64c', cos: '#ff5df2', worlds: '#4dd8ff', missions: '#4dff88', collection: '#4dd8ff', dev: '#ff8c3b', cfg: '#8a84a8' };
+    this.frame(ctx, 40, 30, 560, 300, C[this.overlay]);
+    drawText(ctx, T[this.overlay], 52, 38, { scale: 2, color: C[this.overlay], shadow: true });
+    if (UI.button('closeO', 540, 38, 48, 16, 'X', { color: '#ff4d4d' })) { this.overlay = null; Audio.sfx('uiBack'); }
+    if (this.overlay === 'nexus') this.drawNexus(ctx, G);
+    else if (this.overlay === 'cos') this.drawCosmetics(ctx, G);
+    else if (this.overlay === 'worlds') this.drawWorlds(ctx, G);
+    else if (this.overlay === 'missions') this.drawMissions(ctx, G);
+    else if (this.overlay === 'collection') this.drawCollection(ctx, G);
+    else if (this.overlay === 'dev') this.drawDev(ctx, G);
+    else if (this.overlay === 'cfg') this.drawConfig(ctx, G);
+  }
+
   drawNexus(ctx, G) {
     const s = Save.data;
     HEROES.forEach((h, hi) => {
       const nodes = HERO_NODES.filter((n) => n.hero === h.id);
-      const x = 8 + (hi % 3) * 210, y = 74 + ((hi / 3) | 0) * 140;
-      UI.panel(x, y, 202, 132, {});
-      this.emblem(ctx, 'hero_' + h.id, h.id, x + 22, y + 20, 0.8, 0);
-      drawText(ctx, h.name, x + 42, y + 8, { color: h.color, shadow: true });
+      const x = 52 + (hi % 3) * 182, y = 62 + ((hi / 3) | 0) * 132;
+      ctx.fillStyle = '#120e2a';
+      ctx.fillRect(x, y, 174, 124);
+      ctx.strokeStyle = '#2a2450';
+      ctx.strokeRect(x + 0.5, y + 0.5, 173, 123);
+      const em = SPR['hero_' + h.id];
+      if (em) drawSprite(ctx, em, x + 16, y + 14, { scale: 0.8 });
+      drawText(ctx, h.name.split(' ')[0], x + 32, y + 6, { color: h.color, shadow: true });
       nodes.forEach((n, ni) => {
-        const ny = y + 36 + ni * 48;
+        const ny = y + 28 + ni * 46;
         const rank = s.nexusNodes[n.id] || 0;
         const maxed = rank >= n.max;
         const cost = maxed ? 0 : nodeCost(n, rank);
-        const hov = UI.hit(x + 8, ny, 186, 44);
+        const hov = UI.hit(x + 6, ny, 162, 42);
         if (hov) UI.hoverId = 'n' + n.id;
-        ctx.fillStyle = hov ? '#241b52' : '#120e2a';
-        ctx.fillRect(x + 8, ny, 186, 44);
+        ctx.fillStyle = hov ? '#241b52' : '#0d0a1e';
+        ctx.fillRect(x + 6, ny, 162, 42);
         ctx.strokeStyle = maxed ? '#ffd94a' : rank > 0 ? '#b06bff' : '#2a2450';
-        ctx.strokeRect(x + 8.5, ny + 0.5, 185, 43);
-        drawText(ctx, n.name, x + 14, ny + 4, { color: '#ffffff' });
+        ctx.strokeRect(x + 6.5, ny + 0.5, 161, 41);
+        drawText(ctx, n.name, x + 12, ny + 4, { color: '#ffffff' });
         for (let i = 0; i < n.max; i++) {
           ctx.fillStyle = i < rank ? '#b06bff' : '#2a2450';
-          ctx.fillRect(x + 14 + i * 8, ny + 15, 6, 6);
+          ctx.fillRect(x + 12 + i * 8, ny + 15, 6, 6);
         }
-        drawText(ctx, maxed ? 'MÁXIMO' : cost + ' FR', x + 188, ny + 4, { align: 'right', color: maxed ? '#ffd94a' : s.fragments >= cost ? '#9feaff' : '#9a93c8' });
-        this.wrap(ctx, n.desc, x + 14, ny + 27, 174, '#8a84a8', 8);
+        drawText(ctx, maxed ? 'MÁX' : cost + ' FR', x + 162, ny + 4, { align: 'right', color: maxed ? '#ffd94a' : s.fragments >= cost ? '#9feaff' : '#9a93c8' });
+        this.wrap(ctx, n.desc, x + 12, ny + 26, 150, '#9a93c8', 8);
         if (hov && UI.anyClick && !maxed) {
           if (Save.spendFragments(cost)) { s.nexusNodes[n.id] = rank + 1; Audio.sfx('buy'); }
           else Audio.sfx('deny');
@@ -236,161 +319,197 @@ export class LobbyScene extends Scene {
     });
   }
 
-  // ---- COSMÉTICA: 3 premium skins ----
   drawCosmetics(ctx, G) {
     const s = Save.data;
-    // list
     SKINS.forEach((sk, i) => {
-      const y = 74 + i * 94;
+      const x = 52, y = 62 + i * 46;
       const sel = this.skinSel === sk.id;
       const owned = s.cosmeticsOwned[sk.id];
       const equipped = s.cosmeticsEquipped[sk.hero] === sk.id;
-      const hov = UI.hit(8, y, 200, 86);
+      const hov = UI.hit(x, y, 190, 42);
       if (hov) UI.hoverId = 'sk' + sk.id;
-      ctx.fillStyle = hov || sel ? '#241b52' : '#171233';
-      ctx.fillRect(8, y, 200, 86);
-      ctx.strokeStyle = sel ? RARITY_SHOP[sk.rarity].color : '#2a2450';
-      ctx.strokeRect(8.5, y + 0.5, 199, 85);
-      ctx.fillStyle = RARITY_SHOP[sk.rarity].color;
-      ctx.fillRect(8, y, 200, 2);
-      this.emblem(ctx, 'skin_' + sk.id, sk.hero, 44, y + 40, 1.4, Math.floor(this.t * 3) % 2);
-      drawText(ctx, sk.name, 78, y + 12, { color: '#ffffff', shadow: true });
-      drawText(ctx, RARITY_SHOP[sk.rarity].name, 78, y + 26, { color: RARITY_SHOP[sk.rarity].color });
-      drawText(ctx, heroById(sk.hero).name, 78, y + 40, { color: '#8a84a8' });
-      drawText(ctx, owned ? (equipped ? 'EQUIPADO' : 'ADQUIRIDO') : sk.price + ' FR', 78, y + 62, { color: owned ? (equipped ? '#4dff88' : '#9feaff') : '#ffd94a' });
+      ctx.fillStyle = hov || sel ? '#241b52' : '#120e2a';
+      ctx.fillRect(x, y, 190, 42);
+      ctx.strokeStyle = equipped ? '#4dff88' : sel ? RARITY_SHOP[sk.rarity].color : '#2a2450';
+      ctx.strokeRect(x + 0.5, y + 0.5, 189, 41);
+      const em = SPR['skin_' + sk.id];
+      if (em) drawSprite(ctx, em, x + 20, y + 21, { scale: 1 });
+      drawText(ctx, sk.name, x + 40, y + 6, { color: '#ffffff' });
+      drawText(ctx, heroById(sk.hero).name.split(' ')[0] + ' · ' + RARITY_SHOP[sk.rarity].name, x + 40, y + 18, { color: RARITY_SHOP[sk.rarity].color });
+      drawText(ctx, owned ? (equipped ? 'EQUIPADO' : 'ADQUIRIDO') : sk.price + ' FR', x + 40, y + 30, { color: owned ? (equipped ? '#4dff88' : '#9feaff') : '#ffd94a' });
       if (hov && UI.anyClick) { this.skinSel = sk.id; Audio.sfx('ui'); }
     });
-
-    // preview stage
+    // preview
     const sk = skinById(this.skinSel);
     const hero = heroById(sk.hero);
-    UI.panel(216, 74, 416, 278, { title: 'PRÉ-VISUALIZAÇÃO' });
-    // stage backdrop
-    ctx.fillStyle = '#0b0817';
-    ctx.fillRect(228, 96, 392, 176);
-    ctx.strokeStyle = RARITY_SHOP[sk.rarity].color + '66';
-    ctx.strokeRect(228.5, 96.5, 391, 175);
-    const f0 = SPR['floor_' + 'nexus_0'], f1 = SPR['floor_nexus_1'];
-    for (let x = 228; x < 620; x += 16) ctx.drawImage((x / 16) % 2 ? f0 : f1, x, 256);
-    // animated emblem (cycles idle frames, attack flash)
-    const cyc = this.t % 2.4;
-    const frame = cyc < 1.6 ? (Math.floor(this.t * 3) % 2) : 2;
+    this.frame(ctx, 252, 62, 336, 200, RARITY_SHOP[sk.rarity].color);
+    const big = SPR['skin_' + sk.id + '_big'] || SPR['skin_' + sk.id];
     ctx.globalAlpha = 0.3 + Math.sin(this.t * 2) * 0.1;
     ctx.fillStyle = sk.fx.aura;
-    ctx.beginPath(); ctx.ellipse(424, 250, 54, 10, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(340, 190, 50, 10, 0, 0, Math.PI * 2); ctx.fill();
     ctx.globalAlpha = 1;
-    this.emblem(ctx, 'skin_' + sk.id, sk.hero, 424, 180, 4, frame);
-    // fx showcase: trail dots + shot orb
-    for (let i = 0; i < 5; i++) {
-      const tx = 424 - 70 + ((this.t * 90 + i * 30) % 140);
-      ctx.globalAlpha = 0.5 - i * 0.08;
-      ctx.fillStyle = sk.fx.trail;
-      ctx.fillRect(tx, 236, 2, 2);
-    }
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = sk.fx.shotTint;
-    ctx.fillRect(560 + Math.round(Math.sin(this.t * 4) * 6), 120, 4, 4);
-    drawText(ctx, 'EFEITO DE TIRO', 560, 132, { align: 'center', color: '#9a93c8' });
-
-    // info + actions
-    drawText(ctx, sk.name, 228, 282, { scale: 2, color: RARITY_SHOP[sk.rarity].color, shadow: true });
-    drawText(ctx, RARITY_SHOP[sk.rarity].name + ' · ' + hero.name, 228, 302, { color: '#9a93c8' });
-    this.wrap(ctx, sk.desc, 228, 316, 392, '#cfc8f2', 9);
-
+    if (big) drawSprite(ctx, big, 340, 140, { scale: 84 / big.height });
+    drawText(ctx, sk.name, 340, 200, { align: 'center', scale: 2, color: RARITY_SHOP[sk.rarity].color, shadow: true });
+    drawText(ctx, hero.name, 340, 218, { align: 'center', color: '#9a93c8' });
+    this.wrap(ctx, sk.desc, 264, 232, 312, '#dcd6f6', 9);
     const owned = s.cosmeticsOwned[sk.id];
     const equipped = s.cosmeticsEquipped[sk.hero] === sk.id;
     if (!owned) {
-      if (UI.button('buy', 228, 336, 180, 22, `COMPRAR · ${sk.price} FR`, { color: '#4dff88', accent: true })) {
+      if (UI.button('buy', 264, 276, 170, 20, `COMPRAR · ${sk.price} FR`, { color: '#4dff88' })) {
         if (Save.spendFragments(sk.price)) { s.cosmeticsOwned[sk.id] = true; s.cosmeticsEquipped[sk.hero] = sk.id; Audio.sfx('buy'); }
         else Audio.sfx('deny');
       }
     } else {
-      if (UI.button('equip', 228, 336, 120, 22, equipped ? 'EQUIPADO' : 'EQUIPAR', { color: equipped ? '#9a93c8' : '#7b5cff' })) {
+      if (UI.button('equip', 264, 276, 110, 20, equipped ? 'EQUIPADO' : 'EQUIPAR', { color: equipped ? '#8a84a8' : '#7b5cff' })) {
         if (!equipped) { s.cosmeticsEquipped[sk.hero] = sk.id; Audio.sfx('buy'); }
       }
-      if (equipped && UI.button('std', 354, 336, 110, 22, 'PADRÃO')) {
+      if (equipped && UI.button('std', 382, 276, 90, 20, 'PADRÃO')) {
         delete s.cosmeticsEquipped[sk.hero];
         Save.save(); Audio.sfx('uiBack');
       }
     }
-    drawText(ctx, 'COSMÉTICO — SEM VANTAGEM DE COMBATE', 620, 344, { align: 'right', color: '#7a74a0' });
+    drawText(ctx, 'COSMÉTICO — SEM VANTAGEM', 576, 284, { align: 'right', color: '#7a74a0' });
   }
 
-  // ============================================================ DEV ========
+  drawWorlds(ctx, G) {
+    const s = Save.data;
+    const ws = [['lobby_wemb_wakanda', 'REINO DE VIBRANIUM', 'ROUNDS 1-3'], ['lobby_wemb_asgard', 'PONTE DO ARCO-ÍRIS', 'ROUNDS 4-7'], ['lobby_wemb_newyork', 'CRUZAMENTO DOS HERÓIS', 'ROUNDS 8-12']];
+    ws.forEach(([ic, name, rr], i) => {
+      const x = 56 + i * 180, y = 62;
+      if (SPR[ic]) drawSprite(ctx, SPR[ic], x + 30, y + 30, { scale: 1.1 });
+      drawText(ctx, name, x + 66, y + 12, { color: '#ffffff', shadow: true });
+      drawText(ctx, rr, x + 66, y + 26, { color: '#9a93c8' });
+    });
+    drawText(ctx, 'ESCADA DE INCURSÕES', 56, 132, { scale: 1, color: '#4dd8ff', shadow: true });
+    ['ultron', 'loki', 'hela', 'devourer', 'thanos'].forEach((b, i) => {
+      const d = bossById(b);
+      const x = 56 + i * 108, y = 150;
+      const por = SPR['portrait_' + b];
+      if (por) drawSprite(ctx, por, x + 24, y + 26, { scale: 44 / por.height });
+      drawText(ctx, d.name.split(' ')[0], x + 24, y + 56, { align: 'center', color: '#ff8c8c' });
+      drawText(ctx, 'R' + [3, 6, 8, 10, 12][i], x + 24, y + 68, { align: 'center', color: '#9a93c8' });
+      const kills = s.bossesDefeated[b] || 0;
+      if (kills) drawText(ctx, 'x' + kills, x + 44, y + 8, { color: '#4dff88' });
+    });
+    this.wrap(ctx, 'Vença rounds de ondas para abrir o rasgo de realidade. Entre no portal, derrote o guardião do mundo e volte para a próxima rodada.', 56, 240, 520, '#9a93c8', 9);
+  }
+
+  drawMissions(ctx, G) {
+    const s = Save.data;
+    MISSIONS.forEach((m, i) => {
+      const col = i % 2, row = (i / 2) | 0;
+      const x = 56 + col * 276, y = 62 + row * 54;
+      const [cur, max] = m.check(s);
+      const done = cur >= max;
+      const claimed = s.missionsClaimed[m.id];
+      const hov = UI.hit(x, y, 264, 48);
+      if (hov) UI.hoverId = 'm' + m.id;
+      ctx.fillStyle = hov ? '#241b52' : '#120e2a';
+      ctx.fillRect(x, y, 264, 48);
+      ctx.strokeStyle = claimed ? '#3a3350' : done ? '#4dff88' : '#2a2450';
+      ctx.strokeRect(x + 0.5, y + 0.5, 263, 47);
+      drawText(ctx, m.name, x + 8, y + 5, { color: claimed ? '#8a84a8' : '#ffffff' });
+      this.wrap(ctx, m.desc, x + 8, y + 17, 180, '#9a93c8', 8);
+      ctx.fillStyle = '#1d1740'; ctx.fillRect(x + 8, y + 38, 180, 4);
+      ctx.fillStyle = done ? '#4dff88' : '#4dd8ff';
+      ctx.fillRect(x + 8, y + 38, Math.round(180 * clamp(cur / max, 0, 1)), 4);
+      const rw = (m.reward.frag ? m.reward.frag + ' FR' : '') + (m.reward.cred ? ' + ' + m.reward.cred + ' CR' : '');
+      if (done && !claimed) {
+        if (UI.button('cl' + m.id, x + 196, y + 12, 60, 22, 'RESGATAR', { color: '#4dff88' })) {
+          s.missionsClaimed[m.id] = true;
+          if (m.reward.frag) s.fragments += m.reward.frag;
+          if (m.reward.cred) s.credits += m.reward.cred;
+          Save.save(); Audio.sfx('buy');
+        }
+      } else {
+        drawText(ctx, claimed ? 'FEITO' : rw, x + 256, y + 16, { align: 'right', color: claimed ? '#7a74a0' : '#ffd94a' });
+      }
+    });
+  }
+
+  drawCollection(ctx, G) {
+    const s = Save.data;
+    drawText(ctx, 'INIMIGOS CATADOS', 56, 62, { color: '#4dd8ff', shadow: true });
+    ['drone', 'chitauri', 'symbiote', 'sorcerer', 'sentinel', 'spectre', 'jotun', 'chaos'].forEach((id, i) => {
+      const x = 56 + (i % 8) * 66, y = 92;
+      const disc = s.discovered.enemies[id];
+      const sp = SPR['en_' + id];
+      if (sp) drawSprite(ctx, sp, x + 14, y, { alpha: disc ? 1 : 0.2 });
+      drawText(ctx, disc ? ENEMIES[id].name.split(' ')[0] : '???', x + 14, y + 16, { align: 'center', color: disc ? '#9a93c8' : '#3a3350' });
+    });
+    drawText(ctx, 'GUARDIÕES', 56, 140, { color: '#ff8c8c', shadow: true });
+    ['ultron', 'loki', 'hela', 'devourer', 'thanos'].forEach((b, i) => {
+      const x = 56 + i * 108, y = 168;
+      const disc = s.discovered.bosses[b];
+      const por = SPR['portrait_' + b];
+      if (por) drawSprite(ctx, por, x + 24, y + 20, { scale: 40 / por.height, alpha: disc ? 1 : 0.2 });
+      drawText(ctx, disc ? bossById(b).name.split(' ')[0] : '???', x + 24, y + 48, { align: 'center', color: disc ? '#9a93c8' : '#3a3350' });
+    });
+    drawText(ctx, 'REGISTRO', 56, 236, { color: '#d8b64c', shadow: true });
+    this.wrap(ctx, `Partidas ${s.stats.runs} · Vitórias ${s.stats.wins} · Abates ${s.stats.kills} · Nível máx ${s.stats.levelReached} · Skins ${Object.keys(s.cosmeticsOwned).length}/${SKINS.length}`, 56, 250, 520, '#9a93c8', 9);
+  }
+
   drawDev(ctx, G) {
     const s = Save.data;
     s.dev = s.dev || { god: false, infSpecial: false, speed2: false, startRound: 1 };
-    UI.panel(8, 48, 624, 304, { title: 'CONSOLE DEV — CHEATS DE TESTE', titleColor: '#4dff88' });
-    drawText(ctx, 'ALTERAÇÕES VALEM NA PRÓXIMA PARTIDA (GOD/INF/2X VALEM NA HORA)', 20, 62, { color: '#9a93c8' });
     const tog = (id, x, y, label, val) => {
-      if (UI.button(id, x, y, 190, 20, label + ': ' + (val ? 'ON' : 'OFF'), { color: val ? '#4dff88' : '#8a84a8' })) {
+      if (UI.button(id, x, y, 200, 20, label + ': ' + (val ? 'ON' : 'OFF'), { color: val ? '#4dff88' : '#8a84a8' })) {
         s.dev[id] = !s.dev[id]; Save.save(); Audio.sfx('ui');
       }
     };
-    tog('god', 20, 80, 'MODO DEUS (INVENCÍVEL)', s.dev.god);
-    tog('infSpecial', 20, 106, 'ESPECIAL INFINITO', s.dev.infSpecial);
-    tog('speed2', 20, 132, 'VELOCIDADE 1.6x', s.dev.speed2);
-    if (UI.button('frag', 20, 168, 190, 20, '+10.000 FRAGMENTOS', { color: '#9feaff' })) { s.fragments += 10000; Save.save(); Audio.sfx('buy'); }
-    if (UI.button('cred', 20, 194, 190, 20, '+1.000 CRÉDITOS', { color: '#ffe9a0' })) { s.credits += 1000; Save.save(); Audio.sfx('buy'); }
-    if (UI.button('heroes', 20, 230, 190, 20, 'DESBLOQUEAR HERÓIS', { color: '#b06bff' })) {
+    tog('god', 56, 66, 'MODO DEUS', s.dev.god);
+    tog('infSpecial', 56, 92, 'ESPECIAL INFINITO', s.dev.infSpecial);
+    tog('speed2', 56, 118, 'VELOCIDADE 1.6x', s.dev.speed2);
+    if (UI.button('frag', 56, 154, 200, 20, '+10.000 FRAGMENTOS', { color: '#9feaff' })) { s.fragments += 10000; Save.save(); Audio.sfx('buy'); }
+    if (UI.button('cred', 56, 180, 200, 20, '+1.000 CRÉDITOS', { color: '#ffe9a0' })) { s.credits += 1000; Save.save(); Audio.sfx('buy'); }
+    if (UI.button('heroes', 56, 216, 200, 20, 'DESBLOQUEAR HERÓIS', { color: '#b06bff' })) {
       HEROES.forEach((h) => (s.heroesUnlocked[h.id] = true)); Save.save(); Audio.sfx('buy');
     }
-    if (UI.button('skins', 20, 256, 190, 20, 'DESBLOQUEAR SKINS', { color: '#b06bff' })) {
+    if (UI.button('skins', 56, 242, 200, 20, 'DESBLOQUEAR SKINS', { color: '#b06bff' })) {
       SKINS.forEach((k) => (s.cosmeticsOwned[k.id] = true)); Save.save(); Audio.sfx('buy');
     }
-    if (UI.button('nexus', 20, 282, 190, 20, 'MAX NEXUS NODES', { color: '#b06bff' })) {
+    if (UI.button('nexus', 56, 268, 200, 20, 'MAX NEXUS NODES', { color: '#b06bff' })) {
       HERO_NODES.forEach((n) => (s.nexusNodes[n.id] = n.max)); Save.save(); Audio.sfx('buy');
     }
-    // round inicial
     const sr = s.dev.startRound || 1;
-    drawText(ctx, 'ROUND INICIAL DA PARTIDA', 240, 84, { color: '#9a93c8' });
-    if (UI.button('sr-', 240, 98, 24, 20, '-')) { s.dev.startRound = Math.max(1, sr - 1); Save.save(); Audio.sfx('ui'); }
-    ctx.fillStyle = '#1d1740'; ctx.fillRect(272, 102, 120, 12);
-    ctx.fillStyle = '#4dff88'; ctx.fillRect(272, 102, Math.round(120 * sr / 12), 12);
-    drawText(ctx, 'ROUND ' + sr, 332, 104, { align: 'center', color: '#ffffff', shadow: true });
-    if (UI.button('sr+', 400, 98, 24, 20, '+')) { s.dev.startRound = Math.min(12, sr + 1); Save.save(); Audio.sfx('ui'); }
-    this.wrap(ctx, 'Usa a escada de rounds: 1-2 Vibranium, 3 Ultron, 4-5 Asgard, 6 Loki, 7 Hela, 8-9 Cidade, 10 Devorador, 12 Thanos.', 240, 124, 200, '#9a93c8', 8);
-    // boss spawner info
-    drawText(ctx, 'SPAWN RÁPIDO DE CHEFE (NA PARTIDA)', 240, 190, { color: '#9a93c8' });
-    this.wrap(ctx, 'Com MODO DEUS ligado, use o round inicial para pular direto pra qualquer incursão de chefe (3, 6, 7, 10 ou 12).', 240, 204, 200, '#9a93c8', 8);
-    // reset
-    if (UI.button('reset', 240, 300, 200, 22, 'APAGAR SAVE (CLIQUE 2x)', { color: '#ff4d4d' })) {
+    drawText(ctx, 'ROUND INICIAL', 300, 70, { color: '#9a93c8' });
+    if (UI.button('sr-', 300, 86, 24, 20, '-')) { s.dev.startRound = Math.max(1, sr - 1); Save.save(); Audio.sfx('ui'); }
+    ctx.fillStyle = '#1d1740'; ctx.fillRect(332, 90, 120, 12);
+    ctx.fillStyle = '#4dff88'; ctx.fillRect(332, 90, Math.round(120 * sr / 12), 12);
+    drawText(ctx, 'ROUND ' + sr, 392, 92, { align: 'center', color: '#ffffff', shadow: true });
+    if (UI.button('sr+', 460, 86, 24, 20, '+')) { s.dev.startRound = Math.min(12, sr + 1); Save.save(); Audio.sfx('ui'); }
+    this.wrap(ctx, 'Rounds de chefe: 3 Ultron · 6 Loki · 8 Hela · 10 Devorador · 12 Thanos. God/inf/2x valem na hora; round inicial vale na próxima partida.', 300, 120, 280, '#9a93c8', 9);
+    if (UI.button('reset', 300, 268, 200, 22, 'APAGAR SAVE (2x)', { color: '#ff4d4d' })) {
       if (this._resetArm2) { Save.reset(); Audio.sfx('defeat'); this._resetArm2 = false; }
       else this._resetArm2 = true;
     }
-    if (this._resetArm2) drawText(ctx, 'CLIQUE NOVAMENTE PARA CONFIRMAR', 340, 328, { align: 'center', color: '#ff4d4d' });
-    drawText(ctx, 'DEV BUILD · MARVEL NEXUS', 620, 344, { align: 'right', color: '#7a74a0' });
+    if (this._resetArm2) drawText(ctx, 'CLIQUE DE NOVO PARA CONFIRMAR', 400, 296, { align: 'center', color: '#ff4d4d' });
   }
 
-  // ---- overlays ----
-  drawConfigOverlay(ctx, G) {
-    const s = Save.data;
-    ctx.fillStyle = 'rgba(5,4,10,0.85)';
-    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-    UI.panel(190, 52, 260, 264, { title: 'CONFIGURAÇÕES' });
-    const row = (label, y) => drawText(ctx, label, 204, y, { color: '#9a93c8' });
-    row('MÚSICA', 82);
-    if (UI.button('cm-', 300, 78, 18, 14, '-')) s.music = clamp(s.music - 0.1, 0, 1);
-    ctx.fillStyle = '#1d1740'; ctx.fillRect(324, 81, 60, 6);
-    ctx.fillStyle = '#b06bff'; ctx.fillRect(324, 81, Math.round(60 * s.music), 6);
-    if (UI.button('cm+', 392, 78, 18, 14, '+')) s.music = clamp(s.music + 0.1, 0, 1);
-    row('SFX', 102);
-    if (UI.button('cs-', 300, 98, 18, 14, '-')) s.sfx = clamp(s.sfx - 0.1, 0, 1);
-    ctx.fillStyle = '#1d1740'; ctx.fillRect(324, 101, 60, 6);
-    ctx.fillStyle = '#4dd8ff'; ctx.fillRect(324, 101, Math.round(60 * s.sfx), 6);
-    if (UI.button('cs+', 392, 98, 18, 14, '+')) s.sfx = clamp(s.sfx + 0.1, 0, 1);
-    if (UI.button('t1', 204, 122, 232, 16, 'VIBRAÇÃO DE TELA: ' + (s.screenshake ? 'ON' : 'OFF'))) s.screenshake = !s.screenshake;
-    if (UI.button('t2', 204, 142, 232, 16, 'NÚMEROS DE DANO: ' + (s.dmgNumbers ? 'ON' : 'OFF'))) s.dmgNumbers = !s.dmgNumbers;
-    if (UI.button('t3', 204, 162, 232, 16, 'MIRA AUTOMÁTICA: ' + (s.autofire ? 'ON' : 'OFF'))) s.autofire = !s.autofire;
-    if (UI.button('t4', 204, 182, 232, 16, 'ESCALA INTEIRA DE PIXEL: ' + (s.integerScale ? 'ON' : 'OFF'))) { s.integerScale = !s.integerScale; G.resize && G.resize(); }
-    if (UI.button('fs', 204, 202, 232, 16, 'TELA CHEIA [F]')) toggleFullscreen();
-    if (UI.button('tut', 204, 222, 232, 16, 'REEXIBIR TUTORIAL')) s.tutorialDone = false;
-    if (UI.button('reset', 204, 250, 232, 18, 'APAGAR SAVE (CLIQUE 2x)', { color: '#ff4d4d' })) {
+  drawConfig(ctx, G) {
+    const s = Save.data.settings;
+    const row = (label, y) => drawText(ctx, label, 60, y, { color: '#9a93c8' });
+    row('MÚSICA', 76);
+    if (UI.button('cm-', 200, 72, 18, 14, '-')) { s.music = clamp(s.music - 0.1, 0, 1); Save.save(); }
+    ctx.fillStyle = '#1d1740'; ctx.fillRect(224, 75, 60, 6);
+    ctx.fillStyle = '#b06bff'; ctx.fillRect(224, 75, Math.round(60 * s.music), 6);
+    if (UI.button('cm+', 292, 72, 18, 14, '+')) { s.music = clamp(s.music + 0.1, 0, 1); Save.save(); }
+    row('SFX', 96);
+    if (UI.button('cs-', 200, 92, 18, 14, '-')) { s.sfx = clamp(s.sfx - 0.1, 0, 1); Save.save(); }
+    ctx.fillStyle = '#1d1740'; ctx.fillRect(224, 95, 60, 6);
+    ctx.fillStyle = '#4dd8ff'; ctx.fillRect(224, 95, Math.round(60 * s.sfx), 6);
+    if (UI.button('cs+', 292, 92, 18, 14, '+')) { s.sfx = clamp(s.sfx + 0.1, 0, 1); Save.save(); }
+    if (UI.button('t1', 60, 120, 260, 16, 'VIBRAÇÃO DE TELA: ' + (s.screenshake ? 'ON' : 'OFF'))) s.screenshake = !s.screenshake;
+    if (UI.button('t2', 60, 140, 260, 16, 'NÚMEROS DE DANO: ' + (s.dmgNumbers ? 'ON' : 'OFF'))) s.dmgNumbers = !s.dmgNumbers;
+    if (UI.button('t3', 60, 160, 260, 16, 'MIRA AUTOMÁTICA: ' + (s.autofire ? 'ON' : 'OFF'))) s.autofire = !s.autofire;
+    if (UI.button('t4', 60, 180, 260, 16, 'ESCALA INTEIRA: ' + (s.integerScale ? 'ON' : 'OFF'))) { s.integerScale = !s.integerScale; G.resize && G.resize(); }
+    if (UI.button('fs', 60, 200, 260, 16, 'TELA CHEIA [F]')) toggleFullscreen();
+    if (UI.button('tut', 60, 220, 260, 16, 'REEXIBIR TUTORIAL')) Save.data.tutorialDone = false;
+    if (UI.button('reset2', 60, 250, 260, 18, 'APAGAR SAVE (2x)', { color: '#ff4d4d' })) {
       if (this._resetArm) { Save.reset(); Audio.sfx('defeat'); this._resetArm = false; }
       else this._resetArm = true;
     }
-    if (this._resetArm) drawText(ctx, 'CLIQUE NOVAMENTE PARA CONFIRMAR', 320, 274, { align: 'center', color: '#ff4d4d' });
-    if (UI.button('closeC', 280, 292, 80, 18, 'FECHAR')) this.cfgOpen = false;
+    if (this._resetArm) drawText(ctx, 'CLIQUE DE NOVO PARA CONFIRMAR', 190, 274, { align: 'center', color: '#ff4d4d' });
     Audio.setVolumes({ music: s.music, sfx: s.sfx, master: s.master });
     Save.save();
   }

@@ -70,19 +70,17 @@ const STEP = 1 / 60;
   console.log('draw ok: title');
 }
 
-// ---- lobby: tabs + shop sections + overlays ----
+// ---- lobby: nexus hub + all overlays ----
 {
   const s = new LobbyScene(); const G = freshG();
   s.enter(G, {});
-  s.tab = 0;
   for (let i = 0; i < 10; i++) { s.update(STEP, G); UI.beginFrame(); setCtx(ctx); s.draw(ctx, G); Input.endFrame(); }
-  s.tab = 1; s.shopSec = 'nexus';
-  for (let i = 0; i < 5; i++) { s.update(STEP, G); UI.beginFrame(); setCtx(ctx); s.draw(ctx, G); Input.endFrame(); }
-  s.shopSec = 'cos'; s.skinSel = 'miles';
-  for (let i = 0; i < 5; i++) { s.update(STEP, G); UI.beginFrame(); setCtx(ctx); s.draw(ctx, G); Input.endFrame(); }
-  s.tab = 2; UI.beginFrame(); setCtx(ctx); s.draw(ctx, G);
-  s.cfgOpen = true; UI.beginFrame(); setCtx(ctx); s.draw(ctx, G);
-  console.log('draw ok: lobby (jogar + loja + dev + overlays)');
+  for (const ov of ['nexus', 'cos', 'worlds', 'missions', 'collection', 'dev', 'cfg']) {
+    s.overlay = ov; s.skinSel = 'miles';
+    for (let i = 0; i < 4; i++) { s.update(STEP, G); UI.beginFrame(); setCtx(ctx); s.draw(ctx, G); Input.endFrame(); }
+  }
+  s.overlay = null;
+  console.log('draw ok: lobby hub (core + orbit + portals + JOGAR + overlays)');
 }
 
 // ---- game: run + overlays ----

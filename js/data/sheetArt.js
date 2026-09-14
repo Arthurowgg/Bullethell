@@ -101,6 +101,12 @@ export function loadSheetArt(onProgress) {
   // comic UI icons
   for (const u of ['swarm', 'elite', 'frags', 'alarm', 'burst', 'shield', 'bolt', 'portal'])
     load(`assets/sprites/ui/${u}.png`, (img) => { SPR['ui_' + u] = cnv(img, 1); });
+  // Nexus lobby hub art
+  for (const l of ['bg', 'core', 'portal_shop', 'portal_cos', 'portal_worlds',
+    'wemb_wakanda', 'wemb_asgard', 'wemb_newyork',
+    'nav_play', 'nav_nexus', 'nav_cos', 'nav_inc', 'nav_col', 'nav_mis', 'nav_dev', 'nav_gear']) {
+    load(`assets/sprites/lobby/${l}.png`, (img) => { SPR['lobby_' + l] = cnv(img, 1); });
+  }
 
   let done = 0;
   const total = jobs.length;

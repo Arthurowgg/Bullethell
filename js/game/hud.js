@@ -45,15 +45,17 @@ export function drawHud(ctx, G) {
   drawSprite(ctx, SPR.fragment, VIEW_W / 2 + 26, 27, { scale: 0.8 });
   drawText(ctx, String(G.runFragments), VIEW_W / 2 + 36, 26, { color: '#9feaff' });
 
-  // round indicator (round-based run ladder)
+  // top-left: round ladder + current world icon
   if (G.waves) {
     const r = G.waves.cur ? G.waves.cur() : null;
-    const label = r && r.t === 'boss' ? `ROUND ${G.waves.round + 1} — INCURSÃO` : `ROUND ${G.waves.round + 1}/${12}`;
-    drawText(ctx, label, VIEW_W / 2, 40, { scale: 1, align: 'center', color: r && r.t === 'boss' ? '#ff8c8c' : '#8a84a8', shadow: true });
+    const tid = G.arena && G.arena.themeId;
+    const ic = SPR['wicon_' + tid] || SPR.ui_burst;
+    if (ic) drawSprite(ctx, ic, 16, 16, { scale: 1.2 });
+    const bossish = r && r.t === 'boss';
+    drawText(ctx, `ROUND ${G.waves.round + 1}/${12}`, 28, 8, { scale: 1, color: bossish ? '#ff8c8c' : '#c8c2e8', shadow: true });
     const WLABEL = { wakanda: 'REINO DE VIBRANIUM', asgard: 'PONTE DO ARCO-ÍRIS', newyork: 'CRUZAMENTO DOS HERÓIS',
       boss_ultron: 'SOKOVIA SUSPENSA', boss_loki: 'SALÃO DAS ILUSÕES', boss_hela: 'REINO DOS MORTOS', boss_devourer: 'VAZIO CÓSMICO', boss_thanos: 'MUNDO EM CINZAS' };
-    const wl = WLABEL[G.arena && G.arena.themeId];
-    if (wl) drawText(ctx, wl, VIEW_W / 2, 50, { scale: 1, align: 'center', color: '#5a5480', shadow: true });
+    if (WLABEL[tid]) drawText(ctx, WLABEL[tid], 28, 17, { scale: 1, color: '#5a5480', shadow: true });
   }
   if (G.banner) {
     ctx.globalAlpha = Math.min(1, G.banner.t);
@@ -67,26 +69,48 @@ export function drawHud(ctx, G) {
   // dash pip
   drawAbility(ctx, 90, 322, 'ESP', 'ESQUIVA', P.dashCd, st.dashCd, '#ffffff', P.dashCd <= 0);
 
-  // -- boss bar --
+  // -- boss bar: custom AI frame sprite + code fill --
   if (G.boss && !G.boss.dead) {
     const b = G.boss;
-    const bw = 380, bx = (VIEW_W - bw) / 2, by = 330;
-    drawText(ctx, b.def.name, VIEW_W / 2, by - 10, { align: 'center', scale: 1, color: '#ff8c8c', shadow: true });
-    ctx.fillStyle = '#100818';
-    ctx.fillRect(bx - 1, by - 1, bw + 2, 8);
-    ctx.fillStyle = '#3d0d1c';
-    ctx.fillRect(bx, by, bw, 6);
+    const bw = 380, bh = 18, bx = (VIEW_W - bw) / 2, by = 324;
+    const BCOLOR = { ultron: '#ff4d4d', loki: '#4dff88', hela: '#4dff88', devourer: '#4dd8ff', thanos: '#b06bff' };
+    const bc = BCOLOR[b.def.id] || '#ff2b5c';
+    // portrait
+    const por = SPR['portrait_' + b.def.id] || SPR['boss_' + b.def.id];
+    if (por) drawSprite(ctx, por, bx - 18, by + 6, { scale: Math.min(26 / por.height, 26 / por.width) });
+    drawText(ctx, b.def.name, VIEW_W / 2, by - 9, { align: 'center', scale: 1, color: bc, shadow: true });
+    const frame = SPR['bar_' + b.def.id];
     const f = clamp(b.hp / b.maxHp, 0, 1);
-    const grad = ctx.createLinearGradient(bx, 0, bx + bw, 0);
-    grad.addColorStop(0, '#ff2b5c');
-    grad.addColorStop(1, '#b06bff');
-    ctx.fillStyle = grad;
-    ctx.fillRect(bx, by, Math.round(bw * f), 6);
-    // phase pips
-    for (let i = 1; i < b.def.phases.length; i++) {
-      const px = bx + bw * b.def.phases[i].until;
-      ctx.fillStyle = '#00000088';
-      ctx.fillRect(px, by, 1, 6);
+    if (frame) {
+      // code fill clipped inside the custom frame sprite
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(bx + 4, by + 4, bw - 8, bh - 8);
+      ctx.clip();
+      ctx.fillStyle = '#14060c';
+      ctx.fillRect(bx + 4, by + 4, bw - 8, bh - 8);
+      const grad = ctx.createLinearGradient(bx, 0, bx + bw, 0);
+      grad.addColorStop(0, bc);
+      grad.addColorStop(1, '#ffffff');
+      ctx.fillStyle = grad;
+      ctx.fillRect(bx + 4, by + 4, Math.round((bw - 8) * f), bh - 8);
+      ctx.fillStyle = '#00000055'; // damage shade line
+      ctx.fillRect(bx + 4, by + bh - 6, Math.round((bw - 8) * f), 2);
+      ctx.fillStyle = '#ffffff44'; // top shine
+      ctx.fillRect(bx + 4, by + 4, Math.round((bw - 8) * f), 1);
+      for (let i = 1; i < b.def.phases.length; i++) {
+        ctx.fillStyle = '#000000aa';
+        ctx.fillRect(bx + 4 + (bw - 8) * b.def.phases[i].until, by + 4, 1, bh - 8);
+      }
+      ctx.restore();
+      drawSprite(ctx, frame, bx + bw / 2, by + bh / 2, { scaleX: bw / frame.width, scaleY: bh / frame.height });
+    } else {
+      ctx.fillStyle = '#100818';
+      ctx.fillRect(bx - 1, by - 1, bw + 2, 10);
+      ctx.fillStyle = '#3d0d1c';
+      ctx.fillRect(bx, by, bw, 8);
+      ctx.fillStyle = bc;
+      ctx.fillRect(bx, by, Math.round(bw * f), 8);
     }
   }
 

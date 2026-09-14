@@ -92,7 +92,6 @@ export class LobbyScene extends Scene {
     if (this.tab === 0) this.drawPlay(ctx, G);
     else this.drawShop(ctx, G);
 
-    if (this.raidsOpen) this.drawRaidsOverlay(ctx, G);
     if (this.cfgOpen) this.drawConfigOverlay(ctx, G);
   }
 
@@ -176,7 +175,6 @@ export class LobbyScene extends Scene {
     if (UI.button('start', 478, 74, 142, 42, 'INICIAR PARTIDA', { color: '#4dff88', accent: true, scale: 1 })) {
       G.startGame({ mode: 'run', heroId: hero.id });
     }
-    if (UI.button('raids', 478, 124, 142, 26, 'INCURSÕES', { color: '#b06bff' })) this.raidsOpen = true;
     ctx.fillStyle = '#3a3350'; ctx.fillRect(478, 162, 142, 1);
     drawText(ctx, 'CONTROLES', 478, 172, { color: '#9a93c8' });
     this.wrap(ctx, 'WASD MOVER · MOUSE MIRAR', 478, 184, 142, '#5a5470', 8);

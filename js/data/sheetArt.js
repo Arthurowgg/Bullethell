@@ -49,12 +49,24 @@ export function loadSheetArt(onProgress) {
   for (const b of ['ultron', 'loki', 'hela', 'devourer', 'thanos']) {
     load(`assets/sprites/bosses/${b}.png`, (img) => { SPR['boss_' + b] = cnv(img, 1); });
   }
+  // enemy walk-animation B frames
+  for (const e of ['drone', 'chitauri', 'symbiote', 'sorcerer', 'sentinel', 'spectre', 'jotun', 'chaos']) {
+    load(`assets/sprites/enemies/${e}_b.png`, (img) => { SPR['en_' + e + '_b'] = cnv(img, 1); });
+  }
+  // world icons, boss portraits and custom boss bar frames
+  for (const w of ['wakanda', 'asgard', 'newyork', 'boss_ultron', 'boss_loki', 'boss_hela', 'boss_devourer', 'boss_thanos']) {
+    load(`assets/sprites/ui/wicon_${w}.png`, (img) => { SPR['wicon_' + w] = cnv(img, 1); });
+  }
+  for (const b of ['ultron', 'loki', 'hela', 'devourer', 'thanos']) {
+    load(`assets/sprites/ui/portrait_${b}.png`, (img) => { SPR['portrait_' + b] = cnv(img, 1); });
+    load(`assets/sprites/ui/bar_${b}.png`, (img) => { SPR['bar_' + b] = cnv(img, 1); });
+  }
   // world backgrounds (3 main worlds + 5 boss-exclusive worlds)
   for (const w of ['wakanda', 'asgard', 'newyork', 'boss_ultron', 'boss_loki', 'boss_hela', 'boss_devourer', 'boss_thanos']) {
     load(`assets/sprites/worlds/${w}.png`, (img) => { SPR['world_' + w] = cnv(img, 1); });
   }
   // skin emblem frames
-  for (const s of ['venom', 'crimson', 'midnight']) {
+  for (const s of ['miles', 'ragnarok', 'hulkbuster', 'xforce', 'umbral']) {
     for (let i = 0; i < 4; i++) {
       load(`assets/sprites/skins/${s}_f${i}.png`, (img) => {
         SPR['skin_' + s + '_f' + i] = cnv(img, 1);

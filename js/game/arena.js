@@ -21,9 +21,27 @@ export class Arena {
     this.bg = this._renderBg();
   }
 
+  // push a circle out of every obstacle rect (hitbox do mapa)
+  resolveCircle(x, y, r) {
+    for (const o of this.obstacles) {
+      const cx = Math.max(o.x, Math.min(x, o.x + o.w));
+      const cy = Math.max(o.y, Math.min(y, o.y + o.h));
+      const dx = x - cx, dy = y - cy;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < r * r && d2 > 0.0001) {
+        const d = Math.sqrt(d2);
+        x = cx + (dx / d) * r;
+        y = cy + (dy / d) * r;
+      } else if (d2 <= 0.0001) {
+        y = o.y - r; // degenerate: push up
+      }
+    }
+    return [x, y];
+  }
+
   _makeObstacles() {
     const obs = [];
-    const n = this.rng.int(0, 3);
+    const n = this.rng.int(2, 4);
     for (let i = 0; i < n; i++) {
       const w = 16, h = 16;
       const x = this.rng.range(60, VIEW_W - 76);
@@ -48,7 +66,22 @@ export class Arena {
     const g = c.getContext('2d');
     g.imageSmoothingEnabled = false;
     const wimg = SPR['world_' + this.themeId];
-    if (wimg) { g.drawImage(wimg, 0, 0, VIEW_W, VIEW_H); return c; }
+    if (wimg) {
+      g.drawImage(wimg, 0, 0, VIEW_W, VIEW_H);
+      // visible hitbox props (rocks/cover) drawn over the art
+      for (const o of this.obstacles) {
+        g.fillStyle = '#00000066';
+        g.fillRect(o.x + 2, o.y + o.h - 2, o.w, 4);
+        const wall = this.theme.wallTop || '#6b7285';
+        g.fillStyle = this.theme.wall || '#343a48';
+        g.fillRect(o.x, o.y + 3, o.w, o.h - 3);
+        g.fillStyle = wall;
+        g.fillRect(o.x, o.y, o.w, 4);
+        g.fillStyle = '#00000033';
+        g.fillRect(o.x + 2, o.y + 6, o.w - 4, o.h - 10);
+      }
+      return c;
+    }
     // floor tiles
     const f0 = SPR['floor_' + this.themeId + '_0'] || SPR.floor_nexus_0;
     const f1 = SPR['floor_' + this.themeId + '_1'] || SPR.floor_nexus_1;

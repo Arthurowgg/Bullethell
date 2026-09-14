@@ -208,6 +208,7 @@ export function updateEnemy(e, dt, G) {
   e.x += e.vx * dt;
   e.y += e.vy * dt;
   [e.x, e.y] = arena.clamp(e.x, e.y, e.r);
+  [e.x, e.y] = arena.resolveCircle(e.x, e.y, e.r);
   if (e.def.behavior !== 'wander') [e.x, e.y] = [e.x, e.y];
   else {
     // bounce
@@ -233,7 +234,9 @@ export function updateEnemy(e, dt, G) {
 }
 
 export function drawEnemy(ctx, e) {
-  const spr = SPR[e.def.sprite];
+  // 2-frame walk animation (sprite / spriteB)
+  const step = Math.floor(e.t * 6) % 2;
+  const spr = SPR[step === 1 && e.def.spriteB ? e.def.spriteB : e.def.sprite] || SPR[e.def.sprite];
   if (!spr) return;
   const alpha = e.spawnT > 0 ? 1 - e.spawnT / 0.6 : e.visible === false ? 0.25 : 1;
   drawSprite(ctx, spr, e.x, e.y + (e.def.behavior === 'wander' ? Math.round(Math.sin(e.t * 8)) : 0), {

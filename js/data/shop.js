@@ -14,19 +14,29 @@ export const RARITY_SHOP = {
 
 export const SKINS = [
   {
-    id: 'venom', hero: 'arachnid', name: 'ARANHA VENOM', rarity: 4, price: 650, currency: 'frag',
-    desc: 'Traje simbiótico negro com bio-eletricidade rubra. As teias viram descargas de veneno e o rastro deixa arcos elétricos vermelhos.',
-    fx: { shot: 'b_bolt', shotTint: '#ff4d4d', trail: '#ff2b2b', aura: '#ff2b2b' },
+    id: 'miles', hero: 'arachnid', name: 'MILES MORALES', rarity: 4, price: 800, currency: 'frag',
+    desc: 'O traje negro com teias vermelhas do Aranha do Brooklin: descargas de veneno nas teias e rastro de bio-eletricidade rubra.',
+    fx: { shotTint: '#ff2b2b', trail: '#ff2b2b', aura: '#ff2b2b' },
   },
   {
-    id: 'crimson', hero: 'stormgod', name: 'TEMPESTADE RUBRA', rarity: 4, price: 650, currency: 'frag',
-    desc: 'O trovão ancestral tingido de carmesim: raios, martelo e tempestade queimam em vermelho sobre o aço negro.',
-    fx: { shotTint: '#ff4d6b', trail: '#ff4d6b', aura: '#ff4d6b' },
+    id: 'ragnarok', hero: 'stormgod', name: 'GLADIADOR DO TROVÃO', rarity: 4, price: 650, currency: 'frag',
+    desc: 'Sem elmo, cabelo curto e pintura de guerra: o trovão da arena de Sakaar com raios dourados e rastro de tempestade.',
+    fx: { shotTint: '#ffd94a', trail: '#9feaff', aura: '#9feaff' },
   },
   {
-    id: 'midnight', hero: 'ironknight', name: 'PROTÓTIPO MEIA-NOITE', rarity: 4, price: 650, currency: 'frag',
-    desc: 'Armadura furtiva preto-ouro com reator de plasma âmbar. Repulsores e mísseis ganham brilho incandescente.',
-    fx: { shotTint: '#ff8c3b', trail: '#ffd94a', aura: '#ff8c3b' },
+    id: 'hulkbuster', hero: 'ironknight', name: 'ARMADURA COLOSSAL', rarity: 4, price: 700, currency: 'frag',
+    desc: 'A armadura pesada vermelho-prata de contenção: repulsores âmbar, mísseis de impacto e aura incandescente.',
+    fx: { shotTint: '#ffd94a', trail: '#ff8c3b', aura: '#ff8c3b' },
+  },
+  {
+    id: 'xforce', hero: 'merc', name: 'ESQUADRÃO X', rarity: 4, price: 600, currency: 'frag',
+    desc: 'O uniforme tático preto e cinza da força encoberta: lentes vermelhas escuras e lâminas com rastro de fumaça.',
+    fx: { shotTint: '#c95df2', trail: '#8a84a8', aura: '#8a84a8' },
+  },
+  {
+    id: 'umbral', hero: 'mystic', name: 'MANTO UMBRAL', rarity: 4, price: 650, currency: 'frag',
+    desc: 'O manto do mago mergulhado em magia sombria: runas violeta, olhos em brasa e um rastro de névoa púrpura.',
+    fx: { shotTint: '#b06bff', trail: '#b06bff', aura: '#b06bff' },
   },
 ];
 

@@ -76,9 +76,9 @@ export class GameScene extends Scene {
       this.curWorld = null;
     } else {
       G.waves = new WaveDirector();
-      G.comic.push('round', 'ROUND 1', '', 'burst', '#ffd94a');
       this.curWorld = 'wakanda';
       G.arena.setTheme('wakanda');
+      G.comic.push('round', 'ROUND 1', this.WORLD_LABEL.wakanda, 'burst', '#ffd94a', { world: 'wakanda' });
     }
 
     Audio.playTrack(this.mode === 'raid' ? 'boss' : 'combat');
@@ -117,7 +117,7 @@ export class GameScene extends Scene {
       startIncursion: (id, fin) => self.startIncursion(G, id, fin),
       openPortal: (id, fin) => self.openPortal(G, id, fin),
       setWorldForRound: (n) => self.setWorldForRound(G, n),
-      comicRound: (n) => G.comic.push('round', 'ROUND ' + n, '', 'burst', '#ffd94a'),
+      comicRound: (n) => G.comic.push('round', 'ROUND ' + n, self.WORLD_LABEL[self.curWorld] || '', 'burst', '#ffd94a', { world: self.curWorld }),
       get comic() { return G.comic; },
       get transition() { return self.transition; },
     };
@@ -269,6 +269,12 @@ export class GameScene extends Scene {
     }
   }
 
+  WORLD_LABEL = {
+    wakanda: 'REINO DE VIBRANIUM', asgard: 'PONTE DO ARCO-ÍRIS', newyork: 'CRUZAMENTO DOS HERÓIS',
+    boss_ultron: 'SOKOVIA SUSPENSA', boss_loki: 'SALÃO DAS ILUSÕES', boss_hela: 'REINO DOS MORTOS',
+    boss_devourer: 'VAZIO CÓSMICO', boss_thanos: 'MUNDO EM CINZAS',
+  };
+
   // ---- reality tear / portal to boss worlds -------------------------------
   openPortal(G, bossId, final) {
     const b = G.arena.bounds;
@@ -358,7 +364,7 @@ export class GameScene extends Scene {
     this.currentFinal = final;
     G.boss = new Boss(def, final ? 0.8 : 1);
     this.save.discovered.bosses[bossId] = true;
-    G.comic.push('boss', def.name, def.intro || 'INCURSÃO EM CURSO', 'alarm', '#ff4d4d');
+    G.comic.push('boss', def.name, def.intro || 'INCURSÃO EM CURSO', 'alarm', '#ff4d4d', { bossId });
     Audio.sfx('phase');
     Audio.playTrack('boss');
   }

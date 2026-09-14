@@ -51,6 +51,7 @@ export class WaveDirector {
     }
 
     // ---- wave round ----
+    if (G.enemies.length === 0 && this.t > 6) this.spawnT = 0; // nunca deixa o campo vazio
     this.spawnT -= dt;
     if (this.spawnT <= 0 && G.enemies.length < 26) {
       this.spawnT = rand(0.5, 1.0);

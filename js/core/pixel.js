@@ -184,7 +184,7 @@ export function drawSprite(ctx, spr, x, y, o = {}) {
   if (!spr) return;
   const w = spr.width, h = spr.height;
   const s = o.scale || 1;
-  const dw = w * s, dh = h * s;
+  const dw = w * (o.scaleX || s), dh = h * (o.scaleY || s);
   let img = spr;
   if (o.tint) {
     const key = (spr.__id || (spr.__id = Math.random())) + o.tint;

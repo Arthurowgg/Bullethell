@@ -51,8 +51,13 @@ Gamepad suportado (analógico esquerdo move, direito mira, A/B/X/Y mapeados).
 - **30 upgrades** com ícone próprio (folhas de 10 ícones por imagem), incluindo
   builds específicas por herói; cada herói, inimigo e chefe dispara projéteis
   com sprite único.
-- **UI de anúncios em estilo HQ pixel-art** (painéis inclinados, meio-tom,
-  starbursts, ícones exclusivos por evento, animações de entrada/saída).
+- **Avisos em plaques pixel** (sombra superior, borda dupla, ícones
+  exclusivos, retratos de boss) com animação de entrada/saída.
+- **HUD**: round no canto superior esquerdo com ícone do mapa atual; barra de
+  vida de boss com moldura customizada por vilão + fill em código.
+- **Mapas em 2 tipos**: 3 mundos normais planos (legibilidade de bullet hell)
+  e 5 arenas exclusivas de boss; hitboxes de obstáculos com colisão.
+- **Loja com 5 skins** (Miles Morales + 4) e inimigos com animação de andar.
 - **Lobby enxuto**: abas JOGAR (seleção de herói + partida + incursões) e
   LOJA com duas seções — **NEXUS** (upgrades permanentes customizados por
   herói) e **COSMÉTICA** (visuais exclusivos) — e configurações atrás de um

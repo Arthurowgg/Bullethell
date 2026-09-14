@@ -88,6 +88,7 @@ export class Player {
     this.x += this.vx * dt;
     this.y += this.vy * dt;
     [this.x, this.y] = G.arena.clamp(this.x, this.y, this.r);
+    [this.x, this.y] = G.arena.resolveCircle(this.x, this.y, this.r);
     [this.x, this.y] = G.arena.collideObstacles(this.x, this.y, this.r);
     this.walk += (Math.abs(this.vx) + Math.abs(this.vy)) * dt * 0.15;
 

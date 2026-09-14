@@ -120,7 +120,7 @@ export class WaveDirector {
       G.audio && G.audio.sfx('gem');
     } else {
       this.event = { type: 'elite', name: 'ELITES À SOLTA', t: 12, color: '#b06bff' };
-      for (let i = 0; i < 3; i++) G.summon(pick(['spectre', 'sentinel']), null, 'elite');
+      for (let i = 0; i < 3; i++) G.summon(pick(['spectre', 'sentinel']), 1, true);
       G.comic && G.comic.push('event', 'ELITES À SOLTA', 'INIMIGOS APRIMORADOS', 'elite', '#b06bff');
       G.audio && G.audio.sfx('warn');
     }

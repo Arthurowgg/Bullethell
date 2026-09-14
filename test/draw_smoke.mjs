@@ -80,8 +80,9 @@ const STEP = 1 / 60;
   for (let i = 0; i < 5; i++) { s.update(STEP, G); UI.beginFrame(); setCtx(ctx); s.draw(ctx, G); Input.endFrame(); }
   s.shopSec = 'cos'; s.skinSel = 'miles';
   for (let i = 0; i < 5; i++) { s.update(STEP, G); UI.beginFrame(); setCtx(ctx); s.draw(ctx, G); Input.endFrame(); }
+  s.tab = 2; UI.beginFrame(); setCtx(ctx); s.draw(ctx, G);
   s.cfgOpen = true; UI.beginFrame(); setCtx(ctx); s.draw(ctx, G);
-  console.log('draw ok: lobby (jogar + loja nexus/cosmetica + overlays)');
+  console.log('draw ok: lobby (jogar + loja + dev + overlays)');
 }
 
 // ---- game: run + overlays ----

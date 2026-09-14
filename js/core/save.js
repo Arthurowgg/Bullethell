@@ -24,6 +24,7 @@ export const DEFAULT_SAVE = {
   discovered: { enemies: {}, bosses: {} },
   settings: { sfx: 0.9, music: 0.7, master: 0.8, screenshake: true, dmgNumbers: true, autofire: true, integerScale: false },
   tutorialDone: false,
+  dev: { god: false, infSpecial: false, speed2: false, startRound: 1 },
 };
 
 const mem = {};

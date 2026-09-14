@@ -5,6 +5,7 @@
 // ---------------------------------------------------------------------------
 import { TAU, clamp, rand, angleTo, dist2 } from '../core/util.js';
 import { SPR, drawSprite } from '../core/pixel.js';
+import { Save } from '../core/save.js';
 import { drawText } from '../core/font.js';
 
 export class Player {
@@ -53,6 +54,7 @@ export class Player {
   get speed() {
     let s = this.stats.speed;
     if (this.berserkT > 0) s *= 1.25;
+    if (Save.data.dev && Save.data.dev.speed2) s *= 1.6;
     return s;
   }
 
@@ -254,6 +256,7 @@ export class Player {
   }
 
   hurt(G, dmg) {
+    if (Save.data.dev && Save.data.dev.god) return false;
     if (this.iframes > 0 || !this.alive) return false;
     const st = this.stats;
     if (st.shield > 0) {

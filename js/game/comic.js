@@ -71,7 +71,7 @@ export class ComicUI {
   }
 
   _round(ctx, it) {
-    const w = 160, h = 26, x = VIEW_W / 2 - w / 2, y = 8;
+    const w = 160, h = 26, x = VIEW_W / 2 - w / 2, y = 34;
     this._plaque(ctx, x, y, w, h, it.color);
     const ic = SPR['wicon_' + (it.world || '')] || SPR.ui_burst;
     if (ic) drawSprite(ctx, ic, x + 14, y + h / 2, { scale: 1.1 });

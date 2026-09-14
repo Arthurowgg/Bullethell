@@ -12,14 +12,12 @@ import { Save, xpForLevel } from '../core/save.js';
 import { VIEW_W, VIEW_H } from '../game/arena.js';
 import { THEMES } from '../data/sprites.js';
 import { HEROES, heroById } from '../data/heroes.js';
-import { BOSSES } from '../data/bosses.js';
-import { RAIDS, raidUnlocked } from '../data/raids.js';
 import { HERO_NODES, nodeCost } from '../data/nexuscore.js';
 import { SKINS, skinById, RARITY_SHOP } from '../data/shop.js';
 import { MISSIONS, HERO_UNLOCK_COST } from '../data/missions.js';
-import { clamp, fmtTime } from '../core/util.js';
+import { clamp } from '../core/util.js';
 
-const TABS = ['JOGAR', 'LOJA'];
+const TABS = ['JOGAR', 'LOJA', 'DEV'];
 
 export class LobbyScene extends Scene {
   enter(G, params) {
@@ -90,7 +88,8 @@ export class LobbyScene extends Scene {
     ctx.fillRect(0, 40, VIEW_W, VIEW_H - 40);
 
     if (this.tab === 0) this.drawPlay(ctx, G);
-    else this.drawShop(ctx, G);
+    else if (this.tab === 1) this.drawShop(ctx, G);
+    else this.drawDev(ctx, G);
 
     if (this.cfgOpen) this.drawConfigOverlay(ctx, G);
   }
@@ -155,7 +154,8 @@ export class LobbyScene extends Scene {
     ctx.fillStyle = hero.color;
     ctx.beginPath(); ctx.ellipse(312, 216, 46, 10, 0, 0, Math.PI * 2); ctx.fill();
     ctx.globalAlpha = 1;
-    this.emblem(ctx, base, hero.id, 312, 150, 3, frame);
+    const big = SPR[base + '_big'] || SPR[base + '_f0'];
+    if (big) drawSprite(ctx, big, 312, 150, { scale: 96 / big.height });
     drawText(ctx, eqSkin ? eqSkin.name : hero.name, 312, 200, { align: 'center', scale: 2, color: eqSkin ? RARITY_SHOP[eqSkin.rarity].color : hero.color, shadow: true });
     drawText(ctx, hero.role, 312, 220, { align: 'center', color: '#9a93c8' });
     const bar = (label, val, max, yy, col) => {
@@ -173,7 +173,8 @@ export class LobbyScene extends Scene {
     // actions
     UI.panel(466, 48, 166, 304, { title: 'OPERAÇÕES' });
     if (UI.button('start', 478, 74, 142, 42, 'INICIAR PARTIDA', { color: '#4dff88', accent: true, scale: 1 })) {
-      G.startGame({ mode: 'run', heroId: hero.id });
+      const sr = (s.dev && s.dev.startRound > 1) ? s.dev.startRound : undefined;
+      G.startGame({ mode: 'run', heroId: hero.id, startRound: sr });
     }
     ctx.fillStyle = '#3a3350'; ctx.fillRect(478, 162, 142, 1);
     drawText(ctx, 'CONTROLES', 478, 172, { color: '#9a93c8' });
@@ -315,35 +316,53 @@ export class LobbyScene extends Scene {
     drawText(ctx, 'COSMÉTICO — SEM VANTAGEM DE COMBATE', 620, 344, { align: 'right', color: '#3a3350' });
   }
 
-  // ---- overlays ----
-  drawRaidsOverlay(ctx, G) {
+  // ============================================================ DEV ========
+  drawDev(ctx, G) {
     const s = Save.data;
-    ctx.fillStyle = 'rgba(5,4,10,0.85)';
-    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-    UI.panel(90, 44, 460, 280, { title: 'INCURSÕES', titleColor: '#ff4d4d' });
-    RAIDS.forEach((r, i) => {
-      const y = 68 + i * 48;
-      const unlocked = raidUnlocked(r, s);
-      const cleared = s.raidsCleared[r.id];
-      ctx.fillStyle = '#171233';
-      ctx.fillRect(102, y, 436, 42);
-      ctx.strokeStyle = unlocked ? '#3a3350' : '#221c3d';
-      ctx.strokeRect(102.5, y + 0.5, 435, 41);
-      const bs = SPR[BOSSES[r.boss].sprite];
-      if (bs) drawSprite(ctx, bs, 128, y + 21, { scale: 0.55, alpha: unlocked ? 1 : 0.3 });
-      drawText(ctx, r.name, 158, y + 6, { color: unlocked ? '#ffffff' : '#5a5470' });
-      for (let st = 0; st < 5; st++) drawSprite(ctx, SPR.star, 158 + st * 9, y + 28, { scale: 0.6, alpha: st < r.stars ? 1 : 0.2 });
-      if (cleared) drawText(ctx, 'x' + cleared.wins + ' · ' + fmtTime(cleared.bestTime), 380, y + 14, { align: 'right', color: '#4dff88' });
-      if (!unlocked) {
-        drawSprite(ctx, SPR.lock, 516, y + 20, { scale: 0.9 });
-        drawText(ctx, 'NV ' + r.unlockLevel, 500, y + 16, { align: 'right', color: '#5a5470' });
-      } else if (UI.button('go' + i, 448, y + 8, 80, 26, 'INICIAR', { color: '#ff4d4d' })) {
-        G.startGame({ mode: 'raid', raidId: r.id, heroId: s.heroSelected });
+    s.dev = s.dev || { god: false, infSpecial: false, speed2: false, startRound: 1 };
+    UI.panel(8, 48, 624, 304, { title: 'CONSOLE DEV — CHEATS DE TESTE', titleColor: '#4dff88' });
+    drawText(ctx, 'ALTERAÇÕES VALEM NA PRÓXIMA PARTIDA (GOD/INF/2X VALEM NA HORA)', 20, 62, { color: '#5a5470' });
+    const tog = (id, x, y, label, val) => {
+      if (UI.button(id, x, y, 190, 20, label + ': ' + (val ? 'ON' : 'OFF'), { color: val ? '#4dff88' : '#8a84a8' })) {
+        s.dev[id] = !s.dev[id]; Save.save(); Audio.sfx('ui');
       }
-    });
-    if (UI.button('closeR', 280, 330, 80, 18, 'FECHAR')) this.raidsOpen = false;
+    };
+    tog('god', 20, 80, 'MODO DEUS (INVENCÍVEL)', s.dev.god);
+    tog('infSpecial', 20, 106, 'ESPECIAL INFINITO', s.dev.infSpecial);
+    tog('speed2', 20, 132, 'VELOCIDADE 1.6x', s.dev.speed2);
+    if (UI.button('frag', 20, 168, 190, 20, '+10.000 FRAGMENTOS', { color: '#9feaff' })) { s.fragments += 10000; Save.save(); Audio.sfx('buy'); }
+    if (UI.button('cred', 20, 194, 190, 20, '+1.000 CRÉDITOS', { color: '#ffe9a0' })) { s.credits += 1000; Save.save(); Audio.sfx('buy'); }
+    if (UI.button('heroes', 20, 230, 190, 20, 'DESBLOQUEAR HERÓIS', { color: '#b06bff' })) {
+      HEROES.forEach((h) => (s.heroesUnlocked[h.id] = true)); Save.save(); Audio.sfx('buy');
+    }
+    if (UI.button('skins', 20, 256, 190, 20, 'DESBLOQUEAR SKINS', { color: '#b06bff' })) {
+      SKINS.forEach((k) => (s.cosmeticsOwned[k.id] = true)); Save.save(); Audio.sfx('buy');
+    }
+    if (UI.button('nexus', 20, 282, 190, 20, 'MAX NEXUS NODES', { color: '#b06bff' })) {
+      HERO_NODES.forEach((n) => (s.nexusNodes[n.id] = n.max)); Save.save(); Audio.sfx('buy');
+    }
+    // round inicial
+    const sr = s.dev.startRound || 1;
+    drawText(ctx, 'ROUND INICIAL DA PARTIDA', 240, 84, { color: '#9a93c8' });
+    if (UI.button('sr-', 240, 98, 24, 20, '-')) { s.dev.startRound = Math.max(1, sr - 1); Save.save(); Audio.sfx('ui'); }
+    ctx.fillStyle = '#1d1740'; ctx.fillRect(272, 102, 120, 12);
+    ctx.fillStyle = '#4dff88'; ctx.fillRect(272, 102, Math.round(120 * sr / 12), 12);
+    drawText(ctx, 'ROUND ' + sr, 332, 104, { align: 'center', color: '#ffffff', shadow: true });
+    if (UI.button('sr+', 400, 98, 24, 20, '+')) { s.dev.startRound = Math.min(12, sr + 1); Save.save(); Audio.sfx('ui'); }
+    this.wrap(ctx, 'Usa a escada de rounds: 1-2 Vibranium, 3 Ultron, 4-5 Asgard, 6 Loki, 7 Hela, 8-9 Cidade, 10 Devorador, 12 Thanos.', 240, 124, 200, '#5a5470', 8);
+    // boss spawner info
+    drawText(ctx, 'SPAWN RÁPIDO DE CHEFE (NA PARTIDA)', 240, 190, { color: '#9a93c8' });
+    this.wrap(ctx, 'Com MODO DEUS ligado, use o round inicial para pular direto pra qualquer incursão de chefe (3, 6, 7, 10 ou 12).', 240, 204, 200, '#5a5470', 8);
+    // reset
+    if (UI.button('reset', 240, 300, 200, 22, 'APAGAR SAVE (CLIQUE 2x)', { color: '#ff4d4d' })) {
+      if (this._resetArm2) { Save.reset(); Audio.sfx('defeat'); this._resetArm2 = false; }
+      else this._resetArm2 = true;
+    }
+    if (this._resetArm2) drawText(ctx, 'CLIQUE NOVAMENTE PARA CONFIRMAR', 340, 328, { align: 'center', color: '#ff4d4d' });
+    drawText(ctx, 'DEV BUILD · MARVEL NEXUS', 620, 344, { align: 'right', color: '#3a3350' });
   }
 
+  // ---- overlays ----
   drawConfigOverlay(ctx, G) {
     const s = Save.data;
     ctx.fillStyle = 'rgba(5,4,10,0.85)';

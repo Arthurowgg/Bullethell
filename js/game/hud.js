@@ -135,7 +135,7 @@ function drawAbility(ctx, x, y, key, name, cd, cdMax, color, ready, readyLabel, 
     ctx.fillRect(x, y, s, Math.round(s * f));
   }
   // custom per-hero border (same usable size, border changes)
-  const HB = { arachnid: '#ff4d4d', stormgod: '#9feaff', ironknight: '#ffd94a', merc: '#ff8c8c', claws: '#ffd94a', mystic: '#b06bff' };
+  const HB = { arachnid: '#ff4d4d', stormgod: '#9feaff', ironknight: '#ffd94a', merc: '#ff8c8c', claws: '#ff8c3b', mystic: '#b06bff' };
   ctx.strokeStyle = HB[heroId] || color;
   ctx.strokeRect(x - 1.5, y - 1.5, s + 3, s + 3);
   ctx.strokeStyle = '#000000';

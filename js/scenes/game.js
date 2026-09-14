@@ -76,9 +76,14 @@ export class GameScene extends Scene {
       this.curWorld = null;
     } else {
       G.waves = new WaveDirector();
-      this.curWorld = 'wakanda';
-      G.arena.setTheme('wakanda');
-      G.comic.push('round', 'ROUND 1', this.WORLD_LABEL.wakanda, 'burst', '#ffd94a', { world: 'wakanda' });
+      const sr = params.startRound || 1;
+      if (sr > 1) {
+        G.waves.round = sr - 1;
+        G.waves.durT = null;
+      }
+      this.curWorld = this.worldForRound(sr);
+      G.arena.setTheme(this.curWorld);
+      G.comic.push('round', 'ROUND ' + sr, this.WORLD_LABEL[this.curWorld], 'burst', '#ffd94a', { world: this.curWorld });
     }
 
     Audio.playTrack(this.mode === 'raid' ? 'boss' : 'combat');
@@ -504,6 +509,7 @@ export class GameScene extends Scene {
       G.particles.update(dt, this.save.settings.screenshake);
       if (G.comic) G.comic.update(dt);
 
+      if (this.save.dev && this.save.dev.infSpecial) G.player.charge = 100;
       if (!G.player.alive && !this.endState) this.beginEnd(G, false);
     } else {
       G.particles.update(dt, this.save.settings.screenshake);

@@ -232,12 +232,12 @@ export function updateEnemy(e, dt, G) {
 }
 
 export function drawEnemy(ctx, e) {
-  const spr = SPR[e.flash > 0 ? e.def.spriteB : e.def.sprite] || SPR[e.def.sprite];
+  const spr = SPR[e.def.sprite];
   if (!spr) return;
   const alpha = e.spawnT > 0 ? 1 - e.spawnT / 0.6 : e.visible === false ? 0.25 : 1;
   drawSprite(ctx, spr, e.x, e.y + (e.def.behavior === 'wander' ? Math.round(Math.sin(e.t * 8)) : 0), {
     alpha,
-    tint: e.frozen > 0 ? '#7fd4ff' : e.rooted > 0 ? '#ffffff' : undefined,
+    tint: e.flash > 0 ? '#ffffff' : e.frozen > 0 ? '#7fd4ff' : e.rooted > 0 ? '#ffffff' : undefined,
   });
   if (e.spawnT > 0) {
     ctx.globalAlpha = 0.6;

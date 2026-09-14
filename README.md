@@ -48,9 +48,13 @@ Gamepad suportado (analógico esquerdo move, direito mira, A/B/X/Y mapeados).
 
 ## Pipeline de sprites (ImageMagick)
 
-- Heróis: pixel art gerada por IA sobre fundo magenta, processada com
-  ImageMagick (`tools/process_heroes.sh`): chroma-key, trim, normalização 28×28
-  e retratos 4× — `assets/sprites/heroes/`.
+- Heróis: **Hero Emblem Sprites** — sheets de 4 quadros (idle/idle-alt/ataque/
+  dano) gerados por IA sobre fundo magenta e processados com ImageMagick
+  (`tools/process_sheets.sh`): chroma-key, corte por quadro, normalização 28×28
+  e retratos 4× — `assets/sprites/heroes/*_f0..f3.png`.
+- Inimigos (grade 4×2) e bosses (pares lado a lado + Thanos) também vêm de
+  sheets processados — `assets/sprites/enemies/` e `assets/sprites/bosses/`,
+  com fallback procedural automático se o PNG faltar.
 - Inimigos, bosses, tiles, props, ícones e balas: pixel art autoral compilada
   pelo módulo `js/core/pixel.js` e exportada para PNG via ImageMagick:
 
@@ -79,6 +83,7 @@ test/         headless.mjs, draw_smoke.mjs
 
 ## Budget de gerações de imagem (regra de 10 por etapa)
 
-Etapa atual: **7/10** (1 probe + 6 heróis). Restam 3 gerações para a próxima
-leva (ex.: retratos de bosses / arte do lobby). Escreva **CONTINUE** para
-prosseguir com a próxima leva mantendo a consistência visual.
+- Etapa 1: 7/10 (1 probe + 6 heróis top-down originais).
+- Etapa 2: **10/10** (6 sheets de emblemas de heróis + 1 sheet de inimigos +
+  2 sheets de bosses + 1 Thanos). Budget esgotado — qualquer próxima mensagem
+  do usuário redefine o budget para a etapa seguinte.

@@ -8,6 +8,7 @@ import { Audio } from './core/audio.js';
 import { Save } from './core/save.js';
 import { buildAllSprites } from './data/sprites.js';
 import { loadHeroArt, HEROES } from './data/heroes.js';
+import { loadSheetArt } from './data/sheetArt.js';
 import { ENEMIES, enemyById } from './data/enemies.js';
 import { itemById } from './data/shop.js';
 import { UI, setCtx, toggleFullscreen } from './scenes/scene.js';
@@ -146,7 +147,9 @@ async function boot() {
     await new Promise((r) => setTimeout(r, 30)); // let the bar paint
     buildAllSprites();
     setP(38, 'INVOCANDO HERÓIS 0/6...');
-    await loadHeroArt((n, total) => setP(38 + (n / total) * 52, `INVOCANDO HERÓIS ${n}/${total}...`));
+    await loadHeroArt((n, total) => setP(38 + (n / total) * 30, `INVOCANDO HERÓIS ${n}/${total}...`));
+    setP(72, 'APLICANDO EMBLEMAS E FOLHAS...');
+    await loadSheetArt((n, total) => setP(72 + (n / total) * 20, `FOLHAS DE SPRITE ${n}/${total}...`));
     setP(94, 'SINCRONIZANDO O NEXUS...');
     Audio.setVolumes({ ...Save.data.settings });
     createGame(canvas);

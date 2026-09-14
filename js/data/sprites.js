@@ -412,7 +412,12 @@ export function buildAllSprites() {
   reg('boss_devourer', devourer());
   reg('boss_thanos', thanos());
 
-  // bullets
+  // bullets — distinct hero shots
+  reg('b_web', (() => { const p = new Pix(7, 7); p.disc(3, 3, 2, '#e8f2ff'); p.hline(0, 3, 7, '#9aa5b1'); p.vline(3, 0, 7, '#9aa5b1'); p.px(3, 3, '#ffffff'); return p; })());
+  reg('b_bolt', (() => { const p = new Pix(7, 7); p.px(3, 0, '#eaffff'); p.px(2, 1, '#9feaff'); p.px(3, 2, '#4dd8ff'); p.px(4, 3, '#9feaff'); p.px(3, 4, '#4dd8ff'); p.px(2, 5, '#9feaff'); p.px(3, 6, '#eaffff'); return p; })());
+  reg('b_repulsor', (() => { const p = new Pix(7, 7); p.circle(3, 3, 3, '#1e7fae', false); p.disc(3, 3, 2, '#4dd8ff'); p.px(3, 3, '#ffffff'); return p; })());
+  reg('b_tracer', (() => { const p = new Pix(6, 6); p.rect(1, 2, 4, 2, '#ffd94a'); p.px(5, 2, '#ff6b6b'); p.px(5, 3, '#ff6b6b'); p.px(0, 2, '#fff2c0'); p.px(0, 3, '#fff2c0'); return p; })());
+  reg('b_mandala', (() => { const p = new Pix(8, 8); p.circle(3, 3, 3, '#ff9d4d', false); p.diamond(3, 3, 1, '#ffd94a'); p.px(3, 0, '#ffd94a'); p.px(0, 3, '#ffd94a'); p.px(6, 3, '#ffd94a'); p.px(3, 6, '#ffd94a'); return p; })());
   reg('b_player', orb(6, '#4dd8ff', '#eaffff'));
   reg('b_player2', orb(6, '#ffd94a', '#fffbe0'));
   reg('b_enemy', orb(6, '#ff5d8f', '#ffe0ea'));

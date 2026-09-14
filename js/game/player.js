@@ -40,6 +40,7 @@ export class Player {
     this.trailT = 0;
     this.walk = 0;
     this.alt = false; // dual weapons alternation
+    this.fireAnim = 0;
     this.trailColor = null;
     this.bulletColor = null;
     this.tint = null;
@@ -66,6 +67,7 @@ export class Player {
     this.berserkT = Math.max(0, this.berserkT - dt);
     this.stormT = Math.max(0, this.stormT - dt);
     this.slashT = Math.max(0, this.slashT - dt);
+    this.fireAnim = Math.max(0, this.fireAnim - dt);
     if (st.permHammer) this.hammerT = Math.max(this.hammerT, 0.01);
 
     // movement
@@ -319,16 +321,18 @@ export class Player {
         dmg: dmg(atk.dmg),
         bounce: st.bounce,
       });
-      if (bcol && b) { b.sprite = 'b_player'; b.tint = bcol; }
       Object.assign(b || {}, o);
+      if (b && bcol) b.tint = bcol;
       return b;
     };
+    G.particles.spark(this.x + Math.cos(a) * 10, this.y + Math.sin(a) * 10, this.hero.color, 2);
+    this.fireAnim = 0.14;
     switch (atk.kind) {
       case 'pierce': {
         const n = 1 + st.extraProj;
         for (let i = 0; i < n; i++) {
           const off = (i - (n - 1) / 2) * 0.16;
-          const b = mk(a + off, { pierce: 2, r: 3 });
+          const b = mk(a + off, { pierce: 2, r: 3, sprite: 'b_web' });
           if (b) { b.pierce = 2; if (st.webRoot) b.root = st.webRoot; if (st.webSplit) b.split = true; }
         }
         G.audio.sfx('web');
@@ -343,7 +347,7 @@ export class Player {
         const n = 1 + st.extraProj;
         for (let i = 0; i < n; i++) {
           const off = (i - (n - 1) / 2) * 0.12;
-          mk(a + off, { r: 3 });
+          mk(a + off, { r: 3, sprite: 'b_repulsor' });
         }
         G.audio.sfx('shoot');
         break;
@@ -360,7 +364,7 @@ export class Player {
             x: sx, y: sy,
             vx: Math.cos(a + off) * atk.speed * st.projSpeed,
             vy: Math.sin(a + off) * atk.speed * st.projSpeed,
-            dmg: dmg(atk.dmg), bounce: st.bounce + (this.hero.id === 'merc' && st.bounce ? 0 : 0), r: 3,
+            dmg: dmg(atk.dmg), bounce: st.bounce, r: 3, sprite: 'b_tracer',
           });
           if (bcol && b) b.tint = bcol;
         }
@@ -404,8 +408,7 @@ export class Player {
         const n = 1 + st.extraProj;
         for (let i = 0; i < n; i++) {
           const off = (i - (n - 1) / 2) * 0.2;
-          const b = mk(a + off, { r: 4, pierce: 1, wobble: 0 });
-          if (b) b.sprite = 'b_gold';
+          const b = mk(a + off, { r: 4, pierce: 1, wobble: 0, sprite: 'b_mandala' });
         }
         G.audio.sfx('port');
         break;
@@ -572,8 +575,13 @@ export class Player {
       ctx.fillRect(-2, -2, 4, 4);
       ctx.restore();
     }
-    // hero sprite
-    const spr = SPR['hero_' + this.hero.id];
+    // hero emblem sprite with frame animation (idle/idle-alt/attack/hurt)
+    const id = this.hero.id;
+    let idx = 0;
+    if (this.hurtFlash > 0) idx = 3;
+    else if (this.fireAnim > 0 || this.slashT > 0) idx = 2;
+    else idx = Math.floor(this.walk * 0.6) & 1;
+    const spr = SPR['hero_' + id + '_f' + idx] || SPR['hero_' + id];
     const bob = Math.round(Math.sin(this.walk) * 1);
     const blink = this.iframes > 0 && Math.floor(this.iframes * 14) % 2 === 0;
     if (spr) {

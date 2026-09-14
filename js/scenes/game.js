@@ -750,6 +750,9 @@ export class GameScene extends Scene {
     if (UI.button('resume', bx, 120, bw, 26, 'CONTINUAR')) { this.paused = false; }
     if (UI.button('restart', bx, 154, bw, 26, 'REINICIAR PARTIDA')) { G.restartGame(); return; }
     if (UI.button('quit', bx, 188, bw, 26, 'SAIR PARA O LOBBY')) { G.gotoLobby(); return; }
+    // live telemetry (helps diagnose stalls from a screenshot)
+    drawText(ctx, `t=${G.time.toFixed(0)}s round=${G.waves ? G.waves.round + 1 : '-'} mobs=${G.enemies.length} boss=${G.boss ? G.boss.def.id : '-'} portal=${G.portal ? 'Y' : '-'} world=${G.arena.themeId}`, VIEW_W / 2, 236, { align: 'center', color: '#5a5470' });
+    if (G.__err) drawText(ctx, 'ERR: ' + String(G.__err.message || G.__err).slice(0, 60), VIEW_W / 2, 250, { align: 'center', color: '#ff4d4d' });
     // volumes
     const s = this.save.settings;
     drawText(ctx, 'MÚSICA', bx, 232, { color: '#9a93c8' });

@@ -274,7 +274,7 @@ export class Boss {
 
   draw(ctx) {
     const spr = SPR[this.def.sprite];
-    const bob = Math.round(Math.sin(this.walk * 0.7) * 2);
+    const bob = 0; // static sprite
     // presence aura: ground glow + pulsing ring (color per villain)
     const aura = { ultron: '#ff4d4d', loki: '#4dff88', hela: '#4dff88', devourer: '#4dd8ff', thanos: '#b06bff' }[this.def.id] || '#ff4d4d';
     ctx.save();

@@ -24,7 +24,8 @@ export class WaveDirector {
   constructor() {
     this.round = 0;            // index into ROUNDS
     this.t = 0;                // elapsed time inside the current round
-    this.spawnT = 1;
+    this.spawnT = 0.5;         // first wave comes fast
+    this.opened = false;
     this.eventT = 30;
     this.event = null;
     this.bossSpawned = false;
@@ -51,6 +52,11 @@ export class WaveDirector {
     }
 
     // ---- wave round ----
+    if (!this.opened) {
+      // opening burst as soon as the round starts
+      this.opened = true;
+      for (let i = 0; i < 3; i++) this._spawnOne(G);
+    }
     if (G.enemies.length === 0 && this.t > 6) this.spawnT = 0; // nunca deixa o campo vazio
     this.spawnT -= dt;
     if (this.spawnT <= 0 && G.enemies.length < 26) {
@@ -75,6 +81,8 @@ export class WaveDirector {
     this.round++;
     this.t = 0;
     this.durT = null;
+    this.opened = false;
+    this.spawnT = 0.5;
     this.bossSpawned = false;
     this.eventT = rand(22, 34);
     this.spawnT = Math.max(0.6, this.spawnT);

@@ -106,7 +106,14 @@ export class WaveDirector {
     let id = pick(pool);
     if (this.event && this.event.type === 'elite' && chance(0.5)) id = 'spectre';
     if (this.event && this.event.type === 'swarm' && chance(0.5)) id = pick(['drone', 'chitauri']);
-    G.summon(id, null, this.event && this.event.type === 'elite' ? 'elite' : null);
+    // variant chance grows with the round ladder
+    const vp = Math.min(0.5, 0.1 + this.round * 0.05);
+    if (chance(vp)) {
+      const tier = this.round >= 8 ? 1 + ((Math.random() * 4) | 0) : this.round >= 4 ? 1 + ((Math.random() * 3) | 0) : 1 + ((Math.random() * 2) | 0);
+      const vid = id + '_v' + tier;
+      if ((typeof window !== 'undefined' ? window : globalThis).__nx_enemy(vid)) id = vid;
+    }
+    G.summon(id, 1, this.event && this.event.type === 'elite');
   }
 
   _triggerEvent(G) {

@@ -255,6 +255,11 @@ export function drawEnemy(ctx, e) {
     ctx.strokeRect(e.x - 6, e.y - 6, 12, 12);
     ctx.globalAlpha = 1;
   }
+  // variant identification pip
+  if (e.def.variantColor) {
+    ctx.fillStyle = e.def.variantColor;
+    ctx.fillRect(e.x - 1, e.y - e.r - 5, 3, 3);
+  }
   // elite hp bar
   if (e.maxHp >= 100 && e.hp < e.maxHp) {
     const w = 18;

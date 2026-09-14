@@ -57,9 +57,12 @@ export function loadSheetArt(onProgress) {
     load(`assets/sprites/ui/abil_${h.id}_q.png`, (img) => { SPR['abil_' + h.id + '_q'] = cnv(img, 1); });
     load(`assets/sprites/ui/abil_${h.id}_e.png`, (img) => { SPR['abil_' + h.id + '_e'] = cnv(img, 1); });
   }
-  // enemy walk-animation B frames
+  // enemy variant sprites (4 per family)
   for (const e of ['drone', 'chitauri', 'symbiote', 'sorcerer', 'sentinel', 'spectre', 'jotun', 'chaos']) {
     load(`assets/sprites/enemies/${e}_b.png`, (img) => { SPR['en_' + e + '_b'] = cnv(img, 1); });
+    for (let v = 1; v <= 4; v++) {
+      load(`assets/sprites/enemies/${e}_v${v}.png`, (img) => { SPR['en_' + e + '_v' + v] = cnv(img, 1); });
+    }
   }
   // world icons, boss portraits and custom boss bar frames
   for (const w of ['wakanda', 'asgard', 'newyork', 'boss_ultron', 'boss_loki', 'boss_hela', 'boss_devourer', 'boss_thanos']) {

@@ -71,4 +71,32 @@ export const ENEMIES = {
   },
 };
 
+// ---- variants: 4 per enemy (same family art, distinct stats/role) ----
+const VAR_TIERS = [
+  { k: 'v1', suf: 'VELOZ',    hp: 1.4, spd: 1.3, dmg: 1.2, xp: 2, fr: 2, color: '#4dd8ff', r: 0 },
+  { k: 'v2', suf: 'BLINDADO', hp: 2.4, spd: 0.8, dmg: 1.5, xp: 3, fr: 3, color: '#ffd94a', r: 2 },
+  { k: 'v3', suf: 'MÍSTICO',  hp: 1.7, spd: 1.0, dmg: 1.9, xp: 3, fr: 3, color: '#b06bff', r: 0 },
+  { k: 'v4', suf: 'PRIME',    hp: 3.2, spd: 0.75, dmg: 2.2, xp: 5, fr: 5, color: '#ff4d4d', r: 3 },
+];
+for (const baseId of ['drone', 'chitauri', 'symbiote', 'sorcerer', 'sentinel', 'spectre', 'jotun', 'chaos']) {
+  const b = ENEMIES[baseId];
+  for (const t of VAR_TIERS) {
+    const id = baseId + '_' + t.k;
+    ENEMIES[id] = {
+      ...b,
+      id,
+      name: b.name + ' ' + t.suf,
+      sprite: 'en_' + baseId + '_' + t.k,
+      spriteB: 'en_' + baseId + '_' + t.k,
+      hp: Math.round(b.hp * t.hp),
+      speed: Math.round(b.speed * t.spd),
+      contact: Math.round(b.contact * t.dmg),
+      xp: t.xp, fragments: t.fr,
+      radius: b.radius + t.r,
+      variantColor: t.color,
+      variantOf: baseId,
+    };
+  }
+}
+
 export const enemyById = (id) => ENEMIES[id];

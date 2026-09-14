@@ -14,6 +14,7 @@ export class Player {
     this.skin = skin;
     this.base = skin ? 'skin_' + skin.id : 'hero_' + hero.id;
     this.shotSprite = skin && skin.fx.shot ? skin.fx.shot : null;
+    this.shotKey = 'shot_hero_' + hero.id;
     this.shotTint = skin && skin.fx.shotTint ? skin.fx.shotTint : null;
     this.x = 320; this.y = 220;
     this.vx = 0; this.vy = 0;
@@ -319,8 +320,11 @@ export class Player {
         bounce: st.bounce,
       });
       Object.assign(b || {}, o);
-      if (b && this.shotSprite) b.sprite = this.shotSprite;
-      if (b && bcol) b.tint = bcol;
+      if (b) {
+        if (this.shotSprite) b.sprite = this.shotSprite;
+        else if (SPR[this.shotKey]) b.sprite = this.shotKey;
+        if (bcol) b.tint = bcol;
+      }
       return b;
     };
     G.particles.spark(this.x + Math.cos(a) * 10, this.y + Math.sin(a) * 10, this.hero.color, 2);
@@ -364,8 +368,11 @@ export class Player {
             vy: Math.sin(a + off) * atk.speed * st.projSpeed,
             dmg: dmg(atk.dmg), bounce: st.bounce, r: 3, sprite: 'b_tracer',
           });
-          if (b && this.shotSprite) b.sprite = this.shotSprite;
-          if (bcol && b) b.tint = bcol;
+          if (b) {
+            if (this.shotSprite) b.sprite = this.shotSprite;
+            else if (SPR[this.shotKey]) b.sprite = this.shotKey;
+            if (bcol) b.tint = bcol;
+          }
         }
         G.audio.sfx('shoot');
         break;

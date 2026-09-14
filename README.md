@@ -33,8 +33,16 @@ Gamepad suportado (analógico esquerdo move, direito mira, A/B/X/Y mapeados).
   Thanos Corrompido — cada um com fases e padrões bullet hell próprios
   (anéis com gap, espirais, leques, chuva, ondas, lasers com aviso, zonas,
   poços de gravidade, perseguição).
-- **Partida padrão** com ondas crescentes, mini-eventos, XP + escolha de
-  upgrades (30+ upgrades, incluindo builds específicas por herói) e chefe final.
+- **Partida padrão em ROUNDS** (escada de 12 rounds): rounds de ondas com
+  eventos dinâmicos (Enxame do Caos, Chuva de Fragmentos, Elites à Solta)
+  intercalados por 5 incursões de chefe — Ultron, Loki, Hela, Devorador e a
+  final contra Thanos. Vencer uma incursão dá fragmentos, vida e +1 nível
+  antes do próximo round.
+- **30 upgrades** com ícone próprio (folhas de 10 ícones por imagem), incluindo
+  builds específicas por herói; cada herói, inimigo e chefe dispara projéteis
+  com sprite único.
+- **UI de anúncios em estilo HQ pixel-art** (painéis inclinados, meio-tom,
+  starbursts, ícones exclusivos por evento, animações de entrada/saída).
 - **Lobby enxuto**: abas JOGAR (seleção de herói + partida + incursões) e
   LOJA com duas seções — **NEXUS** (upgrades permanentes customizados por
   herói) e **COSMÉTICA** (visuais exclusivos) — e configurações atrás de um

@@ -18,6 +18,7 @@ export function makeEnemy(def, x, y, slot = 0) {
     rooted: 0, frozen: 0, burn: 0, burnT: 0, chill: 0, flash: 0,
     orbCd: 0, hamCd: 0, auraSlowed: false,
     dead: false,
+    shot: def.shot,
     slot,
     // behavior state
     t: rand(0, 10), state: 'stalk', stateT: 0,
@@ -64,7 +65,7 @@ export function updateEnemy(e, dt, G) {
       if (canAct) e.attackT -= dt;
       if (canAct && e.attackT <= 0) {
         e.attackT = e.def.attack.cd * rand(0.9, 1.2);
-        Patterns.diamond(e.x, e.y, 4, 90, api, { b: { sprite: 'b_orange' } });
+        Patterns.diamond(e.x, e.y, 4, 90, api, { b: { sprite: e.shot } });
         G.audio.sfx('clank');
       }
       break;
@@ -79,7 +80,7 @@ export function updateEnemy(e, dt, G) {
         e.attackT -= dt;
         if (e.attackT <= 0) {
           e.attackT = e.def.attack.cd * rand(0.85, 1.2);
-          Patterns.aimed(e.x, e.y, P.x, P.y, 1, 0, 120, api, { b: { sprite: 'b_green' } });
+          Patterns.aimed(e.x, e.y, P.x, P.y, 1, 0, 120, api, { b: { sprite: e.shot } });
         }
       }
       break;
@@ -115,7 +116,7 @@ export function updateEnemy(e, dt, G) {
           e.attackT -= dt;
           if (e.attackT <= 0) {
             e.attackT = e.def.attack.cd;
-            e.spiral = new Spiral(e.x, e.y, { arms: 1, step: 0.09, speed: 80, rot: 5, b: { sprite: 'b_pink' } });
+            e.spiral = new Spiral(e.x, e.y, { arms: 1, step: 0.09, speed: 80, rot: 5, b: { sprite: e.shot } });
             e.spiral.life = 1.4;
           }
         }
@@ -159,7 +160,7 @@ export function updateEnemy(e, dt, G) {
           e.attackT -= dt;
           if (e.attackT <= 0) {
             e.attackT = e.def.attack.cd;
-            Patterns.aimed(e.x, e.y, P.x, P.y, 3, 0.5, 140, api, { b: { sprite: 'b_blade' } });
+            Patterns.aimed(e.x, e.y, P.x, P.y, 3, 0.5, 140, api, { b: { sprite: e.shot } });
           }
         }
       } else { mvx = 0; mvy = 0; }
@@ -187,7 +188,7 @@ export function updateEnemy(e, dt, G) {
         if (e.stateT <= 0) {
           e.state = 'stalk';
           // ice spikes ring where it stopped
-          Patterns.ring(e.x, e.y, 8, 110, api, { b: { sprite: 'b_ice' } });
+          Patterns.ring(e.x, e.y, 8, 110, api, { b: { sprite: e.shot } });
           G.hazards.zone(e.x, e.y, 30, { telegraph: 0.5, duration: 1.2, color: '#7fd4ff', damage: 10 });
           G.audio.sfx('freeze');
         }

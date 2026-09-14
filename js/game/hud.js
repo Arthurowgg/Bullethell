@@ -45,12 +45,11 @@ export function drawHud(ctx, G) {
   drawSprite(ctx, SPR.fragment, VIEW_W / 2 + 26, 27, { scale: 0.8 });
   drawText(ctx, String(G.runFragments), VIEW_W / 2 + 36, 26, { color: '#9feaff' });
 
-  // wave / event banner
-  if (G.waves && G.waves.event) {
-    const e = G.waves.event;
-    ctx.globalAlpha = Math.min(1, e.t);
-    drawText(ctx, '! ' + e.name + ' !', VIEW_W / 2, 46, { scale: 1, align: 'center', color: '#ffd94a', shadow: true });
-    ctx.globalAlpha = 1;
+  // round indicator (round-based run ladder)
+  if (G.waves) {
+    const r = G.waves.cur ? G.waves.cur() : null;
+    const label = r && r.t === 'boss' ? `ROUND ${G.waves.round + 1} — INCURSÃO` : `ROUND ${G.waves.round + 1}/${12}`;
+    drawText(ctx, label, VIEW_W / 2, 40, { scale: 1, align: 'center', color: r && r.t === 'boss' ? '#ff8c8c' : '#8a84a8', shadow: true });
   }
   if (G.banner) {
     ctx.globalAlpha = Math.min(1, G.banner.t);

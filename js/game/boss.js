@@ -30,6 +30,7 @@ export class Boss {
   }
 
   hpFrac() { return this.hp / this.maxHp; }
+  get SH() { return this.def.shot; }
 
   phaseFor(frac) {
     const ph = this.def.phases;
@@ -158,10 +159,10 @@ export class Boss {
       case 'laserSweep': this.beam = { a: angleTo(this.x, this.y, G.player.x, G.player.y) - 1.1, rot: 1.1, t: 0, dur: 2.6, len: 500, width: 6, dmg: 16 }; G.audio.sfx('laser'); break;
       case 'stoneBeam': this.beam = { a: angleTo(this.x, this.y, G.player.x, G.player.y) - 0.9, rot: 0.9, t: 0, dur: 2.2, len: 520, width: 8, dmg: 20 }; G.audio.sfx('laser'); break;
       case 'tentacleSweep': this.beam = { a: 0, rot: 1.6, t: 0, dur: 2.4, len: 520, width: 7, dmg: 18 }; G.audio.sfx('laser'); break;
-      case 'spiralArms': this.spirals.push(new Spiral(this.x, this.y, { arms: 2, step: 0.1, speed: 85, rot: 2.8, b: { sprite: 'b_enemy' } }), new Spiral(this.x, this.y, { arms: 2, step: 0.1, speed: 70, rot: -2.2, b: { sprite: 'b_orange' } })); this.spirals[0].life = 2.2; this.spirals[1].life = 2.2; break;
-      case 'mirrorSpiral': { const s = new Spiral(this.x, this.y, { arms: 3, step: 0.11, speed: 80, rot: 3, b: { sprite: 'b_green' } }); s.life = 2.4; this.spirals.push(s); break; }
-      case 'voidSpiral': { const s = new Spiral(this.x, this.y, { arms: 3, step: 0.09, speed: 90, rot: 3.4, b: { sprite: 'b_purple' } }); s.life = 2.6; this.spirals.push(s); break; }
-      case 'gauntletSpiral': { const s = new Spiral(this.x, this.y, { arms: 6, step: 0.14, speed: 75, rot: 2.2, b: { sprite: 'b_gold' } }); s.life = 2.6; this.spirals.push(s); break; }
+      case 'spiralArms': this.spirals.push(new Spiral(this.x, this.y, { arms: 2, step: 0.1, speed: 85, rot: 2.8, b: { sprite: this.SH } }), new Spiral(this.x, this.y, { arms: 2, step: 0.1, speed: 70, rot: -2.2, b: { sprite: this.SH } })); this.spirals[0].life = 2.2; this.spirals[1].life = 2.2; break;
+      case 'mirrorSpiral': { const s = new Spiral(this.x, this.y, { arms: 3, step: 0.11, speed: 80, rot: 3, b: { sprite: this.SH } }); s.life = 2.4; this.spirals.push(s); break; }
+      case 'voidSpiral': { const s = new Spiral(this.x, this.y, { arms: 3, step: 0.09, speed: 90, rot: 3.4, b: { sprite: this.SH } }); s.life = 2.6; this.spirals.push(s); break; }
+      case 'gauntletSpiral': { const s = new Spiral(this.x, this.y, { arms: 6, step: 0.14, speed: 75, rot: 2.2, b: { sprite: this.SH } }); s.life = 2.6; this.spirals.push(s); break; }
     }
   }
 
@@ -179,7 +180,7 @@ export class Boss {
         if (a.t > 0.4) { Patterns.ring(this.x, this.y, 24, 110, api, { gapAngle: angleTo(this.x, this.y, P.x, P.y), gapSize: 0.5 }); return true; }
         return false;
       case 'geoCross':
-        if (a.sub < 3 && a.t > 0.35) { Patterns.cross8(this.x, this.y, 110 + a.sub * 15, api, { offset: a.sub * 0.4, b: { sprite: 'b_orange' } }); a.sub++; a.t = 0; }
+        if (a.sub < 3 && a.t > 0.35) { Patterns.cross8(this.x, this.y, 110 + a.sub * 15, api, { offset: a.sub * 0.4, b: { sprite: this.SH } }); a.sub++; a.t = 0; }
         return a.sub >= 3;
       case 'droneWave': return a.t > 0.4;
       case 'spiralArms': return a.t > 2.3;
@@ -195,53 +196,53 @@ export class Boss {
         else if (a.sub === 2 && a.t > 0.6) { Patterns.ring(this.x, this.y, 20, 95, api, { gapAngle: angleTo(this.x, this.y, P.x, P.y), gapSize: 0.6, offset: 0.16 }); return true; }
         return false;
       case 'illusionFan':
-        if (a.sub < 3 && a.t > 0.4) { Patterns.aimed(this.x, this.y, P.x, P.y, 7, 0.9, 130, api, { b: { sprite: 'b_green', fade: 0.9 + a.sub * 0.3 } }); a.sub++; a.t = 0; }
+        if (a.sub < 3 && a.t > 0.4) { Patterns.aimed(this.x, this.y, P.x, P.y, 7, 0.9, 130, api, { b: { sprite: this.SH, fade: 0.9 + a.sub * 0.3 } }); a.sub++; a.t = 0; }
         return a.sub >= 3;
       case 'daggerRain':
-        if (a.sub < 4 && a.t > 0.3) { Patterns.rain(G.arena, P.x, 5, 150, api, { b: { sprite: 'b_blade' } }); a.sub++; a.t = 0; }
+        if (a.sub < 4 && a.t > 0.3) { Patterns.rain(G.arena, P.x, 5, 150, api, { b: { sprite: this.SH } }); a.sub++; a.t = 0; }
         return a.sub >= 4;
       case 'weaponRain':
         if (a.sub < 5 && a.t > 0.32) {
-          Patterns.rain(G.arena, P.x, 4, 140, api, { b: { sprite: 'b_gold' } });
+          Patterns.rain(G.arena, P.x, 4, 140, api, { b: { sprite: this.SH } });
           if (a.sub === 2) G.hazards.zone(P.x, P.y, 34, { telegraph: 0.8, duration: 1, color: '#d8b64c', damage: 14 });
           a.sub++; a.t = 0;
         }
         return a.sub >= 5;
       case 'blink':
-        if (a.t > 0.3) { Patterns.fan(this.x, this.y, angleTo(this.x, this.y, P.x, P.y), 1.2, 9, 140, api, { b: { sprite: 'b_green' } }); return true; }
+        if (a.t > 0.3) { Patterns.fan(this.x, this.y, angleTo(this.x, this.y, P.x, P.y), 1.2, 9, 140, api, { b: { sprite: this.SH } }); return true; }
         return false;
       case 'cloneRing':
         if (a.sub < 4 && a.t > 0.3) {
           const cx = rand(80, 560), cy = rand(60, 200);
           G.particles.burst(cx, cy, '#4dff88', 8, 60, 0.4);
-          Patterns.ring(cx, cy, 10, 95, api, { gapAngle: angleTo(cx, cy, P.x, P.y), gapSize: 0.6, b: { sprite: 'b_green' } });
+          Patterns.ring(cx, cy, 10, 95, api, { gapAngle: angleTo(cx, cy, P.x, P.y), gapSize: 0.6, b: { sprite: this.SH } });
           a.sub++; a.t = 0;
         }
         return a.sub >= 4;
       case 'grandIllusion':
-        if (a.sub === 0 && a.t > 0.4) { Patterns.ring(this.x, this.y, 16, 90, api, { gapAngle: angleTo(this.x, this.y, P.x, P.y), gapSize: 0.5, b: { sprite: 'b_green' } }); a.sub = 1; a.t = 0; }
-        else if (a.sub === 1 && a.t > 0.5) { Patterns.rain(G.arena, P.x, 6, 150, api, { b: { sprite: 'b_blade' } }); a.sub = 2; a.t = 0; }
-        else if (a.sub === 2 && a.t > 0.5) { Patterns.ring(this.x, this.y, 16, 110, api, { gapAngle: angleTo(this.x, this.y, P.x, P.y), gapSize: 0.5, offset: 0.2, b: { sprite: 'b_green' } }); return true; }
+        if (a.sub === 0 && a.t > 0.4) { Patterns.ring(this.x, this.y, 16, 90, api, { gapAngle: angleTo(this.x, this.y, P.x, P.y), gapSize: 0.5, b: { sprite: this.SH } }); a.sub = 1; a.t = 0; }
+        else if (a.sub === 1 && a.t > 0.5) { Patterns.rain(G.arena, P.x, 6, 150, api, { b: { sprite: this.SH } }); a.sub = 2; a.t = 0; }
+        else if (a.sub === 2 && a.t > 0.5) { Patterns.ring(this.x, this.y, 16, 110, api, { gapAngle: angleTo(this.x, this.y, P.x, P.y), gapSize: 0.5, offset: 0.2, b: { sprite: this.SH } }); return true; }
         return false;
       case 'bladeFan':
-        if (a.sub < 3 && a.t > 0.45) { Patterns.aimed(this.x, this.y, P.x, P.y, 5, 0.8, 150, api, { b: { sprite: 'b_blade' } }); a.sub++; a.t = 0; }
+        if (a.sub < 3 && a.t > 0.45) { Patterns.aimed(this.x, this.y, P.x, P.y, 5, 0.8, 150, api, { b: { sprite: this.SH } }); a.sub++; a.t = 0; }
         return a.sub >= 3;
-      case 'bladeSpiral': { if (!a.sp) { a.sp = new Spiral(this.x, this.y, { arms: 2, step: 0.08, speed: 95, rot: 4, b: { sprite: 'b_blade' } }); a.sp.life = 2; } a.sp.moveTo(this.x, this.y); a.sp.update(dt, api); return a.t > 2.1; }
+      case 'bladeSpiral': { if (!a.sp) { a.sp = new Spiral(this.x, this.y, { arms: 2, step: 0.08, speed: 95, rot: 4, b: { sprite: this.SH } }); a.sp.life = 2; } a.sp.moveTo(this.x, this.y); a.sp.update(dt, api); return a.t > 2.1; }
       case 'necroWave':
       case 'spectreCall': return a.t > 0.5;
       case 'deathBloom':
-        if (a.sub === 0 && a.t > 0.4) { Patterns.ring(this.x, this.y, 26, 90, api, { gapAngle: angleTo(this.x, this.y, P.x, P.y), gapSize: 0.5, b: { sprite: 'b_blade' } }); a.sub = 1; a.t = 0; }
-        else if (a.sub === 1 && a.t > 0.5) { Patterns.ring(this.x, this.y, 26, 120, api, { gapAngle: angleTo(this.x, this.y, P.x, P.y), gapSize: 0.5, offset: 0.12, b: { sprite: 'b_green' } }); G.hazards.zone(P.x, P.y, 40, { telegraph: 0.7, duration: 1, color: '#0aa86a', damage: 16 }); return true; }
+        if (a.sub === 0 && a.t > 0.4) { Patterns.ring(this.x, this.y, 26, 90, api, { gapAngle: angleTo(this.x, this.y, P.x, P.y), gapSize: 0.5, b: { sprite: this.SH } }); a.sub = 1; a.t = 0; }
+        else if (a.sub === 1 && a.t > 0.5) { Patterns.ring(this.x, this.y, 26, 120, api, { gapAngle: angleTo(this.x, this.y, P.x, P.y), gapSize: 0.5, offset: 0.12, b: { sprite: this.SH } }); G.hazards.zone(P.x, P.y, 40, { telegraph: 0.7, duration: 1, color: '#0aa86a', damage: 16 }); return true; }
         return false;
       case 'gravityWell': return a.t > 2.3;
       case 'devour':
-        if (a.sub === 0 && a.t > 0.8) { const s = new Spiral(this.x, this.y, { arms: 4, step: 0.1, speed: 70, rot: -3, b: { sprite: 'b_purple' } }); s.life = 1.6; this.spirals.push(s); a.sub = 1; }
+        if (a.sub === 0 && a.t > 0.8) { const s = new Spiral(this.x, this.y, { arms: 4, step: 0.1, speed: 70, rot: -3, b: { sprite: this.SH } }); s.life = 1.6; this.spirals.push(s); a.sub = 1; }
         return a.t > 2.7;
       case 'cosmicWave':
-        if (a.sub < 3 && a.t > 0.5) { Patterns.wave(G.arena, G.arena.bounds.y + 8 + a.sub * 4, 90, api, { b: { sprite: 'b_purple', wobble: 1.5 } }); a.sub++; a.t = 0; }
+        if (a.sub < 3 && a.t > 0.5) { Patterns.wave(G.arena, G.arena.bounds.y + 8 + a.sub * 4, 90, api, { b: { sprite: this.SH, wobble: 1.5 } }); a.sub++; a.t = 0; }
         return a.sub >= 3;
       case 'realityWave':
-        if (a.sub < 2 && a.t > 0.6) { Patterns.wave(G.arena, G.arena.bounds.y + 8, 100, api, { b: { sprite: 'b_pink', wobble: 2 } }); Patterns.wave(G.arena, G.arena.bounds.y + 40, 80, api, { b: { sprite: 'b_purple' } }); a.sub++; a.t = 0; }
+        if (a.sub < 2 && a.t > 0.6) { Patterns.wave(G.arena, G.arena.bounds.y + 8, 100, api, { b: { sprite: this.SH, wobble: 2 } }); Patterns.wave(G.arena, G.arena.bounds.y + 40, 80, api, { b: { sprite: this.SH } }); a.sub++; a.t = 0; }
         return a.sub >= 2;
       case 'meteorRain':
         if (a.sub < 5 && a.t > 0.28) {
@@ -252,7 +253,7 @@ export class Boss {
         }
         return a.sub >= 5;
       case 'shockwave':
-        if (a.sub < 3 && a.t > 0.4) { Patterns.ring(this.x, this.y, 20, 80 + a.sub * 35, api, { gapAngle: angleTo(this.x, this.y, P.x, P.y), gapSize: 0.55, b: { sprite: 'b_orange' } }); a.sub++; a.t = 0; G.audio.sfx('boom'); }
+        if (a.sub < 3 && a.t > 0.4) { Patterns.ring(this.x, this.y, 20, 80 + a.sub * 35, api, { gapAngle: angleTo(this.x, this.y, P.x, P.y), gapSize: 0.55, b: { sprite: this.SH } }); a.sub++; a.t = 0; G.audio.sfx('boom'); }
         return a.sub >= 3;
       case 'nexusCollapse':
         if (a.sub === 0 && a.t > 0.4) { Patterns.ring(this.x, this.y, 28, 100, api, { gapAngle: angleTo(this.x, this.y, P.x, P.y), gapSize: 0.5 }); a.sub = 1; a.t = 0; }

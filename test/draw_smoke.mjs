@@ -100,7 +100,19 @@ const STEP = 1 / 60;
   }
   // pause overlay
   s.paused = true; UI.beginFrame(); setCtx(ctx); s.draw(ctx, G); s.paused = false;
-  console.log('draw ok: game run + levelup + pause');
+  // comic-book announcements: each panel type
+  G.comic.push('round', 'ROUND 4', '', 'burst', '#ffd94a');
+  UI.beginFrame(); setCtx(ctx); s.draw(ctx, G);
+  G.comic.update(5);
+  G.comic.push('event', 'ENXAME DO CAOS', 'INIMIGOS EM FÚRIA', 'swarm', '#ff9a3c');
+  UI.beginFrame(); setCtx(ctx); s.draw(ctx, G);
+  G.comic.update(5);
+  G.comic.push('boss', 'THANOS CORROMPIDO', 'O NEXUS CORROMPIDO EXIGE O FIM', 'alarm', '#ff4d4d');
+  UI.beginFrame(); setCtx(ctx); s.draw(ctx, G);
+  G.comic.update(5);
+  G.comic.push('clear', 'INCURSÃO CONCLUÍDA', '+60 FRAGMENTOS', 'shield', '#4dff88');
+  UI.beginFrame(); setCtx(ctx); s.draw(ctx, G);
+  console.log('draw ok: game run + levelup + pause + comic panels');
 }
 
 // ---- game: raid (boss bar, beams) ----

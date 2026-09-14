@@ -59,6 +59,21 @@ export function loadSheetArt(onProgress) {
     }
     load(`assets/sprites/skins_big/${s}.png`, (img) => { SPR['skin_' + s + '_big'] = cnv(img, 1); });
   }
+  // upgrade icons (30)
+  for (let i = 1; i <= 30; i++) {
+    const k = 'up_' + String(i).padStart(2, '0');
+    load(`assets/sprites/icons/${k}.png`, (img) => { SPR[k] = cnv(img, 1); });
+  }
+  // unique shots
+  for (const h of ['arachnid', 'stormgod', 'ironknight', 'merc', 'claws', 'mystic'])
+    load(`assets/sprites/shots/hero_${h}.png`, (img) => { SPR['shot_hero_' + h] = cnv(img, 1); });
+  for (const e of ['drone', 'chitauri', 'symbiote', 'sorcerer', 'sentinel', 'spectre', 'jotun', 'chaos'])
+    load(`assets/sprites/shots/en_${e}.png`, (img) => { SPR['shot_en_' + e] = cnv(img, 1); });
+  for (const b of ['ultron', 'loki', 'hela', 'devourer', 'thanos', 'cosmic'])
+    load(`assets/sprites/shots/boss_${b}.png`, (img) => { SPR['shot_boss_' + b] = cnv(img, 1); });
+  // comic UI icons
+  for (const u of ['swarm', 'elite', 'frags', 'alarm', 'burst', 'shield', 'bolt', 'portal'])
+    load(`assets/sprites/ui/${u}.png`, (img) => { SPR['ui_' + u] = cnv(img, 1); });
 
   let done = 0;
   const total = jobs.length;

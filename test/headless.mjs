@@ -56,8 +56,11 @@ function run(scene, G, seconds, hooks = {}) {
   // keep the test player alive and moving: rotate movement + iframes cheat
   const dirs = ['KeyD', 'KeyW', 'KeyA', 'KeyS'];
   let leveled = false;
+  let sawBoss = false, maxRound = 0;
   const r = run(scene, G, 250, {
     frame: (i, G) => {
+      if (G.boss) sawBoss = true;
+      if (G.waves) maxRound = Math.max(maxRound, G.waves.round);
       if (i % 90 === 0) {
         Input.keys.clear();
         Input.keys.add(dirs[(i / 90) % 4 | 0]);
@@ -84,9 +87,11 @@ function run(scene, G, seconds, hooks = {}) {
 
   console.log('[run] time=', G.time.toFixed(1), 'kills=', G.kills, 'enemies=', G.enemies.length,
     'lvl=', G.runStats.level, 'enemyBulletsMax=', r.maxEnemyBullets, 'playerBulletsMax=', r.maxPlayerBullets,
-    'finalBoss=', !!G.boss);
+    'round=', G.waves.round, 'sawBoss=', sawBoss);
   assert.ok(G.time > 240, 'full run length simulated');
-  assert.ok(G.boss, 'final boss called at run end');
+  assert.ok(sawBoss, 'an incursion boss round started');
+  assert.ok(maxRound >= 2, 'round ladder advanced past round 3');
+  assert.ok(G.comic && G.comic.cur !== undefined, 'comic UI active');
   assert.ok(G.enemies.length > 0 || G.kills > 0, 'enemies spawned/fought');
   assert.ok(r.maxPlayerBullets > 0, 'player fired bullets');
   assert.ok(r.maxEnemyBullets > 0, 'enemies fired bullet-hell bullets');

@@ -6,7 +6,7 @@
 
 export const BOSSES = {
   ultron: {
-    id: 'ultron', name: 'ULTRON PRIME', sprite: 'boss_ultron',
+    id: 'ultron', shot: 'shot_boss_ultron', name: 'ULTRON PRIME', sprite: 'boss_ultron',
     hp: 1400, radius: 16, speed: 34, contact: 18, theme: 'factory',
     phases: [
       { until: 1.0, attacks: ['ringBurst', 'geoCross', 'droneWave'] },
@@ -16,7 +16,7 @@ export const BOSSES = {
     intro: 'A FÁBRICA CORROMPIDA DESPERTA',
   },
   loki: {
-    id: 'loki', name: 'LOKI, SENHOR DA ILUSÃO', sprite: 'boss_loki',
+    id: 'loki', shot: 'shot_boss_loki', name: 'LOKI, SENHOR DA ILUSÃO', sprite: 'boss_loki',
     hp: 1600, radius: 14, speed: 60, contact: 16, theme: 'palace',
     phases: [
       { until: 1.0, attacks: ['illusionFan', 'daggerRain', 'blink'] },
@@ -26,7 +26,7 @@ export const BOSSES = {
     intro: 'AS ILUSÕES TOMAM FORMA',
   },
   hela: {
-    id: 'hela', name: 'HELA, RAINHA DA MORTE', sprite: 'boss_hela',
+    id: 'hela', shot: 'shot_boss_hela', name: 'HELA, RAINHA DA MORTE', sprite: 'boss_hela',
     hp: 1900, radius: 15, speed: 44, contact: 18, theme: 'asgard',
     phases: [
       { until: 1.0, attacks: ['bladeFan', 'weaponRain', 'necroWave'] },
@@ -36,7 +36,7 @@ export const BOSSES = {
     intro: 'A MORTE CAMINHA SOBRE ASGARD',
   },
   devourer: {
-    id: 'devourer', name: 'DEVORADOR DO NEXUS', sprite: 'boss_devourer',
+    id: 'devourer', shot: 'shot_boss_devourer', name: 'DEVORADOR DO NEXUS', sprite: 'boss_devourer',
     hp: 2300, radius: 18, speed: 30, contact: 20, theme: 'collapse',
     phases: [
       { until: 1.0, attacks: ['voidSpiral', 'gravityWell', 'cosmicWave'] },
@@ -46,7 +46,7 @@ export const BOSSES = {
     intro: 'A DIMENSÃO COLAPSA SOBRE VOCÊ',
   },
   thanos: {
-    id: 'thanos', name: 'THANOS CORROMPIDO', sprite: 'boss_thanos',
+    id: 'thanos', shot: 'shot_boss_thanos', name: 'THANOS CORROMPIDO', sprite: 'boss_thanos',
     hp: 3000, radius: 18, speed: 36, contact: 22, theme: 'throne',
     phases: [
       { until: 1.0, attacks: ['meteorRain', 'powerRing', 'stoneBeam'] },

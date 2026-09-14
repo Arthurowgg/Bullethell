@@ -1,84 +1,122 @@
 // ---------------------------------------------------------------------------
 // MARVEL NEXUS — game/waves.js
-// The standard-run wave director: escalating enemy mixes, mini-events and
-// the final boss call-in. Raids bypass this (boss from t=0).
+// Round-based WaveDirector: the run is a ladder of 12 rounds — waves rounds
+// and boss "incursion" rounds — with dynamic events inside wave rounds.
 // ---------------------------------------------------------------------------
 import { rand, pick, chance } from '../core/util.js';
-import { ENEMIES } from '../data/enemies.js';
 
-export const RUN_LENGTH = 240; // seconds until the final boss appears
+export const ROUNDS = [
+  { t: 'waves', dur: 30 },
+  { t: 'waves', dur: 30 },
+  { t: 'boss', boss: 'ultron' },
+  { t: 'waves', dur: 32 },
+  { t: 'waves', dur: 32 },
+  { t: 'boss', boss: 'loki' },
+  { t: 'waves', dur: 36 },
+  { t: 'boss', boss: 'hela' },
+  { t: 'waves', dur: 36 },
+  { t: 'boss', boss: 'devourer' },
+  { t: 'waves', dur: 40 },
+  { t: 'boss', boss: 'thanos', final: true },
+];
 
 export class WaveDirector {
   constructor() {
-    this.t = 0;
-    this.spawnT = 1.2;
-    this.eventT = 40;
+    this.round = 0;            // index into ROUNDS
+    this.t = 0;                // elapsed time inside the current round
+    this.spawnT = 1;
+    this.eventT = 30;
     this.event = null;
-    this.bossCalled = false;
-    this.kills = 0;
+    this.bossSpawned = false;
+    this.done = false;
   }
 
-  /** weight table over time (seconds) */
-  pool(t) {
-    const p = [];
-    const add = (id, w, after = 0) => { if (t >= after) for (let i = 0; i < w; i++) p.push(id); };
-    add('drone', 5);
-    add('chitauri', 4, 20);
-    add('chaos', 4, 35);
-    add('symbiote', 3, 55);
-    add('sorcerer', 3, 80);
-    add('jotun', 3, 100);
-    add('spectre', 3, 130);
-    add('sentinel', 1, 140);
-    return p;
-  }
+  cur() { return ROUNDS[this.round]; }
 
   update(dt, G) {
     this.t += dt;
-    const t = this.t;
-    // difficulty ramp
-    const interval = Math.max(0.5, 1.6 - t * 0.004);
+    const r = this.cur();
+    if (!r) { this.done = true; return; }
+
+    if (r.t === 'boss') {
+      if (!this.bossSpawned && !G.boss) {
+        this.bossSpawned = true;
+        G.startIncursion(r.boss, !!r.final);
+      } else if (this.bossSpawned && !G.boss) {
+        this._advance(G);
+      }
+      return;
+    }
+
+    // ---- wave round ----
     this.spawnT -= dt;
-    const cap = Math.min(34, 10 + Math.floor(t / 12));
-    if (this.spawnT <= 0 && G.enemies.length < cap) {
-      this.spawnT = interval;
-      const pool = this.pool(t);
-      const n = 1 + (chance(0.35) ? 1 : 0) + (t > 90 && chance(0.3) ? 1 : 0);
-      for (let i = 0; i < n; i++) G.summon(pick(pool), 1, true);
+    if (this.spawnT <= 0 && G.enemies.length < 26) {
+      this.spawnT = rand(0.5, 1.0);
+      const n = 1 + (chance(0.35) ? 1 : 0) + (this.round >= 3 && chance(0.3) ? 1 : 0);
+      for (let i = 0; i < n; i++) this._spawnOne(G);
     }
 
-    // periodic mini-events
     this.eventT -= dt;
-    if (this.eventT <= 0 && !this.bossCalled) {
-      this.eventT = 45;
-      this.triggerEvent(G);
+    if (this.eventT <= 0) {
+      this.eventT = rand(26, 40);
+      this._triggerEvent(G);
     }
-    if (this.event) {
-      this.event.t -= dt;
-      if (this.event.t <= 0) this.event = null;
-    }
+    if (this.event && (this.event.t -= dt) <= 0) this.event = null;
 
-    // final boss
-    if (t >= RUN_LENGTH && !this.bossCalled) {
-      this.bossCalled = true;
-      G.callFinalBoss();
-    }
+    if (!this.durT) this.durT = r.dur;
+    this.durT -= dt;
+    if (this.durT <= 0) this._advance(G);
   }
 
-  triggerEvent(G) {
-    const roll = Math.random();
-    if (roll < 0.34) {
-      this.event = { name: 'ENXAME DO CAOS', t: 4 };
-      G.summon('chaos', 8, true);
-      G.audio.sfx('warn');
-    } else if (roll < 0.67) {
-      this.event = { name: 'CHUVA DE FRAGMENTOS', t: 4 };
-      for (let i = 0; i < 6; i++) G.pickups.drop(rand(60, 580), rand(50, 300), 'fragment', 2);
-      G.audio.sfx('gem');
+  _advance(G) {
+    this.round++;
+    this.t = 0;
+    this.durT = null;
+    this.bossSpawned = false;
+    this.eventT = rand(22, 34);
+    this.spawnT = Math.max(0.6, this.spawnT);
+    if (this.cur()) G.comicRound(this.round + 1);
+  }
+
+  _spawnOne(G) {
+    const t = this.round * 6 + this.t;
+    const pool = [];
+    const add = (id, w) => { for (let i = 0; i < w; i++) pool.push(id); };
+    add('drone', 5); add('chitauri', 4); add('symbiote', 3);
+    if (t > 100) add('sorcerer', 3);
+    if (t > 150) add('sentinel', 2);
+    if (t > 200) add('spectre', 3);
+    if (t > 260) add('jotun', 3);
+    if (t > 330) add('chaos', 3);
+
+    let id = pick(pool);
+    if (this.event && this.event.type === 'elite' && chance(0.5)) id = 'spectre';
+    if (this.event && this.event.type === 'swarm' && chance(0.5)) id = pick(['drone', 'chitauri']);
+    G.summon(id, null, this.event && this.event.type === 'elite' ? 'elite' : null);
+  }
+
+  _triggerEvent(G) {
+    const pool = ['swarm', 'frags', 'elite', 'swarm', 'frags'];
+    const type = pick(pool);
+    const mult = this.round >= 6 ? 2 : 1;
+    if (type === 'swarm') {
+      this.event = { type: 'swarm', name: 'ENXAME DO CAOS', t: 12, color: '#ff9a3c' };
+      for (let i = 0; i < 8 + this.round; i++) G.summon(pick(['drone', 'chitauri']));
+      G.comic && G.comic.push('event', 'ENXAME DO CAOS', 'INIMIGOS EM FÚRIA', 'swarm', '#ff9a3c');
+      G.audio && G.audio.sfx('warn');
+    } else if (type === 'frags') {
+      this.event = { type: 'frags', name: 'CHUVA DE FRAGMENTOS', t: 10, color: '#4dd8ff' };
+      const b = G.arena.bounds;
+      for (let i = 0; i < 8 * mult; i++) {
+        G.pickups.drop(rand(b.x + 20, b.x + b.w - 20), rand(b.y + 20, b.y + b.h - 20), 'fragment', 3);
+      }
+      G.comic && G.comic.push('event', 'CHUVA DE FRAGMENTOS', 'RECOLHA RÁPIDO!', 'frags', '#4dd8ff');
+      G.audio && G.audio.sfx('gem');
     } else {
-      this.event = { name: 'ELITE DETECTADO', t: 4 };
-      G.summon(pick(['sentinel', 'sorcerer', 'jotun']), 1, true);
-      G.audio.sfx('warn');
+      this.event = { type: 'elite', name: 'ELITES À SOLTA', t: 12, color: '#b06bff' };
+      for (let i = 0; i < 3; i++) G.summon(pick(['spectre', 'sentinel']), null, 'elite');
+      G.comic && G.comic.push('event', 'ELITES À SOLTA', 'INIMIGOS APRIMORADOS', 'elite', '#b06bff');
+      G.audio && G.audio.sfx('warn');
     }
   }
 }

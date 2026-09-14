@@ -12,7 +12,8 @@ import { Pickups } from '../game/pickups.js';
 import { Player } from '../game/player.js';
 import { makeEnemy, updateEnemy, drawEnemy } from '../game/enemy.js';
 import { Boss } from '../game/boss.js';
-import { WaveDirector, RUN_LENGTH } from '../game/waves.js';
+import { WaveDirector, ROUNDS } from '../game/waves.js';
+import { ComicUI } from '../game/comic.js';
 import { newRunStats, gainXp, xpNeed } from '../game/run.js';
 import { rollUpgradeChoices, RARITY } from '../data/upgrades.js';
 import { skinById } from '../data/shop.js';
@@ -56,6 +57,8 @@ export class GameScene extends Scene {
     this.introT = 2.2;
     G.banner = { text: this.raid ? this.raid.name : 'NEXO DE COMBATE', color: this.hero.color, t: 2.2 };
     G.hintT = this.save.tutorialDone ? 0 : 8;
+    G.comic = new ComicUI();
+    this.currentFinal = false;
     this.endT = 0;
     this.endState = null;
     this.slowmo = 1;
@@ -70,6 +73,7 @@ export class GameScene extends Scene {
       this.save.discovered.bosses[this.raid.boss] = true;
     } else {
       G.waves = new WaveDirector();
+      G.comic.push('round', 'ROUND 1', '', 'burst', '#ffd94a');
     }
 
     Audio.playTrack(this.mode === 'raid' ? 'boss' : 'combat');
@@ -105,7 +109,9 @@ export class GameScene extends Scene {
       nearestEnemy: (x, y, maxD) => self.nearestEnemy(x, y, maxD),
       randomEnemyOrPoint: () => self.randomEnemyOrPoint(G),
       collect: (p) => self.collect(G, p),
-      callFinalBoss: () => self.callFinalBoss(G),
+      startIncursion: (id, fin) => self.startIncursion(G, id, fin),
+      comicRound: (n) => G.comic.push('round', 'ROUND ' + n, '', 'burst', '#ffd94a'),
+      get comic() { return G.comic; },
     };
   }
 
@@ -255,11 +261,14 @@ export class GameScene extends Scene {
     }
   }
 
-  callFinalBoss(G) {
-    G.banner = { text: 'THANOS CORROMPIDO', color: '#b06bff', t: 3 };
+  startIncursion(G, bossId, final) {
+    const def = bossById(bossId);
+    this.currentFinal = final;
+    G.boss = new Boss(def, final ? 0.8 : 1);
+    this.save.discovered.bosses[bossId] = true;
+    G.comic.push('boss', def.name, def.intro || 'INCURSÃO EM CURSO', 'alarm', '#ff4d4d');
     Audio.sfx('phase');
     Audio.playTrack('boss');
-    this.finalBossDelay = 1.8; // in-game timer (pause-safe)
   }
 
   // ---- update ---------------------------------------------------------------
@@ -312,16 +321,6 @@ export class GameScene extends Scene {
         G.waves.update(sdt, api);
       }
 
-      // final boss call-in (in-game timed)
-      if (this.finalBossDelay != null) {
-        this.finalBossDelay -= sdt;
-        if (this.finalBossDelay <= 0) {
-          this.finalBossDelay = null;
-          G.boss = new Boss(bossById('thanos'), 0.75);
-          this.save.discovered.bosses.thanos = true;
-        }
-      }
-
       // enemies
       for (const e of G.enemies) if (!e.dead) updateEnemy(e, sdt, api);
       G.enemies = G.enemies.filter((e) => !e.dead);
@@ -330,7 +329,23 @@ export class GameScene extends Scene {
       if (G.boss) {
         G.boss.update(sdt, api);
         if (G.boss.dead && !this.endState) {
-          this.beginEnd(G, true);
+          if (this.currentFinal || this.mode === 'raid') {
+            this.beginEnd(G, true);
+          } else {
+            // mid-run incursion cleared: reward, heal, bonus level, next round
+            const b = G.boss;
+            this.save.bossesDefeated[b.def.id] = (this.save.bossesDefeated[b.def.id] || 0) + 1;
+            G.runFragments += 60;
+            G.player.heal(30);
+            this.levelQueue++;
+            G.particles.explosion(b.x, b.y, ['#ffd94a', '#ff8c3b', '#b06bff', '#ffffff'], 50, 200);
+            G.particles.addShake(8);
+            Audio.sfx('victory');
+            G.comic.push('clear', 'INCURSÃO CONCLUÍDA', '+60 FRAGMENTOS · +1 NÍVEL · +30 VIDA', 'shield', '#4dff88');
+            for (const bl of G.bullets.enemy.live) { bl.dead = true; G.particles.spark(bl.x, bl.y, '#b06bff', 2); }
+            G.boss = null;
+            Audio.playTrack('combat');
+          }
         }
       }
 
@@ -362,6 +377,7 @@ export class GameScene extends Scene {
 
       G.pickups.update(sdt, api);
       G.particles.update(dt, this.save.settings.screenshake);
+      if (G.comic) G.comic.update(dt);
 
       if (!G.player.alive && !this.endState) this.beginEnd(G, false);
     } else {
@@ -529,6 +545,7 @@ export class GameScene extends Scene {
 
     G.particles.drawFlash(ctx, VIEW_W, VIEW_H);
     drawHud(ctx, G);
+    if (G.comic) G.comic.draw(ctx);
 
     // mouse cursor reticle
     if (!this.paused && !this.levelChoices) {
@@ -567,9 +584,10 @@ export class GameScene extends Scene {
       ctx.fillRect(x, 80, w, 3);
       drawText(ctx, '[' + (i + 1) + ']', x + 6, 90, { color: '#8a84a8' });
       drawText(ctx, RARITY[u.rarity].name, x + w - 6, 90, { align: 'right', color: rc });
+      if (u.icon && SPR[u.icon]) drawSprite(ctx, SPR[u.icon], x + w / 2, 112, { scale: 1.5 });
       // name wrap
       const words = u.name.split(' ');
-      let line = '', ly = 106;
+      let line = '', ly = 128;
       for (const wd of words) {
         if ((line + wd).length > 16) { drawText(ctx, line, x + 8, ly, { color: '#ffffff' }); ly += 9; line = ''; }
         line += (line ? ' ' : '') + wd;

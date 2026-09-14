@@ -22,7 +22,7 @@ export const DEFAULT_SAVE = {
   missionsClaimed: {},   // mission id -> true
   stats: { runs: 0, wins: 0, kills: 0, deaths: 0, bulletsDodged: 0, playTime: 0, levelReached: 0 },
   discovered: { enemies: {}, bosses: {} },
-  settings: { sfx: 0.9, music: 0.7, master: 0.8, screenshake: true, dmgNumbers: true, autofire: true, integerScale: false },
+  settings: { sfx: 0.9, music: 0.7, master: 0.8, screenshake: true, dmgNumbers: true, autofire: true, integerScale: true },
   tutorialDone: false,
   dev: { god: false, infSpecial: false, speed2: false, startRound: 1 },
 };
@@ -41,6 +41,8 @@ export const Save = {
     this.data = deepMerge(structuredClone(DEFAULT_SAVE), parsed || {});
     // migration: all heroes always unlocked
     for (const h of ['arachnid', 'stormgod', 'ironknight', 'merc', 'claws', 'mystic']) this.data.heroesUnlocked[h] = true;
+    // migration v2: crisp pixel-perfect upscaling by default
+    if ((parsed && parsed.version || 1) < 2) { this.data.settings.integerScale = true; this.data.version = 2; }
     return this.data;
   },
 

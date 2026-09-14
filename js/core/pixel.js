@@ -184,7 +184,10 @@ export function drawSprite(ctx, spr, x, y, o = {}) {
   if (!spr) return;
   const w = spr.width, h = spr.height;
   const s = o.scale || 1;
-  const dw = w * (o.scaleX || s), dh = h * (o.scaleY || s);
+  // integer destination size: nearest-neighbour never samples a fractional
+  // boundary, so sprites stay crisp at ANY scale (no blur, no shimmer)
+  const dw = Math.max(1, Math.round(w * (o.scaleX || s)));
+  const dh = Math.max(1, Math.round(h * (o.scaleY || s)));
   let img = spr;
   if (o.tint) {
     const key = (spr.__id || (spr.__id = Math.random())) + o.tint;
@@ -193,6 +196,7 @@ export function drawSprite(ctx, spr, x, y, o = {}) {
       t = document.createElement('canvas');
       t.width = w; t.height = h;
       const g = t.getContext('2d');
+      g.imageSmoothingEnabled = false;
       g.drawImage(spr, 0, 0);
       g.globalCompositeOperation = 'source-atop';
       g.fillStyle = o.tint;
@@ -206,6 +210,6 @@ export function drawSprite(ctx, spr, x, y, o = {}) {
   if (o.rot) ctx.rotate(o.rot);
   if (o.flip) ctx.scale(-1, 1);
   if (o.alpha != null) ctx.globalAlpha = o.alpha;
-  ctx.drawImage(img, -dw / 2, -dh / 2 + (o.dy || 0), dw, dh);
+  ctx.drawImage(img, Math.round(-dw / 2), Math.round(-dh / 2 + (o.dy || 0)), dw, dh);
   ctx.restore();
 }

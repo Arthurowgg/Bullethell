@@ -21,8 +21,9 @@ html, body {
 }
 
 #game {
-  image-rendering: pixelated;
+  /* crisp nearest-neighbour upscaling; pixelated last so it wins where supported */
   image-rendering: crisp-edges;
+  image-rendering: pixelated;
   background: #05040a;
   outline: none;
   cursor: crosshair;

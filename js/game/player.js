@@ -47,6 +47,18 @@ export class Player {
     this.walk = 0;
     this.alt = false; // dual weapons alternation
     this.fireAnim = 0;
+    // kit identity state
+    this.shotCount = 0;                    // counts shots (thor hammer / merc knife cadence)
+    this.comboStep = 0;                    // wolverine 3-hit combo
+    this.burst = 0; this.burstT = 0;       // iron repulsor burst queue
+    this.webbed = [];                      // recently webbed enemies (visual connections)
+    this.webStormT = 0; this.webStormTick = 0;
+    this.volleyT = 0; this.volleyTick = 0; this.volleyN = 0;
+    this.frenzyT = 0; this.frenzyTick = 0; this.frenzyHits = 0;
+    this.rushT = 0; this.rushHitIds = null;
+    this.portalQ = null;                   // mystic nexus portal {x,y,t,tick,pulse}
+    this.slashMarks = [];                  // lingering claw marks {x,y,a,t}
+    this.decals = [];                      // impact decals {s,x,y,t,max,rot}
     this.trailColor = skin && skin.fx.trail ? skin.fx.trail : null;
     this.auraColor = skin && skin.fx.aura ? skin.fx.aura : null;
   }
@@ -136,11 +148,11 @@ export class Player {
       this.doAttack(G);
     }
 
-    // ability (Q / mouse left hold? -> Q or pad)
-    if ((inp.pressed('KeyQ') || pad.ability) && this.abilityCd <= 0) this.doAbility(G);
+    // special — Q (the signature epic move; charge-gated)
+    if ((inp.pressed('KeyQ') || pad.special) && this.charge >= 100) this.doSpecial(G);
 
-    // special (E)
-    if ((inp.pressed('KeyE') || pad.special) && this.charge >= 100) this.doSpecial(G);
+    // utility ability — E (short cooldown)
+    if ((inp.pressed('KeyE') || pad.ability) && this.abilityCd <= 0) this.doAbility(G);
 
     // passives
     this.regenT += dt;
@@ -248,6 +260,182 @@ export class Player {
       this.zaps[i].t -= dt;
       if (this.zaps[i].t <= 0) this.zaps.splice(i, 1);
     }
+    // decay slash marks
+    for (let i = this.slashMarks.length - 1; i >= 0; i--) {
+      this.slashMarks[i].t -= dt;
+      if (this.slashMarks[i].t <= 0) this.slashMarks.splice(i, 1);
+    }
+    // decay impact decals
+    for (let i = this.decals.length - 1; i >= 0; i--) {
+      this.decals[i].t -= dt;
+      if (this.decals[i].t <= 0) this.decals.splice(i, 1);
+    }
+    // decay webbed connections
+    for (let i = this.webbed.length - 1; i >= 0; i--) {
+      this.webbed[i].t -= dt;
+      if (this.webbed[i].t <= 0 || this.webbed[i].e.dead) this.webbed.splice(i, 1);
+    }
+
+    // iron repulsor burst queue
+    if (this.burst > 0) {
+      this.burstT -= dt;
+      if (this.burstT <= 0) {
+        this.burstT = 0.07;
+        this.burst--;
+        const off = rand(-0.05, 0.05);
+        const b = G.bullets.spawnPlayer({
+          x: this.x + Math.cos(this.aim) * 9, y: this.y + Math.sin(this.aim) * 9,
+          vx: Math.cos(this.aim + off) * 400 * st.projSpeed,
+          vy: Math.sin(this.aim + off) * 400 * st.projSpeed,
+          dmg: this.hero.attack.dmg * st.dmg, r: 3, sprite: 'b_repulsor', fx: 'ironknight',
+        });
+        if (b) { if (this.shotSprite) b.sprite = this.shotSprite; else if (SPR[this.shotKey]) b.sprite = this.shotKey; if (this.shotTint) b.tint = this.shotTint; }
+        G.particles.spark(this.x + Math.cos(this.aim) * 11, this.y + Math.sin(this.aim) * 11, '#4dd8ff', 2);
+      }
+    }
+
+    // merc frenzy: dash through nearest enemies
+    if (this.frenzyT > 0) {
+      this.frenzyT -= dt;
+      this.frenzyTick -= dt;
+      if (this.frenzyTick <= 0) {
+        this.frenzyTick = 0.09;
+        if (this.frenzyHits < 12) {
+          const tgt = G.randomEnemyOrPoint();
+          if (tgt) {
+            const ang = angleTo(this.x, this.y, tgt.x, tgt.y);
+            this.x += Math.cos(ang) * 26; this.y += Math.sin(ang) * 26;
+            [this.x, this.y] = G.arena.clamp(this.x, this.y, this.r);
+            for (const e of G.enemies) {
+              if (e.dead || e.spawnT > 0) continue;
+              if (dist2(this.x, this.y, e.x, e.y) < 26 * 26) {
+                G.damageEnemy(e, 14 * st.dmg, e.x, e.y);
+                this.slashMarks.push({ x: e.x, y: e.y, a: ang + rand(-0.5, 0.5), t: 0.3 });
+              }
+            }
+            G.particles.burst(this.x, this.y, '#ff6b6b', 5, 70, 0.25);
+            this.decal('fx_slashx', this.x, this.y, 0.22, ang);
+            G.audio.sfx('slashq');
+            this.frenzyHits++;
+          }
+        } else {
+          // final spin
+          for (let i = 0; i < 14; i++) {
+            const a2 = (i / 14) * TAU;
+            const b = G.bullets.spawnPlayer({ x: this.x, y: this.y, vx: Math.cos(a2) * 240, vy: Math.sin(a2) * 240, dmg: 12 * st.dmg, r: 4, pierce: 1, sprite: 'b_knife', fx: 'merc' });
+            if (b && SPR.fx_knife) b.sprite = 'fx_knife';
+          }
+          G.particles.ring(this.x, this.y, '#ffd94a', 20, 160);
+          G.particles.addShake(5);
+          this.heal(20);
+          this.frenzyT = 0;
+        }
+      }
+    }
+
+    // claws brutal rush
+    if (this.rushT > 0) {
+      this.rushT -= dt;
+      const sp = 420;
+      this.x += this.dashX * sp * dt; this.y += this.dashY * sp * dt;
+      [this.x, this.y] = G.arena.clamp(this.x, this.y, this.r);
+      [this.x, this.y] = G.arena.collideObstacles(this.x, this.y, this.r);
+      this.trailColor = '#ff4d4d';
+      for (const e of G.enemies) {
+        if (e.dead || e.spawnT > 0 || (this.rushHitIds && this.rushHitIds.has(e.uid))) continue;
+        if (dist2(this.x, this.y, e.x, e.y) < 24 * 24) {
+          if (this.rushHitIds) this.rushHitIds.add(e.uid);
+          G.damageEnemy(e, 22 * st.dmg, e.x, e.y);
+          this.slashMarks.push({ x: e.x, y: e.y, a: Math.atan2(this.dashY, this.dashX), t: 0.35 });
+          if (st.hitHeal) this.heal(st.hitHeal);
+        }
+      }
+      G.particles.burst(this.x, this.y, '#ff4d4d', 2, 40, 0.2);
+      if (this.rushT <= 0) {
+        // final impact
+        G.particles.explosion(this.x, this.y, ['#ffe14a', '#ff4d4d', '#ffffff'], 18, 130);
+        G.particles.ring(this.x, this.y, '#ffe14a', 22, 170);
+        G.particles.addShake(7);
+        G.audio.sfx('rushend');
+        for (const e of G.enemies) {
+          if (!e.dead && dist2(this.x, this.y, e.x, e.y) < 60 * 60) {
+            e.rooted = Math.max(e.rooted || 0, 1.2);
+            G.damageEnemy(e, 18 * st.dmg, e.x, e.y);
+          }
+        }
+        this.rushHitIds = null;
+      }
+    }
+
+    // iron missile volley (special) + final blast
+    if (this.volleyT > 0) {
+      const wasV = this.volleyT;
+      this.volleyT -= dt;
+      this.volleyTick -= dt;
+      if (this.volleyTick <= 0 && this.volleyN < 14) {
+        this.volleyTick = 0.11;
+        this.volleyN++;
+        G.fireMissile(this.x, this.y, this.aim + rand(-0.9, 0.9), 16 * st.dmg);
+        G.particles.burst(this.x, this.y - 6, '#ff8c3b', 4, 60, 0.3);
+      }
+      if (wasV > 0 && this.volleyT <= 0) {
+        const fx = this.x + Math.cos(this.aim) * 110, fy = this.y + Math.sin(this.aim) * 110;
+        G.particles.explosion(fx, fy, ['#ff8c3b', '#ffd94a', '#ffffff'], 26, 170);
+        G.particles.ring(fx, fy, '#ff8c3b', 30, 220);
+        G.particles.addFlash('#ff8c3b', 0.4);
+        G.particles.addShake(8);
+        this.decal('fx_boom', fx, fy, 0.45);
+        G.audio.sfx('rushend');
+        for (const e of G.enemies) if (!e.dead && dist2(fx, fy, e.x, e.y) < 130 * 130) G.damageEnemy(e, 12 * st.dmg, e.x, e.y, true);
+      }
+    }
+
+    // arachnid web storm (special): expanding web rings + persistent root aura
+    if (this.webStormT > 0) {
+      this.webStormT -= dt;
+      this.webStormTick -= dt;
+      for (const e of G.enemies) {
+        if (!e.dead && dist2(this.x, this.y, e.x, e.y) < 150 * 150) e.rooted = Math.max(e.rooted || 0, 0.3);
+      }
+      if (this.webStormTick <= 0) {
+        this.webStormTick = 0.4;
+        const rr = 130 + (2.2 - this.webStormT) * 90;
+        for (let i = 0; i < 14; i++) {
+          const a2 = (i / 14) * TAU + this.webStormT * 2.5;
+          const b = G.bullets.spawnPlayer({
+            x: this.x, y: this.y, vx: Math.cos(a2) * rr, vy: Math.sin(a2) * rr,
+            dmg: 9 * st.dmg, pierce: 2, r: 3, sprite: 'b_web', life: 1.2,
+          });
+          if (b) { b.fx = 'arachnid'; b.root = 0.8; if (SPR.fx_web_dart) b.sprite = 'fx_web_dart'; }
+        }
+        G.audio.sfx('webshot');
+        G.particles.ring(this.x, this.y, '#ffffff', 12, rr * 0.8);
+      }
+    }
+
+    // mystic portal special
+    if (this.portalQ) {
+      const p = this.portalQ;
+      p.t -= dt; p.tick -= dt; p.pulse -= dt;
+      p.rot += dt * 2.5;
+      if (p.tick <= 0) {
+        p.tick = 0.16;
+        const tgt = G.randomEnemyOrPoint();
+        const ang = tgt ? angleTo(p.x, p.y, tgt.x, tgt.y) : rand(0, TAU);
+        const b = G.bullets.spawnPlayer({ x: p.x, y: p.y, vx: Math.cos(ang) * 300, vy: Math.sin(ang) * 300, dmg: 13 * st.dmg, r: 5, pierce: 2, homing: 1.5, sprite: 'b_mandala', fx: 'mystic' });
+        if (b) { b.sigil = true; if (SPR.fx_sigil) b.sprite = 'fx_sigil'; }
+        G.particles.spark(p.x, p.y, '#ff9d4d', 3);
+      }
+      if (p.pulse <= 0) {
+        p.pulse = 0.5;
+        G.particles.ring(p.x, p.y, '#ff9d4d', 12, 90);
+        for (const e of G.enemies) if (!e.dead && dist2(p.x, p.y, e.x, e.y) < 70 * 70) e.frozen = Math.max(e.frozen || 0, 0.6);
+      }
+      if (p.t <= 0) {
+        G.particles.explosion(p.x, p.y, ['#ff9d4d', '#b06bff', '#ffffff'], 16, 120);
+        this.portalQ = null;
+      }
+    }
   }
 
   heal(n) {
@@ -318,8 +506,8 @@ export class Player {
       const b = G.bullets.spawnPlayer({
         x: this.x + Math.cos(angle) * 8,
         y: this.y + Math.sin(angle) * 8,
-        vx: Math.cos(angle) * (atk.speed || 260) * st.projSpeed,
-        vy: Math.sin(angle) * (atk.speed || 260) * st.projSpeed,
+        vx: Math.cos(angle) * (o.speed || atk.speed || 260) * st.projSpeed,
+        vy: Math.sin(angle) * (o.speed || atk.speed || 260) * st.projSpeed,
         dmg: dmg(atk.dmg),
         bounce: st.bounce,
       });
@@ -334,61 +522,82 @@ export class Player {
     };
     G.particles.spark(this.x + Math.cos(a) * 10, this.y + Math.sin(a) * 10, this.hero.color, 2);
     this.fireAnim = 0.14;
+    this.shotCount++;
     switch (atk.kind) {
-      case 'pierce': {
+      // ---- HOMEM-ARANHA: teias rápidas que grudam e conectam alvos ----
+      case 'webshot': {
         const n = 1 + st.extraProj;
         for (let i = 0; i < n; i++) {
-          const off = (i - (n - 1) / 2) * 0.16;
-          const b = mk(a + off, { pierce: 2, r: 3, sprite: 'b_web' });
-          if (b) { b.pierce = 2; if (st.webRoot) b.root = st.webRoot; if (st.webSplit) b.split = true; }
-        }
-        G.audio.sfx('web');
-        break;
-      }
-      case 'chain': {
-        const hits = G.chainLightning(this.x, this.y, st.chains + (st.chains > 3 ? 0 : 0), dmg(atk.dmg), 150);
-        if (hits.length) G.audio.sfx('zap');
-        break;
-      }
-      case 'repulsor': {
-        const n = 1 + st.extraProj;
-        for (let i = 0; i < n; i++) {
-          const off = (i - (n - 1) / 2) * 0.12;
-          mk(a + off, { r: 3, sprite: 'b_repulsor' });
-        }
-        G.audio.sfx('shoot');
-        break;
-      }
-      case 'dual': {
-        this.alt = !this.alt;
-        const off = this.alt ? 0.1 : -0.1;
-        const perp = a + Math.PI / 2;
-        const sx = this.x + Math.cos(perp) * (this.alt ? 5 : -5);
-        const sy = this.y + Math.sin(perp) * (this.alt ? 5 : -5);
-        const n = 1 + st.extraProj;
-        for (let i = 0; i < n; i++) {
-          const b = G.bullets.spawnPlayer({
-            x: sx, y: sy,
-            vx: Math.cos(a + off) * atk.speed * st.projSpeed,
-            vy: Math.sin(a + off) * atk.speed * st.projSpeed,
-            dmg: dmg(atk.dmg), bounce: st.bounce, r: 3, sprite: 'b_tracer',
-          });
+          const off = (i - (n - 1) / 2) * 0.14;
+          const b = mk(a + off, { pierce: 1, r: 3, sprite: 'b_web' });
           if (b) {
-            if (this.shotSprite) b.sprite = this.shotSprite;
-            else if (SPR[this.shotKey]) b.sprite = this.shotKey;
-            b.fx = this.hero.id;
-            if (bcol) b.tint = bcol;
+            b.root = Math.max(st.webRoot || 0, 0.45);   // gruda no impacto
+            if (st.webSplit) b.split = true;
           }
         }
-        G.audio.sfx('shoot');
+        G.audio.sfx('webshot');
         break;
       }
-      case 'slash': {
-        this.slashT = 0.18;
+      // ---- THOR: raio pesado + martelo ocasional ----
+      case 'bolt': {
+        const heavy = this.shotCount % 4 === 0;
+        if (heavy) {
+          // Mjölnir strike: linha de energia + trovão
+          const b = mk(a, { pierce: 3, r: 5, sprite: 'b_hammer' });
+          if (b) { b.heavy = true; b.tint = '#ffd94a'; if (SPR.fx_hammer) b.sprite = 'fx_hammer'; }
+          G.audio.sfx('hamthrow');
+          G.particles.burst(this.x + Math.cos(a) * 12, this.y + Math.sin(a) * 12, '#9feaff', 6, 70, 0.3);
+          G.particles.addShake(2);
+        } else {
+          const b = mk(a, { pierce: 1, r: 4, sprite: 'b_zapbolt' });
+          if (b) b.zap = true;
+          G.audio.sfx('boltheavy');
+        }
+        break;
+      }
+      // ---- IRON MAN: rajada de 3 repulsores ----
+      case 'burst': {
+        this.burst = 3; this.burstT = 0;
+        G.audio.sfx('repul');
+        G.particles.ring(this.x + Math.cos(a) * 8, this.y + Math.sin(a) * 8, '#4dd8ff', 4, 40);
+        break;
+      }
+      // ---- DEADPOOL: tiros caóticos + faca a cada 3 ----
+      case 'chaos': {
+        this.alt = !this.alt;
+        const knife = this.shotCount % 3 === 0;
+        const perp = a + Math.PI / 2;
+        const sx = this.x + Math.cos(perp) * (this.alt ? 6 : -6);
+        const sy = this.y + Math.sin(perp) * (this.alt ? 6 : -6);
+        const spread = knife ? 0 : rand(-0.16, 0.16);
+        const b = G.bullets.spawnPlayer({
+          x: sx, y: sy,
+          vx: Math.cos(a + spread) * atk.speed * st.projSpeed * (knife ? 0.85 : 1),
+          vy: Math.sin(a + spread) * atk.speed * st.projSpeed * (knife ? 0.85 : 1),
+          dmg: dmg(atk.dmg * (knife ? 1.6 : 1)), r: knife ? 4 : 3,
+          pierce: knife ? 2 : 0, bounce: knife ? 1 : st.bounce,
+          wobble: knife ? 0 : rand(0.4, 1.1), sprite: knife ? 'b_knife' : 'b_tracer',
+        });
+        if (b) {
+          if (knife && SPR.fx_knife) b.sprite = 'fx_knife';
+          else if (this.shotSprite) b.sprite = this.shotSprite;
+          else if (SPR[this.shotKey]) b.sprite = this.shotKey;
+          b.fx = this.hero.id;
+          if (bcol && !knife) b.tint = bcol;
+        }
+        G.audio.sfx(knife ? 'knife' : 'pistol');
+        break;
+      }
+      // ---- WOLVERINE: combo de garras em 3 tempos ----
+      case 'claws': {
+        this.comboStep = (this.comboStep + 1) % 3;
+        const finisher = this.comboStep === 2;
+        this.slashT = finisher ? 0.24 : 0.16;
+        this.slashMax = this.slashT;
         this.slashA = a;
-        const range = (atk.range || 52) * st.range;
-        G.audio.sfx('hit');
-        let hitAny = false;
+        this.slashCombo = this.comboStep;
+        const range = (atk.range || 52) * st.range * (finisher ? 1.25 : 1);
+        G.audio.sfx(finisher ? 'claw3' : this.comboStep === 1 ? 'claw2' : 'claw1');
         for (const e of G.enemies) {
           if (e.dead || e.spawnT > 0) continue;
           const d2 = dist2(this.x, this.y, e.x, e.y);
@@ -397,32 +606,38 @@ export class Player {
             let da = ea - a;
             while (da > Math.PI) da -= TAU;
             while (da < -Math.PI) da += TAU;
-            if (Math.abs(da) < 1.2) {
-              hitAny = true;
-              G.damageEnemy(e, dmg(atk.dmg), e.x, e.y);
+            if (Math.abs(da) < (finisher ? 1.5 : 1.1)) {
+              G.damageEnemy(e, dmg(atk.dmg * (finisher ? 1.8 : 1)), e.x, e.y);
+              this.slashMarks.push({ x: e.x + rand(-4, 4), y: e.y + rand(-4, 4), a: a + rand(-0.4, 0.4), t: 0.35 });
               if (st.hitHeal) this.heal(st.hitHeal);
             }
           }
         }
-        // destroy enemy bullets in the arc
         for (const b of G.bullets.enemy.live) {
           if (dist2(this.x, this.y, b.x, b.y) < range ** 2) {
             const ba = angleTo(this.x, this.y, b.x, b.y);
             let da = ba - a;
             while (da > Math.PI) da -= TAU;
             while (da < -Math.PI) da += TAU;
-            if (Math.abs(da) < 1.2) { b.dead = true; G.particles.spark(b.x, b.y, '#ffe14a', 2); }
+            if (Math.abs(da) < 1.4) { b.dead = true; G.particles.spark(b.x, b.y, '#ffe14a', 2); }
           }
+        }
+        if (finisher) {
+          G.particles.addShake(3);
+          G.particles.burst(this.x + Math.cos(a) * 20, this.y + Math.sin(a) * 20, '#ffe14a', 8, 90, 0.3);
+          this.decal('fx_clawarc', this.x + Math.cos(a) * 22, this.y + Math.sin(a) * 22, 0.3, a);
         }
         break;
       }
-      case 'disc': {
+      // ---- DOUTOR ESTRANHO: sigilos místicos teleguiados ----
+      case 'sigil': {
         const n = 1 + st.extraProj;
         for (let i = 0; i < n; i++) {
-          const off = (i - (n - 1) / 2) * 0.2;
-          const b = mk(a + off, { r: 4, pierce: 1, wobble: 0, sprite: 'b_mandala' });
+          const off = (i - (n - 1) / 2) * 0.22;
+          const b = mk(a + off, { r: 4, pierce: 1, homing: 2.2, wobble: 0, sprite: 'b_mandala' });
+          if (b) { b.sigil = true; if (SPR.fx_sigil) b.sprite = 'fx_sigil'; }
         }
-        G.audio.sfx('port');
+        G.audio.sfx('sigil');
         break;
       }
     }
@@ -506,103 +721,187 @@ export class Player {
   doSpecial(G) {
     const st = this.stats;
     this.charge = 0;
-    G.audio.sfx('special');
-    G.particles.addFlash(this.hero.color, 0.35);
-    G.particles.addShake(6);
+    G.particles.addFlash(this.hero.color, 0.4);
+    G.particles.addShake(7);
     switch (this.hero.id) {
+      // grande sequência de teias prendendo e atingindo vários inimigos
       case 'arachnid': {
-        for (let i = 0; i < 24; i++) {
-          const a = (i / 24) * TAU;
-          const b = G.bullets.spawnPlayer({
-            x: this.x, y: this.y, vx: Math.cos(a) * 220, vy: Math.sin(a) * 220,
-            dmg: 14 * st.dmg, pierce: 3, r: 3, sprite: this.shotKey, fx: 'arachnid',
-          });
-          if (b) b.root = 1;
-        }
+        G.audio.sfx('q_web');
+        this.webStormT = 2.2; this.webStormTick = 0;
         for (const e of G.enemies) if (!e.dead) {
-          e.rooted = Math.max(e.rooted || 0, 2);
-          this.zaps.push({ x1: this.x, y1: this.y, x2: e.x, y2: e.y, t: 0.3 });
+          e.rooted = Math.max(e.rooted || 0, 2.4);
+          this.zaps.push({ x1: this.x, y1: this.y, x2: e.x, y2: e.y, t: 0.35 });
+          this.webbed.push({ e, t: 1.4 });
+          G.particles.burst(e.x, e.y, '#ffffff', 6, 40, 0.5, 1);
         }
         G.particles.ring(this.x, this.y, '#ffffff', 26, 180);
+        G.particles.ring(this.x, this.y, '#ff2b2b', 14, 100);
         break;
       }
+      // tempestade: raios em múltiplos pontos + impacto central
       case 'stormgod': {
+        G.audio.sfx('q_storm');
         this.stormT = 4;
-        for (let i = 0; i < 3; i++) this.zaps.push({ x1: this.x + rand(-60, 60), y1: this.y - 120, x2: this.x + rand(-40, 40), y2: this.y, t: 0.35 });
-        G.particles.ring(this.x, this.y, '#9feaff', 22, 160);
+        for (let i = 0; i < 5; i++) this.zaps.push({ x1: this.x + rand(-80, 80), y1: this.y - 140, x2: this.x + rand(-50, 50), y2: this.y, t: 0.4 });
+        G.lightningStrike(this.x, this.y, 40 * st.dmg, 90);   // impacto central devastador
+        this.decal('fx_strike', this.x, this.y - 8, 0.5);
+        G.particles.ring(this.x, this.y, '#9feaff', 26, 190);
+        G.particles.addFlash('#ffffff', 0.5);
         break;
       }
+      // salva de mísseis em grande escala + explosão final
       case 'ironknight': {
-        this.overT = 5;
-        G.particles.ring(this.x, this.y, '#ff8c3b', 20, 150);
+        G.audio.sfx('q_missile');
+        this.volleyT = 1.8; this.volleyTick = 0; this.volleyN = 0;
+        this.overT = 3;
+        G.particles.ring(this.x, this.y, '#ff8c3b', 22, 160);
         G.particles.ring(this.x, this.y, '#4dd8ff', 12, 90);
         break;
       }
+      // sequência frenética atravessando inimigos + giro final
       case 'merc': {
-        for (let i = 0; i < 36; i++) {
-          const a = (i / 36) * TAU;
-          G.bullets.spawnPlayer({
-            x: this.x, y: this.y, vx: Math.cos(a) * 260, vy: Math.sin(a) * 260,
-            dmg: 10 * st.dmg, bounce: 2, r: 3,
-          });
-        }
-        this.heal(25);
-        G.particles.burst(this.x, this.y, '#ffd94a', 20, 120, 0.6);
+        G.audio.sfx('q_frenzy');
+        this.frenzyT = 1.5; this.frenzyTick = 0; this.frenzyHits = 0;
+        this.iframes = Math.max(this.iframes, 1.6);
+        G.particles.ring(this.x, this.y, '#ff6b6b', 20, 150);
         break;
       }
+      // investida brutal atravessando a arena + impacto atordoante
       case 'claws': {
-        this.berserkT = 5;
-        this.auraColor = '#ff2b2b';
-        G.particles.ring(this.x, this.y, '#ff2b2b', 24, 170);
-        G.particles.ring(this.x, this.y, '#ffe14a', 12, 100);
+        G.audio.sfx('q_rush');
+        const [mx, my] = G.input.moveAxis();
+        let dx = mx, dy = my;
+        if (!dx && !dy) { dx = Math.cos(this.aim); dy = Math.sin(this.aim); }
+        const len = Math.hypot(dx, dy) || 1;
+        this.dashX = dx / len; this.dashY = dy / len;
+        this.rushT = 0.55; this.rushHitIds = new Set();
+        this.iframes = Math.max(this.iframes, 0.7);
+        G.particles.burst(this.x, this.y, '#ffe14a', 14, 110, 0.4);
         break;
       }
+      // portal místico bombardeando a arena com dardos teleguiados
       case 'mystic': {
-        for (const e of G.enemies) if (!e.dead) e.frozen = Math.max(e.frozen || 0, 2.5);
-        let cleared = 0;
-        for (const b of G.bullets.enemy.live) {
-          if (dist2(this.x, this.y, b.x, b.y) < 170 * 170) {
-            b.dead = true; cleared++;
-            if (cleared < 40) G.particles.spark(b.x, b.y, '#ff9d4d', 2);
-          }
-        }
-        this.iframes = Math.max(this.iframes, 1.5);
-        G.particles.ring(this.x, this.y, '#ff9d4d', 30, 200);
-        G.particles.ring(this.x, this.y, '#b06bff', 18, 120);
+        G.audio.sfx('q_portal');
+        const px = this.x + Math.cos(this.aim) * 70;
+        const py = this.y + Math.sin(this.aim) * 70;
+        this.portalQ = { x: px, y: py, t: 3.5, tick: 0, pulse: 0, rot: 0 };
+        for (const e of G.enemies) if (!e.dead) e.frozen = Math.max(e.frozen || 0, 1.2);
+        G.particles.ring(px, py, '#ff9d4d', 24, 170);
+        G.particles.ring(px, py, '#b06bff', 14, 100);
         break;
       }
     }
+    G.particles.ring(this.x, this.y, this.auraColor || this.hero.color, 10, 90);
+  }
+
+  decal(s, x, y, life = 0.3, rot = 0) {
+    if (!SPR[s]) return;
+    this.decals.push({ s, x, y, t: life, max: life, rot });
+    if (this.decals.length > 40) this.decals.shift();
   }
 
   draw(ctx) {
     const st = this.stats;
-    // slash arc
+    // impact decals (expanding, fading VFX sprites)
+    for (const d of this.decals) {
+      const s = SPR[d.s];
+      if (!s) continue;
+      const k = d.t / d.max;
+      drawSprite(ctx, s, d.x, d.y, { rot: d.rot || 0, alpha: k, scale: 0.8 + (1 - k) * 0.5 });
+    }
+    // slash arc (wolverine combo)
     if (this.slashT > 0) {
-      const t = 1 - this.slashT / 0.18;
-      ctx.globalAlpha = 0.7 * (1 - t);
-      ctx.strokeStyle = '#ffe14a';
-      ctx.lineWidth = 3;
+      const mx = this.slashMax || 0.18;
+      const t = clamp(1 - this.slashT / mx, 0, 1);
+      const fin = this.slashCombo === 2;
+      const rad = 26 * st.range * 0.6 + 12 + (fin ? 10 : 0);
+      ctx.globalAlpha = 0.85 * (1 - t);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(this.x, this.y, 26 * st.range * 0.6 + 12, this.slashA - 1.1 + t * 1.4, this.slashA - 0.3 + t * 1.4);
+      ctx.arc(this.x, this.y, rad + 2, this.slashA - 1.15 + t * 1.7, this.slashA - 0.25 + t * 1.7);
+      ctx.stroke();
+      ctx.strokeStyle = '#ffe14a';
+      ctx.lineWidth = fin ? 4 : 3;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, rad, this.slashA - 1.05 + t * 1.7, this.slashA - 0.35 + t * 1.7);
       ctx.stroke();
       ctx.globalAlpha = 1;
     }
-    // zaps
+    // zaps (lightning) & silk lines (arachnid)
     for (const z of this.zaps) {
       ctx.globalAlpha = Math.min(1, z.t * 6);
-      ctx.strokeStyle = '#9feaff';
+      ctx.strokeStyle = this.hero.id === 'arachnid' ? '#ffffffcc' : '#9feaff';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(z.x1, z.y1);
       const segs = 4;
       for (let i = 1; i <= segs; i++) {
         const t = i / segs;
-        const nx = z.x1 + (z.x2 - z.x1) * t + (i < segs ? rand(-3, 3) : 0);
-        const ny = z.y1 + (z.y2 - z.y1) * t + (i < segs ? rand(-3, 3) : 0);
+        const jx = this.hero.id === 'arachnid' ? 0 : (i < segs ? rand(-3, 3) : 0);
+        const jy = this.hero.id === 'arachnid' ? (i < segs ? 5 : 0) : (i < segs ? rand(-3, 3) : 0); // silk sags
+        const nx = z.x1 + (z.x2 - z.x1) * t + jx;
+        const ny = z.y1 + (z.y2 - z.y1) * t + jy;
         ctx.lineTo(nx, ny);
       }
       ctx.stroke();
       ctx.globalAlpha = 1;
+    }
+    // lingering claw marks (sprite if available, else lines)
+    for (const m of this.slashMarks) {
+      const cm = SPR.fx_claw3;
+      if (cm) {
+        drawSprite(ctx, cm, m.x, m.y, { rot: m.a + 0.6, alpha: Math.min(1, m.t * 2.6) });
+      } else {
+        ctx.globalAlpha = Math.min(1, m.t * 3);
+        ctx.strokeStyle = '#ffe14a';
+        ctx.lineWidth = 1;
+        for (let i = -1; i <= 1; i++) {
+          ctx.beginPath();
+          ctx.moveTo(m.x + Math.cos(m.a + 1.57) * i * 3 - Math.cos(m.a) * 5, m.y + Math.sin(m.a + 1.57) * i * 3 - Math.sin(m.a) * 5);
+          ctx.lineTo(m.x + Math.cos(m.a + 1.57) * i * 3 + Math.cos(m.a) * 5, m.y + Math.sin(m.a + 1.57) * i * 3 + Math.sin(m.a) * 5);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+      }
+    }
+    // web connections between recently webbed enemies
+    if (this.webbed.length > 1) {
+      ctx.strokeStyle = '#ffffff99';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < this.webbed.length - 1; i++) {
+        const a = this.webbed[i].e, b = this.webbed[i + 1].e;
+        ctx.globalAlpha = Math.min(1, Math.min(this.webbed[i].t, this.webbed[i + 1].t) * 1.5);
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.quadraticCurveTo((a.x + b.x) / 2, (a.y + b.y) / 2 + 6, b.x, b.y);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+    // mystic nexus portal
+    if (this.portalQ) {
+      const p = this.portalQ;
+      const fade = Math.min(1, p.t * 2);
+      const spr = SPR.fx_portal;
+      if (spr) {
+        drawSprite(ctx, spr, p.x, p.y, { rot: p.rot, alpha: fade });
+      } else {
+        ctx.globalAlpha = fade;
+        ctx.strokeStyle = '#ff9d4d';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(p.x, p.y, 20, 0, TAU); ctx.stroke();
+        ctx.strokeStyle = '#ffd94a';
+        ctx.beginPath(); ctx.arc(p.x, p.y, 13, p.rot, p.rot + 4.5); ctx.stroke();
+        ctx.strokeStyle = '#b06bff';
+        ctx.beginPath(); ctx.arc(p.x, p.y, 7, -p.rot, -p.rot + 4.5); ctx.stroke();
+        for (let i = 0; i < 6; i++) {
+          const a = p.rot * 1.5 + (i / 6) * TAU;
+          ctx.fillStyle = '#ffd94a';
+          ctx.fillRect(p.x + Math.cos(a) * 26 - 1, p.y + Math.sin(a) * 26 - 1, 2, 2);
+        }
+        ctx.globalAlpha = 1;
+      }
     }
     // hammer
     if (this.hammerT > 0) {

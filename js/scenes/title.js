@@ -124,7 +124,7 @@ export class TitleScene extends Scene {
 
     if (UI.button('fs', cx - 70, 284, 140, 18, 'TELA CHEIA [F]', { color: '#4dd8ff' })) toggleFullscreen();
 
-    drawText(ctx, 'WASD MOVER · MOUSE MIRAR · ESPAÇO ESQUIVA · Q HABILIDADE · E ESPECIAL · P PAUSA', cx, 318, { align: 'center', scale: 1, color: '#9a93c8' });
+    drawText(ctx, 'WASD MOVER · MOUSE MIRAR · ESPAÇO ESQUIVA · Q ESPECIAL · E HABILIDADE · P PAUSA', cx, 318, { align: 'center', scale: 1, color: '#9a93c8' });
     drawText(ctx, 'FAN GAME SEM FINS LUCRATIVOS · v1.2', cx, 344, { align: 'center', scale: 1, color: '#7a74a0' });
   }
 }

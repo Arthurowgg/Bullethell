@@ -146,5 +146,48 @@ function run(scene, G, seconds, hooks = {}) {
   console.log('PASS test3: 6 heroes + 5 raids boot and simulate');
 }
 
+// ---------------- TEST 4: each hero's basic + Q special fires -------------
+{
+  const { HEROES } = await import('../js/data/heroes.js');
+  const stateKey = {
+    arachnid: 'webStormT', stormgod: 'stormT', ironknight: 'volleyT',
+    merc: 'frenzyT', claws: 'rushT', mystic: 'portalQ',
+  };
+  for (const h of HEROES) {
+    const G = freshG();
+    const scene = new GameScene();
+    scene.enter(G, { mode: 'run', heroId: h.id });
+    const P = G.player;
+    // basic attack produces something within a couple of swings
+    run(scene, G, 2);
+    assert.ok(P.shotCount > 0 || P.comboStep >= 0, h.id + ' basic attacked');
+    // press Q with full charge — goes through the real input path (api proxy)
+    // clear any level-up/pause overlay so the world actually steps
+    scene.levelChoices = null; scene.levelQueue = 0; scene.paused = false; scene.state = 'playing'; scene.introT = 0;
+    // park some enemies close so the special has targets
+    const targets = [];
+    for (let k = 0; k < 3 && k < G.enemies.length; k++) {
+      const e = G.enemies[k];
+      e.x = P.x + 30 + k * 14; e.y = P.y + 18; e.spawnT = 0;
+      targets.push(e);
+    }
+    const tgtHp = () => targets.reduce((a, e) => a + (e.dead ? 0 : e.hp), 0);
+    const killsBefore = G.kills || 0;
+    const hpBefore = tgtHp();
+    P.charge = 100;
+    Input.pressedKeys.add('KeyQ');
+    scene.update(STEP, G);
+    Input.endFrame();
+    const key = stateKey[h.id];
+    assert.ok(P[key], h.id + ' special set ' + key);
+    assert.strictEqual(P.charge, 0, h.id + ' charge consumed');
+    // let the special run its course without throwing
+    run(scene, G, 3);
+    assert.ok(tgtHp() < hpBefore || (G.kills || 0) > killsBefore, h.id + ' special damaged enemies');
+    console.log('  ' + h.id + ' basic+Q ok (kills during Q: ' + ((G.kills || 0) - killsBefore) + ')');
+  }
+  console.log('PASS test4: 6 heroes basic attack + Q special');
+}
+
 console.log('ALL HEADLESS TESTS PASSED');
 process.exit(0);

@@ -65,8 +65,8 @@ export function drawHud(ctx, G) {
   }
 
   // -- bottom-left: abilities with hero icons + custom borders --
-  drawAbility(ctx, 14, 320, 'Q', P.hero.ability.name, P.abilityCd, P.hero.ability.cd * st.cdr, P.hero.color, P.abilityCd <= 0, null, SPR['abil_' + P.hero.id + '_q'], P.hero.id);
-  drawAbility(ctx, 52, 320, 'E', P.hero.special.name, 100 - P.charge, 100, '#ffd94a', P.charge >= 100, P.charge >= 100 ? 'PRONTO!' : null, SPR['abil_' + P.hero.id + '_e'], P.hero.id);
+  drawAbility(ctx, 14, 320, 'Q', P.hero.special.name, 100 - P.charge, 100, '#ffd94a', P.charge >= 100, P.charge >= 100 ? 'PRONTO!' : null, SPR['abil_' + P.hero.id + '_e'], P.hero.id);
+  drawAbility(ctx, 52, 320, 'E', P.hero.ability.name, P.abilityCd, P.hero.ability.cd * st.cdr, P.hero.color, P.abilityCd <= 0, null, SPR['abil_' + P.hero.id + '_q'], P.hero.id);
   drawAbility(ctx, 90, 320, 'ESP', 'ESQUIVA', P.dashCd, st.dashCd, '#ffffff', P.dashCd <= 0, null, SPR.ui_bolt, P.hero.id);
 
   // -- boss bar: custom AI frame sprite + code fill --
@@ -117,7 +117,7 @@ export function drawHud(ctx, G) {
   // control hint (first run)
   if (G.hintT > 0) {
     ctx.globalAlpha = Math.min(1, G.hintT);
-    drawText(ctx, 'WASD MOVER  ·  MOUSE MIRAR  ·  ESPAÇO ESQUIVA  ·  Q HABILIDADE  ·  E ESPECIAL', VIEW_W / 2, 300, { align: 'center', scale: 1, color: '#9a93c8', shadow: true });
+    drawText(ctx, 'WASD MOVER  ·  MOUSE MIRAR  ·  ESPAÇO ESQUIVA  ·  Q ESPECIAL  ·  E HABILIDADE', VIEW_W / 2, 300, { align: 'center', scale: 1, color: '#9a93c8', shadow: true });
     ctx.globalAlpha = 1;
   }
 }

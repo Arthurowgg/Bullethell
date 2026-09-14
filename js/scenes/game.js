@@ -218,10 +218,10 @@ export class GameScene extends Scene {
     }
   }
 
-  chainLightning(G, x, y, n, dmg, range) {
+  chainLightning(G, x, y, n, dmg, range, exclude) {
     const hit = [];
     let cx = x, cy = y;
-    let pool = G.enemies.filter((e) => !e.dead && e.spawnT <= 0);
+    let pool = G.enemies.filter((e) => !e.dead && e.spawnT <= 0 && e !== exclude);
     if (G.boss && !G.boss.dead) pool.push(G.boss);
     for (let i = 0; i < n && pool.length; i++) {
       let best = null, bd = (i === 0 ? range : 120) ** 2;
@@ -571,6 +571,18 @@ export class GameScene extends Scene {
             b.hitIds.add(e.uid);
           }
           if (b.root) e.rooted = Math.max(e.rooted || 0, b.root);
+          if (b.root) {
+            // web feedback: silk burst + connection between webbed targets
+            G.particles.burst(b.x, b.y, '#ffffff', 4, 50, 0.35, 1);
+            G.player.webbed.push({ e, t: 1.2 });
+            if (G.player.webbed.length > 8) G.player.webbed.shift();
+          }
+          if (b.zap && !b.didZap) {
+            b.didZap = true;
+            G.particles.burst(b.x, b.y, '#9feaff', 5, 80, 0.3, 1);
+            const hits = this.chainLightning(G, e.x, e.y, 1, b.dmg * 0.5, 90, e);
+            if (hits && hits.length) Audio.sfx('zap');
+          }
           if (b.split && !b.didSplit) {
             b.didSplit = true;
             for (const off of [-0.7, 0.7]) {
@@ -578,7 +590,13 @@ export class GameScene extends Scene {
               G.bullets.spawnPlayer({ x: b.x, y: b.y, vx: Math.cos(a) * 220, vy: Math.sin(a) * 220, dmg: b.dmg * 0.6, pierce: 1 });
             }
           }
-          G.particles.spark(b.x, b.y, '#ffffff', 2);
+          // per-hero impact feedback
+          if (b.fx === 'arachnid') { G.particles.burst(b.x, b.y, '#ffffff', 3, 55, 0.25, 1); P.decal('fx_web_splat', b.x, b.y, 0.22); }
+          else if (b.fx === 'stormgod') { G.particles.burst(b.x, b.y, '#9feaff', 4, 75, 0.22, 1); G.particles.spark(b.x, b.y, '#ffffff', 1); P.decal('fx_bolt_impact', b.x, b.y, 0.2); }
+          else if (b.fx === 'ironknight') { G.particles.ring(b.x, b.y, '#4dd8ff', 4, 55); G.particles.spark(b.x, b.y, '#ffd94a', 1); }
+          else if (b.fx === 'merc') G.particles.burst(b.x, b.y, '#ffd94a', 3, 70, 0.2, 1);
+          else if (b.fx === 'mystic') { G.particles.burst(b.x, b.y, '#ff9d4d', 4, 55, 0.3, 1); G.particles.spark(b.x, b.y, '#ffd94a', 2); }
+          else G.particles.spark(b.x, b.y, '#ffffff', 2);
           this.damageEnemy(G, e, b.dmg, e.x, e.y);
           if (b.pierce > 0 && b.hitIds && b.hitIds.size > b.pierce) b.dead = true;
           else if (b.pierce <= 0) { b.dead = true; }

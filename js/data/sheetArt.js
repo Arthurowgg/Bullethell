@@ -101,6 +101,15 @@ export function loadSheetArt(onProgress) {
   // comic UI icons
   for (const u of ['swarm', 'elite', 'frags', 'alarm', 'burst', 'shield', 'bolt', 'portal'])
     load(`assets/sprites/ui/${u}.png`, (img) => { SPR['ui_' + u] = cnv(img, 1); });
+  // hero combat VFX (web/bolt/tech/blade/claw/mystic sheets)
+  for (const f of ['fx_web_dart', 'fx_web_splat', 'fx_web_net', 'fx_cocoon',
+    'fx_zapbolt', 'fx_bolt_impact', 'fx_hammer', 'fx_strike',
+    'fx_repul', 'fx_missile', 'fx_boom', 'fx_reticle',
+    'fx_tracer', 'fx_knife', 'fx_slashx', 'fx_arc',
+    'fx_claw3', 'fx_clawarc', 'fx_rage', 'fx_clawblades',
+    'fx_sigil', 'fx_portal', 'fx_rune', 'fx_dart']) {
+    load(`assets/sprites/fx/${f}.png`, (img) => { SPR[f] = cnv(img, 1); });
+  }
   // Nexus lobby hub art
   for (const l of ['bg', 'core', 'portal_shop', 'portal_cos', 'portal_worlds',
     'wemb_wakanda', 'wemb_asgard', 'wemb_newyork',

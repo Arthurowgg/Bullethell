@@ -436,6 +436,9 @@ export function buildAllSprites() {
   reg('b_ice', shard(8, '#7fd4ff', '#eaffff'));
   reg('b_gold', shard(8, '#ffd94a', '#fffbe0'));
   reg('b_blade', shard(10, '#bfe8d2', '#ffffff'));
+  reg('b_zapbolt', (() => { const p = new Pix(9, 11); p.tri(4, 0, 7, 5, 4, 5, '#9feaff'); p.tri(4, 0, 1, 5, 4, 5, '#4dd8ff'); p.tri(2, 5, 7, 5, 4, 10, '#eaffff'); p.tri(2, 5, 4, 10, 3, 6, '#4dd8ff'); p.px(4, 2, '#ffffff'); p.px(4, 4, '#ffffff'); p.px(4, 7, '#ffffff'); return p; })());
+  reg('b_hammer', (() => { const p = new Pix(11, 9); p.rect(1, 2, 9, 5, '#6b7288'); p.rect(2, 3, 7, 3, '#8d93a8'); p.rect(0, 3, 2, 3, '#4dd8ff'); p.rect(9, 3, 2, 3, '#4dd8ff'); p.rect(4, 0, 3, 2, '#524a3a'); p.px(2, 4, '#9feaff'); p.px(8, 4, '#9feaff'); return p; })());
+  reg('b_knife', (() => { const p = new Pix(10, 5); p.tri(5, 0, 9, 2, 5, 4, '#d8dde8'); p.rect(1, 1, 5, 3, '#8d93a8'); p.px(9, 2, '#ffffff'); p.rect(0, 2, 2, 1, '#ff4d4d'); p.px(7, 2, '#ffffff'); return p; })());
 
   // pickups & icons
   reg('heart', heart());

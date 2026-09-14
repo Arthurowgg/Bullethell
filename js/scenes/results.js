@@ -73,7 +73,7 @@ export class ResultsScene extends Scene {
     line('INIMIGOS ABATIDOS', String(p.kills), 126);
     line('NÍVEL ALCANÇADO', String(p.level), 140);
     line('PROJÉTEIS DESVIADOS', String(p.dodged || 0), 154);
-    ctx.fillStyle = '#3a3350';
+    ctx.fillStyle = '#7a74a0';
     ctx.fillRect(234, 168, 272, 1);
     line('FRAGMENTOS', '+' + this.frag, 176, '#4dd8ff');
     if (this.cred) line('CRÉDITOS', '+' + this.cred, 190, '#ffd94a');
@@ -84,6 +84,6 @@ export class ResultsScene extends Scene {
 
     if (UI.button('retry', 220, 260, 145, 26, 'JOGAR NOVAMENTE')) G.startGame({ mode: p.mode, raidId: p.raid && p.raid.id, heroId: p.heroId });
     if (UI.button('lobby', 375, 260, 145, 26, 'VOLTAR AO LOBBY')) G.gotoLobby();
-    drawText(ctx, 'AS RECOMPENSAS FORAM ADICIONADAS AO SEU PERFIL', VIEW_W / 2, 320, { align: 'center', color: '#5a5470' });
+    drawText(ctx, 'AS RECOMPENSAS FORAM ADICIONADAS AO SEU PERFIL', VIEW_W / 2, 320, { align: 'center', color: '#9a93c8' });
   }
 }

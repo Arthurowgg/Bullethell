@@ -133,7 +133,7 @@ export class LobbyScene extends Scene {
         drawSprite(ctx, SPR.lock, x + 33, y + 22, { scale: 0.9 });
         drawText(ctx, String(HERO_UNLOCK_COST[h.id]), x + 33, y + 40, { align: 'center', color: '#4dd8ff' });
       }
-      drawText(ctx, h.name.split(' ')[0], x + 33, y + 56, { align: 'center', color: unlocked ? (sel ? '#ffffff' : '#8a84a8') : '#5a5470' });
+      drawText(ctx, h.name.split(' ')[0], x + 33, y + 56, { align: 'center', color: unlocked ? (sel ? '#ffffff' : '#8a84a8') : '#9a93c8' });
       if (hov && UI.anyClick) {
         if (unlocked) { s.heroSelected = h.id; Save.save(); Audio.sfx('ui'); }
         else if (s.fragments >= HERO_UNLOCK_COST[h.id]) {
@@ -176,14 +176,14 @@ export class LobbyScene extends Scene {
       const sr = (s.dev && s.dev.startRound > 1) ? s.dev.startRound : undefined;
       G.startGame({ mode: 'run', heroId: hero.id, startRound: sr });
     }
-    ctx.fillStyle = '#3a3350'; ctx.fillRect(478, 162, 142, 1);
+    ctx.fillStyle = '#7a74a0'; ctx.fillRect(478, 162, 142, 1);
     drawText(ctx, 'CONTROLES', 478, 172, { color: '#9a93c8' });
-    this.wrap(ctx, 'WASD MOVER · MOUSE MIRAR', 478, 184, 142, '#5a5470', 8);
-    this.wrap(ctx, 'ESPAÇO ESQUIVA · Q HABILIDADE', 478, 208, 142, '#5a5470', 8);
-    this.wrap(ctx, 'E ESPECIAL · P PAUSA · F TELA CHEIA', 478, 232, 142, '#5a5470', 8);
+    this.wrap(ctx, 'WASD MOVER · MOUSE MIRAR', 478, 184, 142, '#9a93c8', 8);
+    this.wrap(ctx, 'ESPAÇO ESQUIVA · Q HABILIDADE', 478, 208, 142, '#9a93c8', 8);
+    this.wrap(ctx, 'E ESPECIAL · P PAUSA · F TELA CHEIA', 478, 232, 142, '#9a93c8', 8);
     const next = MISSIONS.find((m) => { const [c, mx] = m.check(s); return c < mx && !s.missionsClaimed[m.id]; });
     if (next) {
-      ctx.fillStyle = '#3a3350'; ctx.fillRect(478, 268, 142, 1);
+      ctx.fillStyle = '#7a74a0'; ctx.fillRect(478, 268, 142, 1);
       drawText(ctx, 'MISSÃO ATIVA', 478, 278, { color: '#ffd94a' });
       this.wrap(ctx, next.name + ': ' + next.desc, 478, 290, 142, '#8a84a8', 8);
     }
@@ -195,7 +195,7 @@ export class LobbyScene extends Scene {
     // section switch
     if (UI.tab('secN', 8, 48, 120, 18, 'NEXUS', this.shopSec === 'nexus')) this.shopSec = 'nexus';
     if (UI.tab('secC', 134, 48, 120, 18, 'COSMÉTICA', this.shopSec === 'cos')) this.shopSec = 'cos';
-    drawText(ctx, this.shopSec === 'nexus' ? 'UPGRADES PERMANENTES POR HERÓI' : 'VISUAIS EXCLUSIVOS DOS HERÓIS', 268, 53, { color: '#5a5470' });
+    drawText(ctx, this.shopSec === 'nexus' ? 'UPGRADES PERMANENTES POR HERÓI' : 'VISUAIS EXCLUSIVOS DOS HERÓIS', 268, 53, { color: '#9a93c8' });
 
     if (this.shopSec === 'nexus') this.drawNexus(ctx, G);
     else this.drawCosmetics(ctx, G);
@@ -226,7 +226,7 @@ export class LobbyScene extends Scene {
           ctx.fillStyle = i < rank ? '#b06bff' : '#2a2450';
           ctx.fillRect(x + 14 + i * 8, ny + 15, 6, 6);
         }
-        drawText(ctx, maxed ? 'MÁXIMO' : cost + ' FR', x + 188, ny + 4, { align: 'right', color: maxed ? '#ffd94a' : s.fragments >= cost ? '#9feaff' : '#5a5470' });
+        drawText(ctx, maxed ? 'MÁXIMO' : cost + ' FR', x + 188, ny + 4, { align: 'right', color: maxed ? '#ffd94a' : s.fragments >= cost ? '#9feaff' : '#9a93c8' });
         this.wrap(ctx, n.desc, x + 14, ny + 27, 174, '#8a84a8', 8);
         if (hov && UI.anyClick && !maxed) {
           if (Save.spendFragments(cost)) { s.nexusNodes[n.id] = rank + 1; Audio.sfx('buy'); }
@@ -290,7 +290,7 @@ export class LobbyScene extends Scene {
     ctx.globalAlpha = 1;
     ctx.fillStyle = sk.fx.shotTint;
     ctx.fillRect(560 + Math.round(Math.sin(this.t * 4) * 6), 120, 4, 4);
-    drawText(ctx, 'EFEITO DE TIRO', 560, 132, { align: 'center', color: '#5a5470' });
+    drawText(ctx, 'EFEITO DE TIRO', 560, 132, { align: 'center', color: '#9a93c8' });
 
     // info + actions
     drawText(ctx, sk.name, 228, 282, { scale: 2, color: RARITY_SHOP[sk.rarity].color, shadow: true });
@@ -305,7 +305,7 @@ export class LobbyScene extends Scene {
         else Audio.sfx('deny');
       }
     } else {
-      if (UI.button('equip', 228, 336, 120, 22, equipped ? 'EQUIPADO' : 'EQUIPAR', { color: equipped ? '#5a5470' : '#7b5cff' })) {
+      if (UI.button('equip', 228, 336, 120, 22, equipped ? 'EQUIPADO' : 'EQUIPAR', { color: equipped ? '#9a93c8' : '#7b5cff' })) {
         if (!equipped) { s.cosmeticsEquipped[sk.hero] = sk.id; Audio.sfx('buy'); }
       }
       if (equipped && UI.button('std', 354, 336, 110, 22, 'PADRÃO')) {
@@ -313,7 +313,7 @@ export class LobbyScene extends Scene {
         Save.save(); Audio.sfx('uiBack');
       }
     }
-    drawText(ctx, 'COSMÉTICO — SEM VANTAGEM DE COMBATE', 620, 344, { align: 'right', color: '#3a3350' });
+    drawText(ctx, 'COSMÉTICO — SEM VANTAGEM DE COMBATE', 620, 344, { align: 'right', color: '#7a74a0' });
   }
 
   // ============================================================ DEV ========
@@ -321,7 +321,7 @@ export class LobbyScene extends Scene {
     const s = Save.data;
     s.dev = s.dev || { god: false, infSpecial: false, speed2: false, startRound: 1 };
     UI.panel(8, 48, 624, 304, { title: 'CONSOLE DEV — CHEATS DE TESTE', titleColor: '#4dff88' });
-    drawText(ctx, 'ALTERAÇÕES VALEM NA PRÓXIMA PARTIDA (GOD/INF/2X VALEM NA HORA)', 20, 62, { color: '#5a5470' });
+    drawText(ctx, 'ALTERAÇÕES VALEM NA PRÓXIMA PARTIDA (GOD/INF/2X VALEM NA HORA)', 20, 62, { color: '#9a93c8' });
     const tog = (id, x, y, label, val) => {
       if (UI.button(id, x, y, 190, 20, label + ': ' + (val ? 'ON' : 'OFF'), { color: val ? '#4dff88' : '#8a84a8' })) {
         s.dev[id] = !s.dev[id]; Save.save(); Audio.sfx('ui');
@@ -349,17 +349,17 @@ export class LobbyScene extends Scene {
     ctx.fillStyle = '#4dff88'; ctx.fillRect(272, 102, Math.round(120 * sr / 12), 12);
     drawText(ctx, 'ROUND ' + sr, 332, 104, { align: 'center', color: '#ffffff', shadow: true });
     if (UI.button('sr+', 400, 98, 24, 20, '+')) { s.dev.startRound = Math.min(12, sr + 1); Save.save(); Audio.sfx('ui'); }
-    this.wrap(ctx, 'Usa a escada de rounds: 1-2 Vibranium, 3 Ultron, 4-5 Asgard, 6 Loki, 7 Hela, 8-9 Cidade, 10 Devorador, 12 Thanos.', 240, 124, 200, '#5a5470', 8);
+    this.wrap(ctx, 'Usa a escada de rounds: 1-2 Vibranium, 3 Ultron, 4-5 Asgard, 6 Loki, 7 Hela, 8-9 Cidade, 10 Devorador, 12 Thanos.', 240, 124, 200, '#9a93c8', 8);
     // boss spawner info
     drawText(ctx, 'SPAWN RÁPIDO DE CHEFE (NA PARTIDA)', 240, 190, { color: '#9a93c8' });
-    this.wrap(ctx, 'Com MODO DEUS ligado, use o round inicial para pular direto pra qualquer incursão de chefe (3, 6, 7, 10 ou 12).', 240, 204, 200, '#5a5470', 8);
+    this.wrap(ctx, 'Com MODO DEUS ligado, use o round inicial para pular direto pra qualquer incursão de chefe (3, 6, 7, 10 ou 12).', 240, 204, 200, '#9a93c8', 8);
     // reset
     if (UI.button('reset', 240, 300, 200, 22, 'APAGAR SAVE (CLIQUE 2x)', { color: '#ff4d4d' })) {
       if (this._resetArm2) { Save.reset(); Audio.sfx('defeat'); this._resetArm2 = false; }
       else this._resetArm2 = true;
     }
     if (this._resetArm2) drawText(ctx, 'CLIQUE NOVAMENTE PARA CONFIRMAR', 340, 328, { align: 'center', color: '#ff4d4d' });
-    drawText(ctx, 'DEV BUILD · MARVEL NEXUS', 620, 344, { align: 'right', color: '#3a3350' });
+    drawText(ctx, 'DEV BUILD · MARVEL NEXUS', 620, 344, { align: 'right', color: '#7a74a0' });
   }
 
   // ---- overlays ----

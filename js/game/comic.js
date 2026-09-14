@@ -76,7 +76,7 @@ export class ComicUI {
     const ic = SPR['wicon_' + (it.world || '')] || SPR.ui_burst;
     if (ic) drawSprite(ctx, ic, x + 14, y + h / 2, { scale: 1.1 });
     drawText(ctx, it.title, x + 28, y + 5, { scale: 2, color: it.color, shadow: true });
-    if (it.sub) drawText(ctx, it.sub, x + 28, y + 17, { scale: 1, color: '#c8c2e8', shadow: true });
+    if (it.sub) drawText(ctx, it.sub, x + 28, y + 17, { scale: 1, color: '#dcd6f6', shadow: true });
   }
 
   _event(ctx, it) {
@@ -85,7 +85,7 @@ export class ComicUI {
     const ic = SPR['ui_' + it.icon];
     if (ic) drawSprite(ctx, ic, x + 16, y + h / 2, { scale: 1.2 });
     drawText(ctx, it.title, x + 32, y + 6, { scale: 2, color: it.color, shadow: true });
-    if (it.sub) drawText(ctx, it.sub, x + 32, y + 21, { scale: 1, color: '#c8c2e8', shadow: true });
+    if (it.sub) drawText(ctx, it.sub, x + 32, y + 21, { scale: 1, color: '#dcd6f6', shadow: true });
   }
 
   _boss(ctx, it) {
@@ -99,7 +99,7 @@ export class ComicUI {
     }
     drawText(ctx, 'INCURSÃO', x + 48, y + 5, { scale: 1, color: '#ffd94a', shadow: true });
     drawText(ctx, it.title, x + 48, y + 14, { scale: 2, color: '#ff4d4d', shadow: true });
-    if (it.sub) drawText(ctx, it.sub, x + 48, y + 30, { scale: 1, color: '#c8c2e8', shadow: true });
+    if (it.sub) drawText(ctx, it.sub, x + 48, y + 30, { scale: 1, color: '#dcd6f6', shadow: true });
   }
 
   _clear(ctx, it) {
@@ -108,6 +108,6 @@ export class ComicUI {
     const ic = SPR['ui_' + it.icon] || SPR.ui_shield;
     if (ic) drawSprite(ctx, ic, x + 16, y + h / 2, { scale: 1.2 });
     drawText(ctx, it.title, x + 32, y + 6, { scale: 2, color: '#4dff88', shadow: true });
-    if (it.sub) drawText(ctx, it.sub, x + 32, y + 21, { scale: 1, color: '#c8c2e8', shadow: true });
+    if (it.sub) drawText(ctx, it.sub, x + 32, y + 21, { scale: 1, color: '#dcd6f6', shadow: true });
   }
 }

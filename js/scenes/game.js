@@ -130,8 +130,9 @@ export class GameScene extends Scene {
 
   // ---- helpers ------------------------------------------------------------
   summon(G, type, n = 1, edges = false) {
-    const def = (typeof window !== 'undefined' ? window : globalThis).__nx_enemy(type);
-    if (!def) return;
+    let def = (typeof window !== 'undefined' ? window : globalThis).__nx_enemy(type);
+    if (!def) def = (typeof window !== 'undefined' ? window : globalThis).__nx_enemy && ((typeof window !== 'undefined' ? window : globalThis).__nx_enemy('drone'));
+    if (!def) { console.warn('[summon] no def for', type); return; }
     for (let i = 0; i < n; i++) {
       let x, y;
       if (edges) {

@@ -113,7 +113,7 @@ export class TitleScene extends Scene {
       ctx.fillStyle = unlocked ? h.color : '#2a2545';
       ctx.fillRect(x - 22, y - 24, 44, 2);
       if (big) drawSprite(ctx, big, x, y, { scale: 40 / big.height, alpha: unlocked ? 1 : 0.35 });
-      drawText(ctx, unlocked ? h.name.split(' ')[0] : '???', x, y + 18, { align: 'center', scale: 1, color: unlocked ? '#c8c2e8' : '#4a4468' });
+      drawText(ctx, unlocked ? h.name.split(' ')[0] : '???', x, y + 18, { align: 'center', scale: 1, color: unlocked ? '#dcd6f6' : '#8a84a8' });
     });
 
     // start prompt plaque (blink)
@@ -124,7 +124,7 @@ export class TitleScene extends Scene {
 
     if (UI.button('fs', cx - 70, 284, 140, 18, 'TELA CHEIA [F]', { color: '#4dd8ff' })) toggleFullscreen();
 
-    drawText(ctx, 'WASD MOVER · MOUSE MIRAR · ESPAÇO ESQUIVA · Q HABILIDADE · E ESPECIAL · P PAUSA', cx, 318, { align: 'center', scale: 1, color: '#5a5470' });
-    drawText(ctx, 'FAN GAME SEM FINS LUCRATIVOS · v1.2', cx, 344, { align: 'center', scale: 1, color: '#3a3350' });
+    drawText(ctx, 'WASD MOVER · MOUSE MIRAR · ESPAÇO ESQUIVA · Q HABILIDADE · E ESPECIAL · P PAUSA', cx, 318, { align: 'center', scale: 1, color: '#9a93c8' });
+    drawText(ctx, 'FAN GAME SEM FINS LUCRATIVOS · v1.2', cx, 344, { align: 'center', scale: 1, color: '#7a74a0' });
   }
 }

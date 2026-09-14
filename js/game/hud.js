@@ -52,11 +52,11 @@ export function drawHud(ctx, G) {
     const ic = SPR['wicon_' + tid] || SPR.ui_burst;
     const bossish = r && r.t === 'boss';
     const label = `ROUND ${G.waves.round + 1}/${12}`;
-    drawText(ctx, label, VIEW_W - 26, 8, { align: 'right', scale: 1, color: bossish ? '#ff8c8c' : '#c8c2e8', shadow: true });
+    drawText(ctx, label, VIEW_W - 26, 8, { align: 'right', scale: 1, color: bossish ? '#ff8c8c' : '#dcd6f6', shadow: true });
     if (ic) drawSprite(ctx, ic, VIEW_W - 14, 14, { scale: 1.2 });
     const WLABEL = { wakanda: 'REINO DE VIBRANIUM', asgard: 'PONTE DO ARCO-ÍRIS', newyork: 'CRUZAMENTO DOS HERÓIS',
       boss_ultron: 'SOKOVIA SUSPENSA', boss_loki: 'SALÃO DAS ILUSÕES', boss_hela: 'REINO DOS MORTOS', boss_devourer: 'VAZIO CÓSMICO', boss_thanos: 'MUNDO EM CINZAS' };
-    if (WLABEL[tid]) drawText(ctx, WLABEL[tid], VIEW_W - 8, 17, { align: 'right', scale: 1, color: '#5a5480', shadow: true });
+    if (WLABEL[tid]) drawText(ctx, WLABEL[tid], VIEW_W - 8, 17, { align: 'right', scale: 1, color: '#9a93c8', shadow: true });
   }
   if (G.banner) {
     ctx.globalAlpha = Math.min(1, G.banner.t);
@@ -126,7 +126,7 @@ function drawAbility(ctx, x, y, key, name, cd, cdMax, color, ready, readyLabel, 
   const s = 26;
   ctx.fillStyle = '#100818cc';
   ctx.fillRect(x, y, s, s);
-  ctx.strokeStyle = ready ? color : '#3a3350';
+  ctx.strokeStyle = ready ? color : '#7a74a0';
   ctx.strokeRect(x + 0.5, y + 0.5, s - 1, s - 1);
   // cooldown sweep
   if (!ready && cdMax > 0) {

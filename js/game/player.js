@@ -436,17 +436,26 @@ export class Player {
     switch (this.hero.id) {
       case 'arachnid': {
         G.particles.ring(this.x, this.y, '#ffffff', 20, 140);
+        G.particles.ring(this.x, this.y, '#ff2b2b', 12, 90);
         for (const e of G.enemies) {
           if (!e.dead && dist2(this.x, this.y, e.x, e.y) < 130 * 130) {
             e.rooted = Math.max(e.rooted || 0, 2.5);
+            this.zaps.push({ x1: this.x, y1: this.y, x2: e.x, y2: e.y, t: 0.25 }); // silk line
             G.particles.burst(e.x, e.y, '#ffffff', 6, 40, 0.5, 1);
           }
         }
         break;
       }
-      case 'stormgod': this.hammerT = 3; break;
+      case 'stormgod': {
+        this.hammerT = 3;
+        G.particles.burst(this.x, this.y - 14, '#9feaff', 14, 90, 0.5);
+        this.zaps.push({ x1: this.x + rand(-8, 8), y1: this.y - 90, x2: this.x, y2: this.y - 6, t: 0.25 });
+        break;
+      }
       case 'ironknight': {
         for (let i = 0; i < 4; i++) G.fireMissile(this.x, this.y, this.aim + (i - 1.5) * 0.5, 18 * st.dmg);
+        G.particles.burst(this.x, this.y, '#ff8c3b', 10, 70, 0.4);
+        G.particles.ring(this.x, this.y, '#4dd8ff', 8, 60);
         break;
       }
       case 'merc': {
@@ -455,9 +464,10 @@ export class Player {
           const b = G.bullets.spawnPlayer({
             x: this.x, y: this.y,
             vx: Math.cos(a) * 240, vy: Math.sin(a) * 240,
-            dmg: 16 * st.dmg, bounce: 3, r: 3, sprite: 'b_blade',
+            dmg: 16 * st.dmg, bounce: 3, r: 3, sprite: 'b_blade', fx: 'merc',
           });
         }
+        G.particles.burst(this.x + Math.cos(this.aim) * 8, this.y + Math.sin(this.aim) * 8, '#ffd94a', 8, 60, 0.3);
         break;
       }
       case 'claws': {
@@ -468,6 +478,8 @@ export class Player {
         this.dashT = 0.3;
         this.iframes = Math.max(this.iframes, 0.45);
         this.lungeDmg = 20 * st.dmg;
+        this.trailColor = '#ff4d4d';
+        G.particles.burst(this.x, this.y, '#ffe14a', 10, 80, 0.4);
         break;
       }
       case 'mystic': {
@@ -480,6 +492,11 @@ export class Player {
           });
         }
         G.particles.ring(this.x, this.y, aura, 18, 120);
+        G.particles.ring(this.x, this.y, '#ffd94a', 10, 70);
+        for (let i = 0; i < 6; i++) {
+          const a = (i / 6) * TAU;
+          G.particles.spark(this.x + Math.cos(a) * 20, this.y + Math.sin(a) * 20, '#ff8c3b', 2);
+        }
         break;
       }
     }
@@ -498,15 +515,29 @@ export class Player {
           const a = (i / 24) * TAU;
           const b = G.bullets.spawnPlayer({
             x: this.x, y: this.y, vx: Math.cos(a) * 220, vy: Math.sin(a) * 220,
-            dmg: 14 * st.dmg, pierce: 3, r: 3,
+            dmg: 14 * st.dmg, pierce: 3, r: 3, sprite: this.shotKey, fx: 'arachnid',
           });
           if (b) b.root = 1;
         }
-        for (const e of G.enemies) if (!e.dead) { e.rooted = Math.max(e.rooted || 0, 2); }
+        for (const e of G.enemies) if (!e.dead) {
+          e.rooted = Math.max(e.rooted || 0, 2);
+          this.zaps.push({ x1: this.x, y1: this.y, x2: e.x, y2: e.y, t: 0.3 });
+        }
+        G.particles.ring(this.x, this.y, '#ffffff', 26, 180);
         break;
       }
-      case 'stormgod': this.stormT = 4; break;
-      case 'ironknight': this.overT = 5; break;
+      case 'stormgod': {
+        this.stormT = 4;
+        for (let i = 0; i < 3; i++) this.zaps.push({ x1: this.x + rand(-60, 60), y1: this.y - 120, x2: this.x + rand(-40, 40), y2: this.y, t: 0.35 });
+        G.particles.ring(this.x, this.y, '#9feaff', 22, 160);
+        break;
+      }
+      case 'ironknight': {
+        this.overT = 5;
+        G.particles.ring(this.x, this.y, '#ff8c3b', 20, 150);
+        G.particles.ring(this.x, this.y, '#4dd8ff', 12, 90);
+        break;
+      }
       case 'merc': {
         for (let i = 0; i < 36; i++) {
           const a = (i / 36) * TAU;
@@ -516,9 +547,16 @@ export class Player {
           });
         }
         this.heal(25);
+        G.particles.burst(this.x, this.y, '#ffd94a', 20, 120, 0.6);
         break;
       }
-      case 'claws': this.berserkT = 5; break;
+      case 'claws': {
+        this.berserkT = 5;
+        this.auraColor = '#ff2b2b';
+        G.particles.ring(this.x, this.y, '#ff2b2b', 24, 170);
+        G.particles.ring(this.x, this.y, '#ffe14a', 12, 100);
+        break;
+      }
       case 'mystic': {
         for (const e of G.enemies) if (!e.dead) e.frozen = Math.max(e.frozen || 0, 2.5);
         let cleared = 0;
@@ -530,6 +568,7 @@ export class Player {
         }
         this.iframes = Math.max(this.iframes, 1.5);
         G.particles.ring(this.x, this.y, '#ff9d4d', 30, 200);
+        G.particles.ring(this.x, this.y, '#b06bff', 18, 120);
         break;
       }
     }

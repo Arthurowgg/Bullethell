@@ -7,5 +7,23 @@
   "scripts": {
     "test": "node test/headless.mjs",
     "sprites": "node tools/build_sprites.mjs"
+  },
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Arthurowgg/Bullethell.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Arthurowgg/Bullethell/issues"
+  },
+  "homepage": "https://github.com/Arthurowgg/Bullethell#readme",
+  "dependencies": {
+    "puppeteer": "^25.11.0"
   }
 }

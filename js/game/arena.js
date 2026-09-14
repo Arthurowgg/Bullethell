@@ -35,12 +35,20 @@ export class Arena {
     return obs;
   }
 
+  setTheme(themeId) {
+    this.themeId = themeId;
+    this.theme = THEMES[themeId] || this.theme;
+    this.bg = this._renderBg();
+  }
+
   _renderBg() {
     if (!globalThis.document) return null;
     const c = document.createElement('canvas');
     c.width = VIEW_W; c.height = VIEW_H;
     const g = c.getContext('2d');
     g.imageSmoothingEnabled = false;
+    const wimg = SPR['world_' + this.themeId];
+    if (wimg) { g.drawImage(wimg, 0, 0, VIEW_W, VIEW_H); return c; }
     // floor tiles
     const f0 = SPR['floor_' + this.themeId + '_0'] || SPR.floor_nexus_0;
     const f1 = SPR['floor_' + this.themeId + '_1'] || SPR.floor_nexus_1;

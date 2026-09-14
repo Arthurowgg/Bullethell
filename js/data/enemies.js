@@ -34,14 +34,14 @@ export const ENEMIES = {
     desc: 'Fragmento de simbionte.',
   },
   sorcerer: {
-    id: 'sorcerer', shot: 'shot_en_sorcerer', name: 'FEITICEIRO DA REALIDADE', sprite: 'en_sorcerer', spriteB: 'en_sorcerer_b',
+    id: 'sorcerer', shot: 'shot_en_sorcerer', name: 'ZELOTA DAS TREVAS', sprite: 'en_sorcerer', spriteB: 'en_sorcerer_b',
     hp: 34, speed: 40, radius: 7, contact: 8, xp: 2, fragments: 2,
     behavior: 'kite',
     attack: { cd: 3, kind: 'spiral' },
     desc: 'Conjuradores que distorcem o espaço com espirais.',
   },
   sentinel: {
-    id: 'sentinel', shot: 'shot_en_sentinel', name: 'SENTINELA DESTRUÍDA', sprite: 'en_sentinel', spriteB: 'en_sentinel_b',
+    id: 'sentinel', shot: 'shot_en_sentinel', name: 'SENTINELA KREE', sprite: 'en_sentinel', spriteB: 'en_sentinel_b',
     hp: 130, speed: 24, radius: 10, contact: 16, xp: 6, fragments: 6,
     behavior: 'slowTank',
     attack: { cd: 3.6, kind: 'laser' },

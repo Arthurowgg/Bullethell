@@ -49,6 +49,10 @@ export function loadSheetArt(onProgress) {
   for (const b of ['ultron', 'loki', 'hela', 'devourer', 'thanos']) {
     load(`assets/sprites/bosses/${b}.png`, (img) => { SPR['boss_' + b] = cnv(img, 1); });
   }
+  // world backgrounds (3 main worlds + 5 boss-exclusive worlds)
+  for (const w of ['wakanda', 'asgard', 'newyork', 'boss_ultron', 'boss_loki', 'boss_hela', 'boss_devourer', 'boss_thanos']) {
+    load(`assets/sprites/worlds/${w}.png`, (img) => { SPR['world_' + w] = cnv(img, 1); });
+  }
   // skin emblem frames
   for (const s of ['venom', 'crimson', 'midnight']) {
     for (let i = 0; i < 4; i++) {

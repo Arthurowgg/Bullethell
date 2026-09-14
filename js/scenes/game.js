@@ -68,12 +68,17 @@ export class GameScene extends Scene {
     this.playerBeam = null;
     this.nearMiss = new Set();
 
+    this.transition = null;
+    G.portal = null;
     if (this.mode === 'raid') {
       G.boss = new Boss(bossById(this.raid.boss), 1);
       this.save.discovered.bosses[this.raid.boss] = true;
+      this.curWorld = null;
     } else {
       G.waves = new WaveDirector();
       G.comic.push('round', 'ROUND 1', '', 'burst', '#ffd94a');
+      this.curWorld = 'wakanda';
+      G.arena.setTheme('wakanda');
     }
 
     Audio.playTrack(this.mode === 'raid' ? 'boss' : 'combat');
@@ -110,8 +115,11 @@ export class GameScene extends Scene {
       randomEnemyOrPoint: () => self.randomEnemyOrPoint(G),
       collect: (p) => self.collect(G, p),
       startIncursion: (id, fin) => self.startIncursion(G, id, fin),
+      openPortal: (id, fin) => self.openPortal(G, id, fin),
+      setWorldForRound: (n) => self.setWorldForRound(G, n),
       comicRound: (n) => G.comic.push('round', 'ROUND ' + n, '', 'burst', '#ffd94a'),
       get comic() { return G.comic; },
+      get transition() { return self.transition; },
     };
   }
 
@@ -261,6 +269,90 @@ export class GameScene extends Scene {
     }
   }
 
+  // ---- reality tear / portal to boss worlds -------------------------------
+  openPortal(G, bossId, final) {
+    const b = G.arena.bounds;
+    G.portal = { x: rand(b.x + 80, b.x + b.w - 80), y: rand(b.y + 70, b.y + b.h - 60), r: 16, t: 0, bossId, final };
+    G.comic.push('event', 'RASGO DE REALIDADE', 'ENTRE NO PORTAL PARA A INCURSÃO', 'portal', '#b06bff');
+    Audio.sfx('port');
+  }
+
+  worldForRound(n) {
+    if (n <= 3) return 'wakanda';
+    if (n <= 7) return 'asgard';
+    return 'newyork';
+  }
+
+  setWorldForRound(G, n) {
+    const w = this.worldForRound(n);
+    if (w && w !== this.curWorld) {
+      this.curWorld = w;
+      if (this.transition && this.transition.phase === 'out') this.transition.to = w;
+      else { G.arena.setTheme(w); G.particles.addFlash('#ffffff', 0.35); }
+    }
+  }
+
+  drawPortal(ctx, G) {
+    const p = G.portal;
+    const t = G.time;
+    const pul = 1 + Math.sin(t * 5) * 0.08;
+    ctx.save();
+    ctx.translate(Math.round(p.x), Math.round(p.y));
+    // outer glow
+    ctx.globalAlpha = 0.25 + Math.sin(t * 5) * 0.08;
+    ctx.fillStyle = '#b06bff';
+    ctx.beginPath(); ctx.arc(0, 0, p.r + 10, 0, TAU); ctx.fill();
+    ctx.globalAlpha = 1;
+    // jagged tear: rotating shards
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * TAU + t * 1.6;
+      const rr = (p.r + 4 + Math.sin(t * 7 + i * 3) * 3) * pul;
+      ctx.fillStyle = i % 2 ? '#7b2fff' : '#ff5df2';
+      ctx.fillRect(Math.round(Math.cos(a) * rr) - 1, Math.round(Math.sin(a) * rr * 1.15) - 2, 2, 4);
+    }
+    // void core
+    ctx.fillStyle = '#05010a';
+    ctx.beginPath(); ctx.ellipse(0, 0, p.r * 0.7 * pul, p.r * 0.9 * pul, 0, 0, TAU); ctx.fill();
+    ctx.strokeStyle = '#ff5df2';
+    ctx.beginPath(); ctx.ellipse(0, 0, p.r * 0.7 * pul, p.r * 0.9 * pul, 0, 0, TAU); ctx.stroke();
+    // inner swirl
+    ctx.strokeStyle = '#b06bff';
+    ctx.beginPath();
+    ctx.arc(0, 0, p.r * 0.4, t * 4, t * 4 + 2.2);
+    ctx.stroke();
+    ctx.restore();
+    drawText(ctx, 'ENTRE NO RASGO', p.x, p.y + p.r + 14, { align: 'center', scale: 1, color: '#ff5df2', shadow: true });
+  }
+
+  drawTransition(ctx, tr) {
+    const total = 1.1;
+    const q = tr.phase === 'in' ? 1 - tr.t / total : tr.t / total;
+    const e = Math.min(1, Math.max(0, q));
+    ctx.save();
+    // expanding/contracting reality-warp wash
+    ctx.fillStyle = `rgba(123,47,255,${0.55 * e})`;
+    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    ctx.strokeStyle = `rgba(255,93,242,${0.8 * e})`;
+    const R = 40 + 600 * e;
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath();
+      ctx.arc(VIEW_W / 2, VIEW_H / 2, Math.max(1, R - i * 60), 0, TAU);
+      ctx.stroke();
+    }
+    // streaks toward center
+    ctx.fillStyle = `rgba(255,255,255,${0.5 * e})`;
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * TAU;
+      const rr = 340 * (1 - e) + 30;
+      ctx.fillRect(VIEW_W / 2 + Math.cos(a) * rr - 1, VIEW_H / 2 + Math.sin(a) * rr * 0.6 - 1, 2, 2);
+    }
+    if (e > 0.85) {
+      ctx.fillStyle = `rgba(255,255,255,${(e - 0.85) / 0.15})`;
+      ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    }
+    ctx.restore();
+  }
+
   startIncursion(G, bossId, final) {
     const def = bossById(bossId);
     this.currentFinal = final;
@@ -321,6 +413,32 @@ export class GameScene extends Scene {
         G.waves.update(sdt, api);
       }
 
+      // reality tear portal: enter to reach the boss world
+      if (G.portal) {
+        const p = G.portal;
+        p.t += sdt;
+        if (Math.random() < 0.5) G.particles.spark(p.x + rand(-16, 16), p.y + rand(-16, 16), '#b06bff', 1);
+        if (dist2(G.player.x, G.player.y, p.x, p.y) < (p.r + G.player.r + 2) ** 2) {
+          this.transition = { t: 1.1, phase: 'in', to: 'boss_' + p.bossId, bossId: p.bossId, final: p.final };
+          G.portal = null;
+          Audio.sfx('port');
+        }
+      }
+      if (this.transition) {
+        const tr = this.transition;
+        tr.t -= sdt;
+        if (tr.t <= 0) {
+          if (tr.phase === 'in') {
+            G.arena.setTheme(tr.to);
+            this.startIncursion(G, tr.bossId, tr.final);
+          } else {
+            G.arena.setTheme(tr.to);
+            G.particles.addFlash('#ffffff', 0.3);
+          }
+          this.transition = null;
+        }
+      }
+
       // enemies
       for (const e of G.enemies) if (!e.dead) updateEnemy(e, sdt, api);
       G.enemies = G.enemies.filter((e) => !e.dead);
@@ -344,6 +462,7 @@ export class GameScene extends Scene {
             G.comic.push('clear', 'INCURSÃO CONCLUÍDA', '+60 FRAGMENTOS · +1 NÍVEL · +30 VIDA', 'shield', '#4dff88');
             for (const bl of G.bullets.enemy.live) { bl.dead = true; G.particles.spark(bl.x, bl.y, '#b06bff', 2); }
             G.boss = null;
+            this.transition = { t: 1.1, phase: 'out', to: this.curWorld };
             Audio.playTrack('combat');
           }
         }
@@ -544,6 +663,8 @@ export class GameScene extends Scene {
     ctx.restore();
 
     G.particles.drawFlash(ctx, VIEW_W, VIEW_H);
+    if (G.portal) this.drawPortal(ctx, G);
+    if (this.transition) this.drawTransition(ctx, this.transition);
     drawHud(ctx, G);
     if (G.comic) G.comic.draw(ctx);
 

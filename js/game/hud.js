@@ -50,6 +50,10 @@ export function drawHud(ctx, G) {
     const r = G.waves.cur ? G.waves.cur() : null;
     const label = r && r.t === 'boss' ? `ROUND ${G.waves.round + 1} — INCURSÃO` : `ROUND ${G.waves.round + 1}/${12}`;
     drawText(ctx, label, VIEW_W / 2, 40, { scale: 1, align: 'center', color: r && r.t === 'boss' ? '#ff8c8c' : '#8a84a8', shadow: true });
+    const WLABEL = { wakanda: 'REINO DE VIBRANIUM', asgard: 'PONTE DO ARCO-ÍRIS', newyork: 'CRUZAMENTO DOS HERÓIS',
+      boss_ultron: 'SOKOVIA SUSPENSA', boss_loki: 'SALÃO DAS ILUSÕES', boss_hela: 'REINO DOS MORTOS', boss_devourer: 'VAZIO CÓSMICO', boss_thanos: 'MUNDO EM CINZAS' };
+    const wl = WLABEL[G.arena && G.arena.themeId];
+    if (wl) drawText(ctx, wl, VIEW_W / 2, 50, { scale: 1, align: 'center', color: '#5a5480', shadow: true });
   }
   if (G.banner) {
     ctx.globalAlpha = Math.min(1, G.banner.t);

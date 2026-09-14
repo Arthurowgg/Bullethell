@@ -39,10 +39,12 @@ export class WaveDirector {
     if (!r) { this.done = true; return; }
 
     if (r.t === 'boss') {
-      if (!this.bossSpawned && !G.boss) {
-        this.bossSpawned = true;
-        G.startIncursion(r.boss, !!r.final);
-      } else if (this.bossSpawned && !G.boss) {
+      // the incursion opens a reality tear; the player must step into it
+      if (!this.bossSpawned && !G.boss && !G.portal && !G.transition) {
+        G.openPortal(r.boss, !!r.final);
+      }
+      if (!this.bossSpawned && G.boss) this.bossSpawned = true;
+      else if (this.bossSpawned && !G.boss && !G.transition) {
         this._advance(G);
       }
       return;
@@ -75,7 +77,10 @@ export class WaveDirector {
     this.bossSpawned = false;
     this.eventT = rand(22, 34);
     this.spawnT = Math.max(0.6, this.spawnT);
-    if (this.cur()) G.comicRound(this.round + 1);
+    if (this.cur()) {
+      G.comicRound(this.round + 1);
+      G.setWorldForRound(this.round + 1);
+    }
   }
 
   _spawnOne(G) {

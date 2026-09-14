@@ -581,13 +581,9 @@ export class Player {
       ctx.fillRect(-2, -2, 4, 4);
       ctx.restore();
     }
-    // hero emblem sprite with frame animation (idle/idle-alt/attack/hurt)
-    let idx = 0;
-    if (this.hurtFlash > 0) idx = 3;
-    else if (this.fireAnim > 0 || this.slashT > 0) idx = 2;
-    else idx = Math.floor(this.walk * 0.6) & 1;
-    const spr = SPR[this.base + '_f' + idx] || SPR[this.base] || SPR['hero_' + this.hero.id];
-    const bob = Math.round(Math.sin(this.walk) * 1);
+    // hero emblem sprite — static (head/mask emblem, no frame animation)
+    const spr = SPR[this.base] || SPR['hero_' + this.hero.id];
+    const bob = 0;
     const blink = this.iframes > 0 && Math.floor(this.iframes * 14) % 2 === 0;
     if (spr) {
       drawSprite(ctx, spr, this.x, this.y + bob, {

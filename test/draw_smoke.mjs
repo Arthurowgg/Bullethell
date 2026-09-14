@@ -112,7 +112,16 @@ const STEP = 1 / 60;
   G.comic.update(5);
   G.comic.push('clear', 'INCURSÃO CONCLUÍDA', '+60 FRAGMENTOS', 'shield', '#4dff88');
   UI.beginFrame(); setCtx(ctx); s.draw(ctx, G);
-  console.log('draw ok: game run + levelup + pause + comic panels');
+  // reality tear portal + transition + boss worlds
+  G.portal = { x: 320, y: 180, r: 16, t: 0.5, bossId: 'ultron', final: false };
+  UI.beginFrame(); setCtx(ctx); s.draw(ctx, G);
+  s.transition = { t: 0.55, phase: 'in', to: 'boss_ultron' };
+  UI.beginFrame(); setCtx(ctx); s.draw(ctx, G);
+  G.arena.setTheme('boss_thanos');
+  UI.beginFrame(); setCtx(ctx); s.draw(ctx, G);
+  G.arena.setTheme('wakanda');
+  UI.beginFrame(); setCtx(ctx); s.draw(ctx, G);
+  console.log('draw ok: game run + levelup + pause + comic panels + portal/transition/worlds');
 }
 
 // ---- game: raid (boss bar, beams) ----

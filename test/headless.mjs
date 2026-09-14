@@ -56,10 +56,12 @@ function run(scene, G, seconds, hooks = {}) {
   // keep the test player alive and moving: rotate movement + iframes cheat
   const dirs = ['KeyD', 'KeyW', 'KeyA', 'KeyS'];
   let leveled = false;
-  let sawBoss = false, maxRound = 0;
+  let sawBoss = false, maxRound = 0, sawWorld = null;
   const r = run(scene, G, 250, {
     frame: (i, G) => {
       if (G.boss) sawBoss = true;
+      if (G.portal) { G.player.x = G.portal.x; G.player.y = G.portal.y; } // step into the tear
+      if (G.arena.themeId && G.arena.themeId.startsWith('boss_')) sawWorld = G.arena.themeId;
       if (G.waves) maxRound = Math.max(maxRound, G.waves.round);
       if (i % 90 === 0) {
         Input.keys.clear();
@@ -90,6 +92,7 @@ function run(scene, G, seconds, hooks = {}) {
     'round=', G.waves.round, 'sawBoss=', sawBoss);
   assert.ok(G.time > 240, 'full run length simulated');
   assert.ok(sawBoss, 'an incursion boss round started');
+  assert.ok(sawWorld, 'player was transported to a boss-exclusive world (' + sawWorld + ')');
   assert.ok(maxRound >= 2, 'round ladder advanced past round 3');
   assert.ok(G.comic && G.comic.cur !== undefined, 'comic UI active');
   assert.ok(G.enemies.length > 0 || G.kills > 0, 'enemies spawned/fought');

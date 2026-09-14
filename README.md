@@ -38,6 +38,16 @@ Gamepad suportado (analógico esquerdo move, direito mira, A/B/X/Y mapeados).
   intercalados por 5 incursões de chefe — Ultron, Loki, Hela, Devorador e a
   final contra Thanos. Vencer uma incursão dá fragmentos, vida e +1 nível
   antes do próximo round.
+- **Rasgo de realidade**: cada incursão abre um **portal animado** na arena;
+  o jogador entra e é transportado (transição de warp) para o **mundo
+  exclusivo do boss** (Sokovia Suspensa, Salão das Ilusões, Reino dos Mortos,
+  Vazio Cósmico, Mundo em Cinzas) e depois retorna ao fluxo principal.
+- **3 mundos de jogo** com cenários completos em pixel art: Reino de
+  Vibranium (selva tecnológica), Ponte do Arco-Íris (reino dourado) e
+  Cruzamento dos Heróis (cidade ao entardecer).
+- **Heróis como emblemas estáticos** (cabeça/máscara, sem animação de
+  quadros) e **bosses com presença própria** (aura colorida, silhueta com
+  rim-light, bob pesado) em linguagem visual unificada.
 - **30 upgrades** com ícone próprio (folhas de 10 ícones por imagem), incluindo
   builds específicas por herói; cada herói, inimigo e chefe dispara projéteis
   com sprite único.

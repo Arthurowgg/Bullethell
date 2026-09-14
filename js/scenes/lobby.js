@@ -129,8 +129,7 @@ export class LobbyScene extends Scene {
       ctx.fillRect(x, y, 66, 70);
       ctx.strokeStyle = sel ? h.color : hov ? '#7b5cff' : '#2a2450';
       ctx.strokeRect(x + 0.5, y + 0.5, 65, 69);
-      const frame = Math.floor(this.t * 2) % 2;
-      this.emblem(ctx, 'hero_' + h.id, h.id, x + 33, y + 26, 1, unlocked ? frame : 0);
+      this.emblem(ctx, 'hero_' + h.id, h.id, x + 33, y + 26, 1, 0); // static emblem
       if (!unlocked) {
         ctx.fillStyle = '#000000aa'; ctx.fillRect(x, y, 66, 70);
         drawSprite(ctx, SPR.lock, x + 33, y + 22, { scale: 0.9 });
@@ -151,7 +150,7 @@ export class LobbyScene extends Scene {
     UI.panel(166, 48, 292, 304, { title: 'HERÓI' });
     const eqSkin = skinById(s.cosmeticsEquipped[hero.id]);
     const base = eqSkin && eqSkin.hero === hero.id ? 'skin_' + eqSkin.id : 'hero_' + hero.id;
-    const frame = Math.floor(this.t * 3) % 2;
+    const frame = 0; // static emblem
     // glow pedestal
     ctx.globalAlpha = 0.25 + Math.sin(this.t * 2) * 0.08;
     ctx.fillStyle = hero.color;

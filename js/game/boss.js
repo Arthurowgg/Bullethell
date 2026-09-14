@@ -274,7 +274,24 @@ export class Boss {
 
   draw(ctx) {
     const spr = SPR[this.def.sprite];
-    const bob = Math.round(Math.sin(this.walk) * 1);
+    const bob = Math.round(Math.sin(this.walk * 0.7) * 2);
+    // presence aura: ground glow + pulsing ring (color per villain)
+    const aura = { ultron: '#ff4d4d', loki: '#4dff88', hela: '#4dff88', devourer: '#4dd8ff', thanos: '#b06bff' }[this.def.id] || '#ff4d4d';
+    ctx.save();
+    ctx.globalAlpha = 0.22 + Math.sin(this.walk * 2) * 0.06;
+    ctx.fillStyle = aura;
+    ctx.beginPath(); ctx.ellipse(this.x, this.y + 24, 34, 12, 0, 0, TAU); ctx.fill();
+    ctx.globalAlpha = 0.5;
+    ctx.strokeStyle = aura;
+    ctx.beginPath(); ctx.ellipse(this.x, this.y + 24, 38 + Math.sin(this.walk * 2) * 4, 14, 0, 0, TAU); ctx.stroke();
+    ctx.restore();
+    // silhouette rim glow behind sprite
+    if (spr) {
+      ctx.save();
+      ctx.globalAlpha = 0.35;
+      drawSprite(ctx, spr, this.x, this.y + bob - 1, { tint: aura });
+      ctx.restore();
+    }
     if (this.introT > 0 && Math.floor(this.introT * 10) % 2 === 0) ctx.globalAlpha = 0.5;
     if (spr) drawSprite(ctx, spr, this.x, this.y + bob, { tint: this.flash > 0 ? '#ffffff' : this.frozen > 0 ? '#7fd4ff' : undefined });
     ctx.globalAlpha = 1;

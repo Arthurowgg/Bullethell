@@ -338,6 +338,13 @@ export const THEMES = {
   asgard: { floor: '#2b2b33', floorAlt: '#33333d', line: '#4a4a58', wall: '#4a4550', wallTop: '#8a8095', accent: '#d8b64c' },
   collapse: { floor: '#1c0f2e', floorAlt: '#241338', line: '#3d1f5c', wall: '#341a52', wallTop: '#6b3aa0', accent: '#ff5df2' },
   throne: { floor: '#200a12', floorAlt: '#2a0d18', line: '#451526', wall: '#3a1020', wallTop: '#7a2440', accent: '#ffd94a' },
+  wakanda: { floor: '#12281a', floorAlt: '#163420', line: '#1f5a38', wall: '#1d4a2c', wallTop: '#3fa06e', accent: '#b06bff' },
+  newyork: { floor: '#1d2027', floorAlt: '#242832', line: '#3a4050', wall: '#343a48', wallTop: '#6b7285', accent: '#4dd8ff' },
+  boss_ultron: { floor: '#23262e', floorAlt: '#282c36', line: '#3a3f4c', wall: '#3c414e', wallTop: '#6b7285', accent: '#ff4d4d' },
+  boss_loki: { floor: '#0d1a12', floorAlt: '#10241a', line: '#1f5a38', wall: '#1d4a2c', wallTop: '#d8b64c', accent: '#4dff88' },
+  boss_hela: { floor: '#0a1410', floorAlt: '#0d1c14', line: '#1f4a30', wall: '#16301f', wallTop: '#3fa07e', accent: '#4dff88' },
+  boss_devourer: { floor: '#0d0f2a', floorAlt: '#101436', line: '#2a2a6a', wall: '#2b2560', wallTop: '#4dd8ff', accent: '#4dd8ff' },
+  boss_thanos: { floor: '#241005', floorAlt: '#2e1508', line: '#5a2a10', wall: '#4a2008', wallTop: '#ff8c3b', accent: '#ff8c3b' },
 };
 
 function makeFloor(theme, seed) {

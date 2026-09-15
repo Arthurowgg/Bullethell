@@ -56,7 +56,7 @@ export class ResultsScene extends Scene {
     }
     const p = this.p;
     const win = p.win;
-    drawText(ctx, win ? 'VITÓRIA' : 'DERROTA', VIEW_W / 2, 34, { align: 'center', scale: 3, color: win ? '#ffd94a' : '#ff4d4d', shadow: true });
+    drawText(ctx, win ? 'VITÓRIA' : 'DERROTA', VIEW_W / 2, 34, { align: 'center', scale: 3, color: win ? '#ffd94a' : '#ff4d4d', shadow: true, style: 'hero' });
     drawText(ctx, p.raid ? p.raid.name : 'NEXO DE COMBATE', VIEW_W / 2, 62, { align: 'center', scale: 1, color: '#9a93c8', shadow: true });
 
     // hero

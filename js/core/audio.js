@@ -109,6 +109,8 @@ class AudioSys {
       case 'warn': this.tone({ f: 950, t: 0.09, type: 'square', v: 0.14 }); this.tone({ f: 950, t: 0.09, type: 'square', v: 0.14, at: 0.14 }); break;
       case 'wave': [392, 523, 659, 784].forEach((f, i) => this.tone({ f, t: 0.09, type: 'square', v: 0.16, at: i * 0.06 })); this.noise({ t: 0.15, v: 0.08, hp: 4000 }); break;
       case 'clear': [523, 659, 784].forEach((f, i) => this.tone({ f, t: 0.12, type: 'triangle', v: 0.18, at: i * 0.07 })); break;
+      case 'page': this.noise({ t: 0.12, v: 0.1, hp: 2500 }); this.tone({ f: 320, f2: 180, t: 0.08, type: 'triangle', v: 0.08 }); break;
+      case 'unlock': [659, 784, 988, 1319].forEach((f, i) => this.tone({ f, t: 0.1, type: 'triangle', v: 0.16, at: i * 0.05 })); this.noise({ t: 0.2, v: 0.06, hp: 5000 }); break;
       case 'phase': this.tone({ f: 80, f2: 400, t: 0.5, type: 'sawtooth', v: 0.3 }); this.noise({ t: 0.5, v: 0.2, lp: 3000 }); break;
       case 'victory': [523, 659, 784, 1046, 784, 1046, 1318].forEach((f, i) => this.tone({ f, t: 0.16, type: 'square', v: 0.2, at: i * 0.11 })); break;
       case 'defeat': [400, 350, 300, 200].forEach((f, i) => this.tone({ f, f2: f * 0.8, t: 0.25, type: 'triangle', v: 0.25, at: i * 0.2 })); break;

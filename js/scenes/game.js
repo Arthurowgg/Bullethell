@@ -21,6 +21,7 @@ import { skinById } from '../data/shop.js';
 import { heroById } from '../data/heroes.js';
 import { raidById } from '../data/raids.js';
 import { bossById } from '../data/bosses.js';
+import { ENEMIES } from '../data/enemies.js';
 import { drawHud } from '../game/hud.js';
 import { drawText } from '../core/font.js';
 import { SPR, drawSprite } from '../core/pixel.js';
@@ -74,7 +75,7 @@ export class GameScene extends Scene {
     G.portal = null;
     if (this.mode === 'raid') {
       G.boss = new Boss(bossById(this.raid.boss), 1);
-      this.save.discovered.bosses[this.raid.boss] = true;
+      this._disc(G, 'boss', this.raid.boss, bossById(this.raid.boss).name);
       this.curWorld = null;
     } else {
       G.waves = new WaveDirector();
@@ -83,6 +84,7 @@ export class GameScene extends Scene {
       const seg0 = G.waves.curSeg();
       this.curWorld = (seg0 && seg0.map) || 'wakanda';
       G.arena.setTheme(this.curWorld);
+      this._disc(G, 'world', this.curWorld, WORLD_LABEL[this.curWorld] || this.curWorld);
     }
 
     Audio.playTrack(this.mode === 'raid' ? 'boss' : 'combat');
@@ -154,7 +156,7 @@ export class GameScene extends Scene {
         e.speed *= 1.1; e.r += 1;
       }
       G.enemies.push(e);
-      this.save.discovered.enemies[type] = true;
+      this._disc(G, 'enemy', type, (ENEMIES[type] || {}).name || type);
       G.particles.burst(x, y, elite ? '#ffd94a' : zone === 'sky' ? '#4dd8ff' : '#b06bff', 6, 50, 0.4);
     }
   }
@@ -199,6 +201,8 @@ export class GameScene extends Scene {
     if (e.dead) return;
     e.dead = true;
     G.kills++;
+    const dk = this.save.discovered.kills || (this.save.discovered.kills = {});
+    dk[e.def.id] = (dk[e.def.id] || 0) + 1;
     this.save.stats.kills++;
     G.player.addCharge(2);
     G.particles.explosion(e.x, e.y, ['#ff8c3b', '#ff4d4d', '#ffffff'], 14, 110);
@@ -284,6 +288,21 @@ export class GameScene extends Scene {
 
   WORLD_LABEL = WORLD_LABEL;
 
+  // NEXUS ARCHIVES discovery tracking + in-run unlock notification
+  _disc(G, kind, id, label) {
+    const d = this.save.discovered;
+    d.worlds = d.worlds || {}; d.kills = d.kills || {};
+    let isNew = false;
+    if (kind === 'enemy' && !d.enemies[id]) { d.enemies[id] = true; isNew = true; }
+    if (kind === 'boss' && !d.bosses[id]) { d.bosses[id] = true; isNew = true; }
+    if (kind === 'world' && !d.worlds[id]) { d.worlds[id] = true; isNew = true; }
+    if (isNew) {
+      Save.save();
+      G.comic.push('event', 'NEXUS ARCHIVES', 'NOVA ENTRADA: ' + label, 'upgrade', '#4dd8ff');
+      Audio.sfx('unlock');
+    }
+  }
+
   // ---- reality tear / portal to boss worlds -------------------------------
   openPortal(G, bossId, final) {
     const b = G.arena.bounds;
@@ -295,6 +314,7 @@ export class GameScene extends Scene {
   setMap(G, id) {
     if (!id || id === this.curWorld) return;
     this.curWorld = id;
+    this._disc(G, 'world', id, WORLD_LABEL[id] || id);
     if (this.transition && this.transition.phase === 'out') this.transition.to = id;
     else { G.arena.setTheme(id); G.particles.addFlash('#ffffff', 0.35); G.particles.addShake(3); }
   }
@@ -372,7 +392,7 @@ export class GameScene extends Scene {
     const def = bossById(bossId);
     this.currentFinal = final;
     G.boss = new Boss(def, final ? 0.8 : 1);
-    this.save.discovered.bosses[bossId] = true;
+    this._disc(G, 'boss', bossId, def.name);
     G.comic.push('boss', def.name, def.intro || 'INCURSÃO EM CURSO', 'alarm', '#ff4d4d', { bossId });
     Audio.sfx('phase');
     Audio.playTrack('boss');

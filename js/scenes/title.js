@@ -93,8 +93,8 @@ export class TitleScene extends Scene {
 
     // logo plaque
     this._plaque(ctx, cx - 170, 52, 340, 66, '#7b5cff');
-    drawText(ctx, 'MARVEL', cx - 6, 62, { align: 'right', scale: 4, color: '#e8e0ff', shadow: '#2a1b6b' });
-    drawText(ctx, 'NEXUS', cx + 6, 62, { align: 'left', scale: 4, color: '#ff4d4d', shadow: '#3d0d1c' });
+    drawText(ctx, 'MARVEL', cx - 6, 62, { align: 'right', scale: 4, color: '#e8e0ff', shadow: '#2a1b6b', style: 'hero', outline: '#2a1b6b' });
+    drawText(ctx, 'NEXUS', cx + 6, 62, { align: 'left', scale: 4, color: '#ff4d4d', shadow: '#3d0d1c', style: 'hero', outline: '#3d0d1c' });
     ctx.fillStyle = '#7b5cff';
     ctx.fillRect(cx - 120, 98, 240, 2);
     drawText(ctx, 'BULLET HELL DIMENSIONAL', cx, 104, { align: 'center', scale: 1, color: '#9a93c8', shadow: true });

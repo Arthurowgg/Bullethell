@@ -132,7 +132,7 @@ export const UI = {
       const hw = Math.min(w - 8, Math.max(120, textWidth(o.title, 2) + 40));
       if (SPR.ui_header) drawSprite(GCTX, SPR.ui_header, x + w / 2, y + 12, { scaleX: hw / SPR.ui_header.width, scaleY: 24 / SPR.ui_header.height });
       if (o.icon) this.icon(o.icon, x + w / 2 - hw / 2 + 12, y + 12, 1);
-      drawText(GCTX, o.title, x + w / 2 + (o.icon ? 6 : 0), y + 6, { align: 'center', scale: o.titleScale || 2, color: o.titleColor || '#ffd94a', shadow: true });
+      drawText(GCTX, o.title, x + w / 2 + (o.icon ? 6 : 0), y + 6, { align: 'center', scale: o.titleScale || 2, color: o.titleColor || '#ffd94a', shadow: true, style: 'hero' });
       ctxFill(x + 6, y + 26, w - 12, 1, '#3a3350');
     }
   },

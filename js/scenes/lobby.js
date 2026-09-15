@@ -8,6 +8,7 @@ import { Scene, UI, toggleFullscreen } from './scene.js';
 import { drawText, textWidth } from '../core/font.js';
 import { SPR, drawSprite } from '../core/pixel.js';
 import { Audio } from '../core/audio.js';
+import { Input } from '../core/input.js';
 import { Save, xpForLevel } from '../core/save.js';
 import { VIEW_W, VIEW_H } from '../game/arena.js';
 import { HEROES, heroById } from '../data/heroes.js';
@@ -17,11 +18,13 @@ import { SKINS, skinById, RARITY_SHOP } from '../data/shop.js';
 import { MISSIONS, HERO_UNLOCK_COST } from '../data/missions.js';
 import { ENEMIES } from '../data/enemies.js';
 import { clamp } from '../core/util.js';
+import { ArchivesUI } from '../game/archives.js';
 
 export class LobbyScene extends Scene {
   enter(G, params) {
     this.t = 0;
-    this.overlay = null;      // null | nexus | cos | worlds | missions | collection | dev | cfg
+    this.overlay = null;      // null | nexus | cos | arch | missions | dev | cfg
+    this.arch = new ArchivesUI();
     this.shopSec = 'cos';
     this.skinSel = SKINS[0].id;
     this.transT = 0;          // portal transition anim
@@ -29,7 +32,11 @@ export class LobbyScene extends Scene {
     Audio.playTrack('lobby');
   }
 
-  update(dt, G) { this.t += dt; this.transT = Math.max(0, this.transT - dt); }
+  update(dt, G) {
+    this.t += dt; this.transT = Math.max(0, this.transT - dt);
+    if (this.overlay === 'arch') this.arch.update(dt);
+    if (this.overlay && (Input.pressed('Escape') || Input.pressed('KeyP'))) { this.overlay = null; Audio.sfx('uiBack'); }
+  }
 
   // ------------------------------------------------------------ helpers ----
   wrap(ctx, txt, x, y, w, color, lh = 9) {
@@ -93,6 +100,8 @@ export class LobbyScene extends Scene {
   // ---------------------------------------------------------------- draw ---
   draw(ctx, G) {
     const s = Save.data;
+    const realClick = UI.anyClick;
+    if (this.overlay) UI.anyClick = false;   // menus are modal layers: nothing behind reacts
     // living background
     const bg = SPR['lobby_bg'];
     if (bg) ctx.drawImage(bg, 0, 0, VIEW_W, VIEW_H);
@@ -122,12 +131,14 @@ export class LobbyScene extends Scene {
     drawText(ctx, String(s.credits), 554, 7, { color: '#ffe9a0' });
     if (this.holo(ctx, 'gear', 618, 11, 'lobby_nav_gear', '', '#8a84a8')) this.open('cfg');
 
+    this.drawComputers(ctx, G);
     this.drawCore(ctx, G);
     this.drawHeroesOrbit(ctx, G);
     this.drawPortals(ctx, G);
     this.drawPlayPad(ctx, G);
     this.drawChips(ctx, G);
 
+    UI.anyClick = realClick;
     if (this.overlay) this.drawOverlay(ctx, G);
 
     // portal transition
@@ -259,24 +270,70 @@ export class LobbyScene extends Scene {
   // bottom holo chips ---------------------------------------------------------
   drawChips(ctx, G) {
     if (this.holo(ctx, 'mis', 26, 336, 'lobby_nav_mis', 'MISSÕES', '#4dff88')) this.open('missions');
-    if (this.holo(ctx, 'col', 78, 336, 'lobby_nav_col', 'COLEÇÃO', '#4dd8ff')) this.open('collection');
-    if (this.holo(ctx, 'dev', 130, 336, 'lobby_nav_dev', 'DEV', '#ff8c3b')) this.open('dev');
+    if (this.holo(ctx, 'dev', 78, 336, 'lobby_nav_dev', 'DEV', '#ff8c3b')) this.open('dev');
+  }
+
+  // clickable consoles on the hub art: hologram shops ----------------------
+  drawComputers(ctx, G) {
+    const hovL = UI.hit(28, 138, 110, 80);
+    const hovR = UI.hit(512, 156, 96, 64);
+    if (hovL) UI.hoverId = 'pcL';
+    if (hovR) UI.hoverId = 'pcR';
+    this._holoShop(ctx, 83, 138, 'LOJA NEXUS', '#4dd8ff', hovL);
+    this._holoShop(ctx, 560, 156, 'LOJA COSMÉTICA', '#ff5df2', hovR);
+    if (hovL && UI.anyClick) this.open('nexus');
+    if (hovR && UI.anyClick) this.open('cos');
+  }
+
+  _holoShop(ctx, x, yTop, label, color, hov) {
+    const flick = 0.75 + Math.sin(this.t * 13 + x) * 0.12 + (Math.sin(this.t * 47) > 0.96 ? -0.3 : 0);
+    const a = hov ? 1 : 0.55;
+    ctx.save();
+    ctx.globalAlpha = a * flick;
+    // light cone from the console
+    ctx.fillStyle = color + '22';
+    ctx.beginPath();
+    ctx.moveTo(x - 16, yTop + 26);
+    ctx.lineTo(x + 16, yTop + 26);
+    ctx.lineTo(x + 30, yTop - 14);
+    ctx.lineTo(x - 30, yTop - 14);
+    ctx.closePath();
+    ctx.fill();
+    // holo plate
+    const w = 96, h = 18;
+    ctx.fillStyle = '#0d0a1ecc';
+    ctx.fillRect(x - w / 2, yTop - 14 - h, w, h);
+    ctx.strokeStyle = color;
+    ctx.strokeRect(x - w / 2 + 0.5, yTop - 14 - h + 0.5, w - 1, h - 1);
+    ctx.fillStyle = color;
+    ctx.fillRect(x - w / 2, yTop - 14 - h, w, 1);
+    // scanlines
+    ctx.fillStyle = color + '33';
+    for (let yy = yTop - 14 - h + 3; yy < yTop - 14 - 2; yy += 3) ctx.fillRect(x - w / 2 + 2, yy, w - 4, 1);
+    drawText(ctx, label, x, yTop - 14 - h + 5, { align: 'center', scale: 1, color: hov ? '#ffffff' : color, shadow: true });
+    ctx.restore();
   }
 
   // ============================================================ overlays ====
   drawOverlay(ctx, G) {
     ctx.fillStyle = 'rgba(5,4,10,0.82)';
     ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-    const T = { nexus: 'NEXUS CORE', cos: 'COSMÉTICA', worlds: 'MUNDOS E INCURSÕES', missions: 'MISSÕES', collection: 'COLEÇÃO', dev: 'CONSOLE DEV', cfg: 'CONFIGURAÇÕES' };
-    const C = { nexus: '#d8b64c', cos: '#ff5df2', worlds: '#4dd8ff', missions: '#4dff88', collection: '#4dd8ff', dev: '#ff8c3b', cfg: '#8a84a8' };
+    if (this.overlay === 'arch') {
+      if (SPR.ui_menubg) { ctx.globalAlpha = 0.4; ctx.drawImage(SPR.ui_menubg, 0, 0, VIEW_W, VIEW_H); ctx.globalAlpha = 1; }
+      this.arch.draw(ctx, 40, 34, 560, 292);
+      drawText(ctx, 'NEXUS ARCHIVES', VIEW_W / 2, 12, { align: 'center', scale: 2, color: '#4dd8ff', shadow: true, style: 'hero' });
+      drawText(ctx, 'ENCICLOPÉDIA DO NEXO — DESCUBRA JOGANDO', VIEW_W / 2, 332, { align: 'center', scale: 1, color: '#7a74a0' });
+      if (UI.button('closeO', 566, 8, 54, 18, 'FECHAR', { color: '#ff4d4d', icon: 'ic_quit' })) { this.overlay = null; Audio.sfx('uiBack'); }
+      return;
+    }
+    const T = { nexus: 'NEXUS CORE', cos: 'COSMÉTICA', missions: 'MISSÕES', dev: 'CONSOLE DEV', cfg: 'CONFIGURAÇÕES' };
+    const C = { nexus: '#d8b64c', cos: '#ff5df2', missions: '#4dff88', dev: '#ff8c3b', cfg: '#8a84a8' };
     this.frame(ctx, 40, 30, 560, 300, C[this.overlay]);
-    drawText(ctx, T[this.overlay], 52, 38, { scale: 2, color: C[this.overlay], shadow: true });
+    drawText(ctx, T[this.overlay], 52, 38, { scale: 2, color: C[this.overlay], shadow: true, style: 'hero' });
     if (UI.button('closeO', 540, 38, 48, 16, 'X', { color: '#ff4d4d' })) { this.overlay = null; Audio.sfx('uiBack'); }
     if (this.overlay === 'nexus') this.drawNexus(ctx, G);
     else if (this.overlay === 'cos') this.drawCosmetics(ctx, G);
-    else if (this.overlay === 'worlds') this.drawWorlds(ctx, G);
     else if (this.overlay === 'missions') this.drawMissions(ctx, G);
-    else if (this.overlay === 'collection') this.drawCollection(ctx, G);
     else if (this.overlay === 'dev') this.drawDev(ctx, G);
     else if (this.overlay === 'cfg') this.drawConfig(ctx, G);
   }
@@ -371,29 +428,6 @@ export class LobbyScene extends Scene {
     drawText(ctx, 'COSMÉTICO — SEM VANTAGEM', 576, 284, { align: 'right', color: '#7a74a0' });
   }
 
-  drawWorlds(ctx, G) {
-    const s = Save.data;
-    const ws = [['lobby_wemb_wakanda', 'REINO DE VIBRANIUM', 'ROUNDS 1-3'], ['lobby_wemb_asgard', 'PONTE DO ARCO-ÍRIS', 'ROUNDS 4-7'], ['lobby_wemb_newyork', 'CRUZAMENTO DOS HERÓIS', 'ROUNDS 8-12']];
-    ws.forEach(([ic, name, rr], i) => {
-      const x = 56 + i * 180, y = 62;
-      if (SPR[ic]) drawSprite(ctx, SPR[ic], x + 30, y + 30, { scale: 1.1 });
-      drawText(ctx, name, x + 66, y + 12, { color: '#ffffff', shadow: true });
-      drawText(ctx, rr, x + 66, y + 26, { color: '#9a93c8' });
-    });
-    drawText(ctx, 'ESCADA DE INCURSÕES', 56, 132, { scale: 1, color: '#4dd8ff', shadow: true });
-    ['ultron', 'loki', 'hela', 'devourer', 'thanos'].forEach((b, i) => {
-      const d = bossById(b);
-      const x = 56 + i * 108, y = 150;
-      const por = SPR['portrait_' + b];
-      if (por) drawSprite(ctx, por, x + 24, y + 26, { scale: 44 / por.height });
-      drawText(ctx, d.name.split(' ')[0], x + 24, y + 56, { align: 'center', color: '#ff8c8c' });
-      drawText(ctx, 'R' + [3, 6, 8, 10, 12][i], x + 24, y + 68, { align: 'center', color: '#9a93c8' });
-      const kills = s.bossesDefeated[b] || 0;
-      if (kills) drawText(ctx, 'x' + kills, x + 44, y + 8, { color: '#4dff88' });
-    });
-    this.wrap(ctx, 'Vença rounds de ondas para abrir o rasgo de realidade. Entre no portal, derrote o guardião do mundo e volte para a próxima rodada.', 56, 240, 520, '#9a93c8', 9);
-  }
-
   drawMissions(ctx, G) {
     const s = Save.data;
     MISSIONS.forEach((m, i) => {
@@ -425,28 +459,6 @@ export class LobbyScene extends Scene {
         drawText(ctx, claimed ? 'FEITO' : rw, x + 256, y + 16, { align: 'right', color: claimed ? '#7a74a0' : '#ffd94a' });
       }
     });
-  }
-
-  drawCollection(ctx, G) {
-    const s = Save.data;
-    drawText(ctx, 'INIMIGOS CATADOS', 56, 62, { color: '#4dd8ff', shadow: true });
-    ['drone', 'chitauri', 'symbiote', 'sorcerer', 'sentinel', 'spectre', 'jotun', 'chaos'].forEach((id, i) => {
-      const x = 56 + (i % 8) * 66, y = 92;
-      const disc = s.discovered.enemies[id];
-      const sp = SPR['en_' + id];
-      if (sp) drawSprite(ctx, sp, x + 14, y, { alpha: disc ? 1 : 0.2 });
-      drawText(ctx, disc ? ENEMIES[id].name.split(' ')[0] : '???', x + 14, y + 16, { align: 'center', color: disc ? '#9a93c8' : '#3a3350' });
-    });
-    drawText(ctx, 'GUARDIÕES', 56, 140, { color: '#ff8c8c', shadow: true });
-    ['ultron', 'loki', 'hela', 'devourer', 'thanos'].forEach((b, i) => {
-      const x = 56 + i * 108, y = 168;
-      const disc = s.discovered.bosses[b];
-      const por = SPR['portrait_' + b];
-      if (por) drawSprite(ctx, por, x + 24, y + 20, { scale: 40 / por.height, alpha: disc ? 1 : 0.2 });
-      drawText(ctx, disc ? bossById(b).name.split(' ')[0] : '???', x + 24, y + 48, { align: 'center', color: disc ? '#9a93c8' : '#3a3350' });
-    });
-    drawText(ctx, 'REGISTRO', 56, 236, { color: '#d8b64c', shadow: true });
-    this.wrap(ctx, `Partidas ${s.stats.runs} · Vitórias ${s.stats.wins} · Abates ${s.stats.kills} · Nível máx ${s.stats.levelReached} · Skins ${Object.keys(s.cosmeticsOwned).length}/${SKINS.length}`, 56, 250, 520, '#9a93c8', 9);
   }
 
   drawDev(ctx, G) {

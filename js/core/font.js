@@ -107,6 +107,7 @@ export function drawText(ctx, str, x, y, opts = {}) {
 
   const adv = (FONT_W + spacing) * scale;
   const px = Math.round(sx), py = Math.round(y);
+  const hero = opts.style === 'hero';
   const draw = (col) => {
     let cx = px;
     for (const ch of str) {
@@ -135,16 +136,23 @@ export function drawText(ctx, str, x, y, opts = {}) {
       cx += adv;
     }
   };
-  if (opts.shadow) {
+  ctx.save();
+  if (hero) {
+    // comic-hero type: italic shear + heavy outline + double drop shadow
+    ctx.transform(1, 0, -0.16, 1, 0.16 * py, 0);
+    const dark = '#05040a';
+    ctx.save(); ctx.translate(2 * scale, 2 * scale); draw(dark); ctx.restore();
+    ctx.save(); ctx.translate(scale, 2 * scale); draw(dark); ctx.restore();
+    for (const [ox, oy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+      ctx.save(); ctx.translate(ox * Math.max(1, scale * 0.9), oy * Math.max(1, scale * 0.9)); draw(opts.outline || dark); ctx.restore();
+    }
+  } else if (opts.shadow) {
     // draw shadow pass
-    ctx.save();
-    const prev = ctx.__nxShadow;
-    ctx.__nxShadow = true;
     ctx.translate(scale, scale);
     draw(typeof opts.shadow === 'string' ? opts.shadow : '#05040a');
-    ctx.restore();
   }
   draw(color);
+  ctx.restore();
 }
 
 export function drawTextLines(ctx, str, x, y, opts = {}) {

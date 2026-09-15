@@ -116,6 +116,11 @@ export function loadSheetArt(onProgress) {
     load(`assets/sprites/ui/${k}.png`, (img) => { SPR[k] = cnv(img, 1); });
   for (const k of ['dz_fire', 'dz_vent', 'fx_gravwell', 'fx_gauntlet', 'fx_tclock'])
     load(`assets/sprites/fx/${k}.png`, (img) => { SPR[k] = cnv(img, 1); });
+  // NEXUS ARCHIVES book art
+  for (const k of ['arch_cover', 'arch_back', 'arch_page', 'arch_frame', 'arch_stamp', 'arch_unlock',
+    'arch_bookmark', 'arch_lock', 'arch_arrow', 'arch_tape', 'arch_under',
+    'arch_i_world', 'arch_i_boss', 'arch_i_enemy', 'arch_i_info'])
+    load(`assets/sprites/ui/${k}.png`, (img) => { SPR[k] = cnv(img, 1); });
   // universal UI kit: frames, icons, toggles, sliders, menu backdrop
   for (const k of ['ui_btn', 'ui_btn_gold', 'ui_panel', 'ui_header', 'ui_menubg', 'ui_keycap',
     'ui_toggle_on', 'ui_toggle_off', 'ui_slider_track', 'ui_slider_knob',

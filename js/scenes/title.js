@@ -91,13 +91,21 @@ export class TitleScene extends Scene {
     }
     ctx.globalAlpha = 1;
 
-    // logo plaque
-    this._plaque(ctx, cx - 170, 52, 340, 66, '#7b5cff');
-    drawText(ctx, 'MARVEL', cx - 6, 62, { align: 'right', scale: 4, color: '#e8e0ff', shadow: '#2a1b6b', style: 'hero', outline: '#2a1b6b' });
-    drawText(ctx, 'NEXUS', cx + 6, 62, { align: 'left', scale: 4, color: '#ff4d4d', shadow: '#3d0d1c', style: 'hero', outline: '#3d0d1c' });
-    ctx.fillStyle = '#7b5cff';
-    ctx.fillRect(cx - 120, 98, 240, 2);
-    drawText(ctx, 'BULLET HELL DIMENSIONAL', cx, 104, { align: 'center', scale: 1, color: '#9a93c8', shadow: true });
+    // game logo (own generated asset) floating over the rift
+    if (SPR.nexus_logo) {
+      const L = SPR.nexus_logo, lw = 420, lh = Math.round(L.height * (lw / L.width));
+      const bob = Math.sin(this.t * 1.5) * 2;
+      ctx.save();
+      ctx.shadowColor = '#7b5cff'; ctx.shadowBlur = 14;
+      drawSprite(ctx, L, cx, 50 + lh / 2 + bob, { scaleX: lw / L.width, scaleY: lh / L.height });
+      ctx.restore();
+      drawText(ctx, 'BULLET HELL DIMENSIONAL', cx, 50 + lh + 4 + bob, { align: 'center', scale: 1, color: '#9a93c8', shadow: true });
+    } else {
+      this._plaque(ctx, cx - 170, 52, 340, 66, '#7b5cff');
+      drawText(ctx, 'MARVEL', cx - 6, 62, { align: 'right', scale: 4, color: '#e8e0ff', shadow: '#2a1b6b', style: 'hero', outline: '#2a1b6b' });
+      drawText(ctx, 'NEXUS', cx + 6, 62, { align: 'left', scale: 4, color: '#ff4d4d', shadow: '#3d0d1c', style: 'hero', outline: '#3d0d1c' });
+      drawText(ctx, 'BULLET HELL DIMENSIONAL', cx, 104, { align: 'center', scale: 1, color: '#9a93c8', shadow: true });
+    }
 
     // hero emblem cards
     HEROES.forEach((h, i) => {

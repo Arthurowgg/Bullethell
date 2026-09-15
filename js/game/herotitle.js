@@ -62,3 +62,32 @@ export function drawHeroTitle(ctx, heroId, name, x, y, scale = 2, align = 'cente
   flourish(ctx, heroId, sx, y, w, 7 * scale);
   drawText(ctx, name, x, y, { align, scale, color: c, shadow: true, style: 'hero', outline: '#05040a' });
 }
+
+// ---------------------------------------------------------------------------
+// Generic comic-pixel SECTION titles (configs / overlays / pause panels).
+// Hero-styled type with colored core, black shell, drop, and a notched bar.
+// ---------------------------------------------------------------------------
+export function drawSectionTitle(ctx, text, x, y, color, scale = 2, align = 'left') {
+  const w = textWidth(text, scale);
+  const sx = align === 'center' ? x - w / 2 : x;
+  // soft colored backplate
+  ctx.fillStyle = color + '18';
+  ctx.fillRect(sx - 6, y - 2, w + 12, scale * 8 + 4);
+  // drop + core
+  drawText(ctx, text, x + 2, y + 2, { scale, color: '#000000', style: 'hero', align });
+  drawText(ctx, text, x, y, { scale, color, style: 'hero', outline: '#0a0816', align });
+  // notched underline bar with end diamonds
+  const by = y + scale * 8 + 1;
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(sx - 5, by, w + 10, 3);
+  ctx.fillStyle = color;
+  ctx.fillRect(sx - 4, by + 1, w + 8, 2);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(sx - 4, by + 1, w + 8, 1);
+  for (const ex of [sx - 8, sx + w + 5]) {
+    ctx.fillStyle = color;
+    ctx.fillRect(ex, by - 1, 3, 3);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(ex + 1, by, 1, 1);
+  }
+}

@@ -4,10 +4,10 @@
 // core, hero emblems in orbit, themed portals for shops/worlds, holo-chips
 // for missions/collection/dev, discreet gear for settings.
 // ---------------------------------------------------------------------------
-import { Scene, UI, toggleFullscreen } from './scene.js';
+import { Scene, UI, toggleFullscreen, slice9 } from './scene.js';
 import { drawText, textWidth } from '../core/font.js';
 import { drawIcon } from '../core/icons.js';
-import { drawHeroTitle } from '../game/herotitle.js';
+import { drawHeroTitle, drawSectionTitle } from '../game/herotitle.js';
 import { SPR, drawSprite } from '../core/pixel.js';
 import { Audio } from '../core/audio.js';
 import { Input } from '../core/input.js';
@@ -234,7 +234,7 @@ export class LobbyScene extends Scene {
 
   // side portals + worlds ---------------------------------------------------
   drawPortals(ctx, G) {
-    const p1 = SPR['lobby_portal_shop'], p2 = SPR['lobby_portal_cos'], p3 = SPR['lobby_portal_worlds'];
+    const p1 = SPR['lobby_portal_shop'], p2 = SPR['lobby_portal_cos'];
     const pulse = Math.sin(this.t * 3) * 2;
     const hovL = UI.hit(38, 120, 64, 84);
     if (p1) drawSprite(ctx, p1, 70, 158 + pulse * 0.4, { scale: 1 });
@@ -244,10 +244,6 @@ export class LobbyScene extends Scene {
     if (p2) drawSprite(ctx, p2, 570, 158 - pulse * 0.4, { scale: 1 });
     drawText(ctx, 'COSMÉTICA', 570, 196, { align: 'center', color: hovR ? '#ffffff' : '#ff5df2', shadow: true });
     if (hovR) { UI.hoverId = 'pcos'; if (UI.anyClick) this.open('cos'); }
-    const hovW = UI.hit(278, 30, 84, 54);
-    if (p3) drawSprite(ctx, p3, 320, 54, { scale: 0.8 });
-    drawText(ctx, 'MUNDOS E INCURSÕES', 320, 88, { align: 'center', color: hovW ? '#ffffff' : '#4dd8ff', shadow: true });
-    if (hovW) { UI.hoverId = 'pworlds'; if (UI.anyClick) this.open('worlds'); }
   }
 
   // main play pad ------------------------------------------------------------
@@ -261,12 +257,10 @@ export class LobbyScene extends Scene {
     ctx.translate(VIEW_W / 2, y + h / 2);
     ctx.scale(pul, pul);
     ctx.translate(-VIEW_W / 2, -(y + h / 2));
-    ctx.fillStyle = '#000000aa'; ctx.fillRect(x + 2, y + 3, w, h);
-    ctx.fillStyle = hov ? '#1d3a24' : '#12281a';
-    ctx.fillRect(x, y, w, h);
-    ctx.strokeStyle = '#4dff88';
-    ctx.lineWidth = 2; ctx.strokeRect(x + 1, y + 1, w - 2, h - 2); ctx.lineWidth = 1;
-    ctx.strokeStyle = '#ffffff33'; ctx.strokeRect(x + 3.5, y + 3.5, w - 7, h - 7);
+    ctx.fillStyle = '#000000aa'; ctx.fillRect(x + 3, y + 4, w, h);
+    if (SPR.plate_green) { slice9(ctx, SPR.plate_green, x, y + (hov && Input.mouse.down ? 1 : 0), w, h, 12); }
+    else { ctx.fillStyle = hov ? '#1d3a24' : '#12281a'; ctx.fillRect(x, y, w, h); ctx.strokeStyle = '#4dff88'; ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1); }
+    if (hov) { ctx.fillStyle = '#ffffff22'; ctx.fillRect(x + 4, y + 4, w - 8, h - 8); }
     if (SPR.lobby_nav_play) drawSprite(ctx, SPR.lobby_nav_play, x + 18, y + h / 2, { scale: 1.3 });
     drawText(ctx, 'JOGAR', VIEW_W / 2 + 8, y + 10, { align: 'center', scale: 2, color: '#4dff88', shadow: true });
     ctx.restore();
@@ -281,6 +275,7 @@ export class LobbyScene extends Scene {
   drawChips(ctx, G) {
     if (this.holo(ctx, 'mis', 26, 336, 'lobby_nav_mis', 'MISSÕES', '#4dff88')) this.open('missions');
     if (this.holo(ctx, 'dev', 78, 336, 'lobby_nav_dev', 'DEV', '#ff8c3b')) this.open('dev');
+    if (this.holo(ctx, 'cod', 130, 336, 'lobby_nav_col', 'CODEX', '#4dd8ff')) this.open('arch');
   }
 
   // clickable consoles on the hub art: hologram shops ----------------------
@@ -348,7 +343,7 @@ export class LobbyScene extends Scene {
     const T = { nexus: 'NEXUS CORE', cos: 'COSMÉTICA', missions: 'MISSÕES', dev: 'CONSOLE DEV', cfg: 'CONFIGURAÇÕES' };
     const C = { nexus: '#d8b64c', cos: '#ff5df2', missions: '#4dff88', dev: '#ff8c3b', cfg: '#8a84a8' };
     this.frame(ctx, 40, 30, 560, 300, C[this.overlay]);
-    drawText(ctx, T[this.overlay], 52, 38, { scale: 2, color: C[this.overlay], shadow: true, style: 'hero' });
+    drawSectionTitle(ctx, T[this.overlay], 52, 36, C[this.overlay], 2);
     if (UI.close('closeO', 576, 36, 20)) { this.overlay = null; }
     if (this.overlay === 'nexus') this.drawNexus(ctx, G);
     else if (this.overlay === 'cos') this.drawCosmetics(ctx, G);

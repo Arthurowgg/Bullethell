@@ -127,6 +127,9 @@ export function loadSheetArt(onProgress) {
     load(`assets/sprites/ui/${k}.png`, (img) => { SPR[k] = cnv(img, 1); });
   // universal UI kit: frames, icons, toggles, sliders, menu backdrop
   load('assets/sprites/ui/loki_ugly.png', (img) => { SPR.loki_ugly = cnv(img, 1); });
+  // v5 button plates (own art per family) + game logo
+  for (const k of ['plate_gold', 'plate_purple', 'plate_hazard', 'plate_cyan', 'plate_green', 'plate_pink', 'nexus_logo'])
+    load(`assets/sprites/ui/${k}.png`, (img) => { SPR[k] = cnv(img, 1); });
   for (const k of ['ui_btn', 'ui_btn_gold', 'ui_panel', 'ui_header', 'ui_menubg', 'ui_keycap',
     'ui_toggle_on', 'ui_toggle_off', 'ui_slider_track', 'ui_slider_knob',
     'ic_play', 'ic_restart', 'ic_quit', 'ic_gear', 'ic_music', 'ic_speaker',
@@ -141,7 +144,7 @@ export function loadSheetArt(onProgress) {
   // Nexus lobby hub art
   for (const l of ['bg', 'core', 'portal_shop', 'portal_cos', 'portal_worlds',
     'wemb_wakanda', 'wemb_asgard', 'wemb_newyork',
-    'nav_play', 'nav_nexus', 'nav_cos', 'nav_inc', 'nav_col', 'nav_mis', 'nav_dev', 'nav_gear']) {
+    'nav_play', 'nav_nexus', 'nav_cos', 'nav_inc', 'nav_col', 'nav_mis', 'nav_dev', 'nav_gear', 'nav_cart']) {
     load(`assets/sprites/lobby/${l}.png`, (img) => { SPR['lobby_' + l] = cnv(img, 1); });
   }
 

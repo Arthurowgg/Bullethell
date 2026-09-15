@@ -64,12 +64,8 @@ html, body {
 }
 @keyframes lokiBob { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(4px) rotate(2deg); } }
 .boot-head { text-align: center; margin-bottom: 14px; }
-.boot-logo {
-  font-size: 26px; font-weight: 700; color: #e8e0ff; font-style: italic;
-  text-shadow: 0 3px 0 #2a1b6b, 0 0 22px rgba(123,92,255,.55);
-  animation: bootPulse 1.6s steps(2) infinite;
-}
-.boot-logo b { color: #ff4d4d; }
+#boot-logo { width: 230px; image-rendering: pixelated; margin: 0 auto 2px; display: block; }
+
 @keyframes bootPulse { 50% { text-shadow: 0 3px 0 #2a1b6b, 0 0 34px rgba(255,77,77,.65); } }
 .boot-sub { font-size: 10px; color: #7b6cff; letter-spacing: 5px; margin-top: -2px; }
 .boot-bar {

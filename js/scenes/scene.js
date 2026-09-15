@@ -10,6 +10,7 @@ import { Audio } from '../core/audio.js';
 import { clamp } from '../core/util.js';
 import { SPR, drawSprite } from '../core/pixel.js';
 import { drawIcon } from '../core/icons.js';
+import { drawSectionTitle } from '../game/herotitle.js';
 import { VIEW_W, VIEW_H } from '../game/arena.js';
 
 export class Scene {
@@ -103,11 +104,15 @@ export const UI = {
     if (clicked) this.clickedId = id;
     const oy = pressed ? 1 : 0;
     const col = o.color || (o.primary ? '#ffd94a' : '#7b5cff');
-    const useFrame = o.style === 'frame' && h >= 20 && w >= 64 && (o.primary ? SPR.ui_btn_gold : SPR.ui_btn);
+    const PLATE = { '#4dff88': 'green', '#d8b64c': 'gold', '#ffd94a': 'gold', '#ffe9a0': 'gold',
+      '#ff5df2': 'pink', '#ff4d4d': 'hazard', '#ff8c8c': 'hazard', '#ff8c3b': 'hazard',
+      '#4dd8ff': 'cyan', '#9feaff': 'cyan', '#7b5cff': 'purple', '#b06bff': 'purple', '#8a84a8': 'purple' };
+    const plate = (o.style !== 'ghost') && SPR['plate_' + (o.plate || PLATE[col] || 'purple')];
+    const useFrame = h >= 18 && w >= 44 && plate;
     if (useFrame) {
-      ctxFill(x, y + oy, w, h, '#0d0a1e');
-      slice9(GCTX, o.primary ? SPR.ui_btn_gold : SPR.ui_btn, x, y + oy, w, h, 6);
-      if (hov) ctxFill(x + 2, y + oy + 2, w - 4, h - 4, pressed ? '#00000066' : '#ffffff14');
+      ctxFill(x + 2, y + oy + 3, w, h, '#000000aa');
+      slice9(GCTX, plate, x, y + oy, w, h, 12);
+      if (hov) ctxFill(x + 4, y + oy + 4, w - 8, h - 8, pressed ? '#00000066' : '#ffffff22');
     } else {
       const inside = o.style === 'ghost' ? null : (hov ? (pressed ? '#0a0818' : '#1d1740') : '#120e2a');
       chamfer(GCTX, x, y + oy, w, h, {
@@ -141,11 +146,18 @@ export const UI = {
     if (clicked) this.clickedId = id;
     const oy = pressed ? 1 : 0;
     const col = o.color || '#7b5cff';
-    chamfer(GCTX, x, y + oy, s, s, {
-      fill: hov ? (pressed ? '#0a0818' : '#1d1740') : '#120e2a',
-      border: hov ? '#ffffff' : col,
-      cut: Math.min(3, Math.floor(s / 5)),
-    });
+    const ip = s >= 22 && SPR['plate_' + (o.plate || 'purple')];
+    if (ip) {
+      ctxFill(x + 2, y + oy + 2, s, s, '#000000aa');
+      slice9(GCTX, ip, x, y + oy, s, s, Math.min(12, s >> 1));
+      if (hov) ctxFill(x + 3, y + oy + 3, s - 6, s - 6, pressed ? '#00000066' : '#ffffff22');
+    } else {
+      chamfer(GCTX, x, y + oy, s, s, {
+        fill: hov ? (pressed ? '#0a0818' : '#1d1740') : '#120e2a',
+        border: hov ? '#ffffff' : col,
+        cut: Math.min(3, Math.floor(s / 5)),
+      });
+    }
     drawIcon(GCTX, iconKey, x + s / 2, y + oy + s / 2, { color: hov ? '#ffffff' : o.iconColor || '#cfc8f2' });
     if (clicked && !o.silent) Audio.sfx('ui');
     return clicked;
@@ -159,11 +171,17 @@ export const UI = {
     const clicked = hov && this.anyClick;
     if (clicked) this.clickedId = id;
     const oy = pressed ? 1 : 0;
-    chamfer(GCTX, x, y + oy, s, s, {
-      fill: hov ? (pressed ? '#2a0a12' : '#3d0d1c') : '#1c0a14',
-      border: hov ? '#ffffff' : '#ff4d4d',
-      cut: 3,
-    });
+    if (s >= 20 && SPR.plate_hazard) {
+      ctxFill(x + 2, y + oy + 2, s, s, '#000000aa');
+      slice9(GCTX, SPR.plate_hazard, x, y + oy, s, s, Math.min(12, s >> 1));
+      if (hov) ctxFill(x + 3, y + oy + 3, s - 6, s - 6, pressed ? '#00000066' : '#ffffff22');
+    } else {
+      chamfer(GCTX, x, y + oy, s, s, {
+        fill: hov ? (pressed ? '#2a0a12' : '#3d0d1c') : '#1c0a14',
+        border: hov ? '#ffffff' : '#ff4d4d',
+        cut: 3,
+      });
+    }
     drawIcon(GCTX, 'x', x + s / 2, y + oy + s / 2, { color: hov ? '#ffffff' : '#ff8c8c', accent: '#ff4d4d' });
     if (clicked) Audio.sfx('uiBack');
     return clicked;
@@ -175,9 +193,7 @@ export const UI = {
     ctxFill(x + 3, y + 2, w - 6, 1, '#ffffff14');
     if (o.title) {
       if (SPR.ui_header) drawSprite(GCTX, SPR.ui_header, x + w / 2, y + 13, { scaleX: Math.min(w - 12, Math.max(130, textWidth(o.title, 2) + 46)) / SPR.ui_header.width, scaleY: 22 / SPR.ui_header.height });
-      if (o.icon) drawIcon(GCTX, o.icon, x + w / 2 - textWidth(o.title, 2) / 2 - 12, y + 12, { color: o.titleColor || '#ffd94a' });
-      drawText(GCTX, o.title, x + w / 2 + (o.icon ? 5 : 0), y + 7, { align: 'center', scale: o.titleScale || 2, color: o.titleColor || '#ffd94a', shadow: true, style: 'hero' });
-      ctxFill(x + 6, y + 26, w - 12, 1, '#3a3350');
+      drawSectionTitle(GCTX, o.title, x + w / 2, y + 6, o.titleColor || '#ffd94a', o.titleScale || 2, 'center');
     }
   },
 

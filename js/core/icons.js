@@ -136,6 +136,26 @@ const IC = {
     'XX....XX',
     '.XXXXXX.',
   ],
+  cart: [
+    '........',
+    '.XXXX...',
+    '.X..X...',
+    '.XooX.X.',
+    '.XooXXX.',
+    '.X....X.',
+    '..o..o..',
+    '........',
+  ],
+  mask: [
+    '........',
+    '.XXXXXX.',
+    'XX.oo.XX',
+    'XX.oo.XX',
+    '.XX..XX.',
+    '..XXXX..',
+    '........',
+    '........',
+  ],
   // ---- hero ability icons (Q / E) ----
   q_arachnid: [
     'X..XX..X',

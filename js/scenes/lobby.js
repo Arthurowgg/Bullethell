@@ -6,6 +6,8 @@
 // ---------------------------------------------------------------------------
 import { Scene, UI, toggleFullscreen } from './scene.js';
 import { drawText, textWidth } from '../core/font.js';
+import { drawIcon } from '../core/icons.js';
+import { drawHeroTitle } from '../game/herotitle.js';
 import { SPR, drawSprite } from '../core/pixel.js';
 import { Audio } from '../core/audio.js';
 import { Input } from '../core/input.js';
@@ -29,11 +31,15 @@ export class LobbyScene extends Scene {
     this.skinSel = SKINS[0].id;
     this.transT = 0;          // portal transition anim
     this._resetArm = false; this._resetArm2 = false;
+    this.holoL = 0; this.holoR = 0;
     Audio.playTrack('lobby');
   }
 
   update(dt, G) {
     this.t += dt; this.transT = Math.max(0, this.transT - dt);
+    const k = Math.min(1, dt * 10);
+    this.holoL += ((UI.hit(28, 138, 110, 80) ? 1 : 0) - this.holoL) * k;
+    this.holoR += ((UI.hit(512, 156, 96, 64) ? 1 : 0) - this.holoR) * k;
     if (this.overlay === 'arch' && this.arch.update(dt)) this.overlay = null;
     if (this.overlay && (Input.pressed('Escape') || Input.pressed('KeyP'))) {
       if (this.overlay === 'arch' && !this.arch.closing) this.arch.close();
@@ -182,7 +188,8 @@ export class LobbyScene extends Scene {
     const base = eq && eq.hero === hero.id ? 'skin_' + eq.id : 'hero_' + hero.id;
     const big = SPR[base + '_big'] || SPR[base];
     if (big) drawSprite(ctx, big, cx, cy - 6, { scale: 56 / big.height });
-    drawText(ctx, eq ? eq.name : hero.name, cx, cy + 42, { align: 'center', scale: 2, color: eq ? RARITY_SHOP[eq.rarity].color : hero.color, shadow: true });
+    if (eq) drawText(ctx, eq.name, cx, cy + 42, { align: 'center', scale: 2, color: RARITY_SHOP[eq.rarity].color, shadow: true });
+    else drawHeroTitle(ctx, hero.id, hero.name, cx, cy + 42, 2);
     drawText(ctx, hero.role, cx, cy + 60, { align: 'center', color: '#9a93c8', shadow: true });
   }
 
@@ -282,42 +289,44 @@ export class LobbyScene extends Scene {
     const hovR = UI.hit(512, 156, 96, 64);
     if (hovL) UI.hoverId = 'pcL';
     if (hovR) UI.hoverId = 'pcR';
-    this._holoShop(ctx, 83, 138, 'LOJA NEXUS', '#4dd8ff', hovL, hovL ? ['up_01', 'up_05', 'up_12'] : null);
-    this._holoShop(ctx, 560, 156, 'LOJA COSMÉTICA', '#ff5df2', hovR, hovR ? SKINS.slice(0, 3).map((k) => 'skin_' + k.id) : null);
+    if (this.holoL > 0.02) this._holoShop(ctx, 83, 138, 'LOJA NEXUS', '#4dd8ff', this.holoL, 'pixel', ['up_01', 'up_05', 'up_12']);
+    if (this.holoR > 0.02) this._holoShop(ctx, 560, 156, 'LOJA COSMÉTICA', '#ff5df2', this.holoR, 'mask', SKINS.slice(0, 3).map((k) => 'skin_' + k.id));
     if (hovL && UI.anyClick) this.open('nexus');
     if (hovR && UI.anyClick) this.open('cos');
   }
 
-  _holoShop(ctx, x, yTop, label, color, hov, previews) {
-    const flick = 0.75 + Math.sin(this.t * 13 + x) * 0.12 + (Math.sin(this.t * 47) > 0.96 ? -0.3 : 0);
-    const a = hov ? 1 : 0.55;
+  _holoShop(ctx, x, yTop, label, color, k, iconKey, previews) {
+    const flick = 0.9 + Math.sin(this.t * 13 + x) * 0.06 + (Math.sin(this.t * 47) > 0.97 ? -0.18 : 0);
+    const a = k * flick;
+    const rise = (1 - k) * 8;
     ctx.save();
-    ctx.globalAlpha = a * flick;
+    ctx.globalAlpha = a;
     // light cone from the console
     ctx.fillStyle = color + '22';
     ctx.beginPath();
-    ctx.moveTo(x - 16, yTop + 26);
-    ctx.lineTo(x + 16, yTop + 26);
-    ctx.lineTo(x + 30, yTop - 14);
-    ctx.lineTo(x - 30, yTop - 14);
+    ctx.moveTo(x - 14, yTop + 24);
+    ctx.lineTo(x + 14, yTop + 24);
+    ctx.lineTo(x + 30, yTop - 12 + rise);
+    ctx.lineTo(x - 30, yTop - 12 + rise);
     ctx.closePath();
     ctx.fill();
-    // holo plate
-    const w = 96, h = 18;
-    ctx.fillStyle = '#0d0a1ecc';
-    ctx.fillRect(x - w / 2, yTop - 14 - h, w, h);
+    // holo plate (rises with hover)
+    const w = 108, h = 20, py = yTop - 14 - h + rise;
+    ctx.fillStyle = '#0d0a1ee6';
+    ctx.fillRect(x - w / 2, py, w, h);
     ctx.strokeStyle = color;
-    ctx.strokeRect(x - w / 2 + 0.5, yTop - 14 - h + 0.5, w - 1, h - 1);
+    ctx.strokeRect(x - w / 2 + 0.5, py + 0.5, w - 1, h - 1);
     ctx.fillStyle = color;
-    ctx.fillRect(x - w / 2, yTop - 14 - h, w, 1);
-    // scanlines
+    ctx.fillRect(x - w / 2, py, w, 1);
     ctx.fillStyle = color + '33';
-    for (let yy = yTop - 14 - h + 3; yy < yTop - 14 - 2; yy += 3) ctx.fillRect(x - w / 2 + 2, yy, w - 4, 1);
-    drawText(ctx, label, x, yTop - 14 - h + 5, { align: 'center', scale: 1, color: hov ? '#ffffff' : color, shadow: true });
-    if (previews) {
-      previews.forEach((k, i) => {
-        const sp = SPR[k];
-        if (sp) { ctx.globalAlpha = a * flick; drawSprite(ctx, sp, x - 26 + i * 26, yTop - 2, { scale: Math.min(14 / sp.width, 14 / sp.height) }); }
+    for (let yy = py + 3; yy < py + h - 2; yy += 3) ctx.fillRect(x - w / 2 + 2, yy, w - 4, 1);
+    drawIcon(ctx, iconKey, x - w / 2 + 10, py + h / 2, { color });
+    drawText(ctx, label, x - w / 2 + 20, py + 6, { scale: 1, color: k > 0.6 ? '#ffffff' : color, shadow: true });
+    if (previews && k > 0.35) {
+      ctx.globalAlpha = a * ((k - 0.35) / 0.65);
+      previews.forEach((pk, i) => {
+        const sp = SPR[pk];
+        if (sp) drawSprite(ctx, sp, x - 26 + i * 26, yTop + 2 + rise, { scale: Math.min(14 / sp.width, 14 / sp.height) });
       });
     }
     ctx.restore();

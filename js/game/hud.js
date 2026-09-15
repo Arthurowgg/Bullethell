@@ -12,6 +12,7 @@ import { fmtTime, clamp } from '../core/util.js';
 import { xpNeed } from './run.js';
 import { VIEW_W } from './arena.js';
 import { TOTAL_WAVES, WORLD_LABEL } from '../data/campaign.js';
+import { drawHeroTitle } from './herotitle.js';
 
 const HERO_COLOR = { arachnid: '#ff4d4d', stormgod: '#9feaff', ironknight: '#ffd94a', merc: '#ff8c8c', claws: '#ff8c3b', mystic: '#b06bff' };
 
@@ -167,7 +168,8 @@ export function drawHud(ctx, G) {
 
   if (G.banner) {
     ctx.globalAlpha = Math.min(1, G.banner.t);
-    drawText(ctx, G.banner.text, VIEW_W / 2, 120, { scale: 2, align: 'center', color: G.banner.color || '#e8e8ff', shadow: true });
+    if (G.banner.hero) drawHeroTitle(ctx, G.banner.hero, G.banner.text, VIEW_W / 2, 116, 3);
+    else drawText(ctx, G.banner.text, VIEW_W / 2, 120, { scale: 2, align: 'center', color: G.banner.color || '#e8e8ff', shadow: true });
     ctx.globalAlpha = 1;
   }
 }

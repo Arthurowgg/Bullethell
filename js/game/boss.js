@@ -45,7 +45,18 @@ export class Boss {
     this.frozen = Math.max(0, this.frozen - dt);
     const P = G.player;
 
-    if (this.introT > 0) { this.introT -= dt; return; }
+    if (this.introT > 0) {
+      this.introT -= dt;
+      if (this.introT <= 0.25 && !this._slammed) {
+        this._slammed = true;
+        G.particles.addShake(7);
+        G.particles.ring(this.x, this.y + 20, '#ffffff', 26, 190);
+        G.particles.ring(this.x, this.y + 20, this.def.id === 'kang' ? '#4dff88' : '#ff4d4d', 18, 140);
+        G.particles.burst(this.x, this.y + 22, '#8a84a8', 18, 90, 0.6, 2, 60);
+        G.audio.sfx('bigboom');
+      }
+      return;
+    }
 
     // phase transitions
     const want = this.phaseFor(this.hpFrac());
@@ -294,9 +305,16 @@ export class Boss {
       drawSprite(ctx, spr, this.x, this.y + bob - 1, { tint: aura });
       ctx.restore();
     }
-    if (this.introT > 0 && Math.floor(this.introT * 10) % 2 === 0) ctx.globalAlpha = 0.5;
-    if (spr) drawSprite(ctx, spr, this.x, this.y + bob, { tint: this.flash > 0 ? '#ffffff' : this.frozen > 0 ? '#7fd4ff' : undefined });
-    ctx.globalAlpha = 1;
+    if (this.introT > 0) {
+      // slam-in: scale down from above with landing shadow
+      const q = this.introT / 2.2;
+      const sc = 1 + q * 1.6;
+      ctx.globalAlpha = 0.35 + (1 - q) * 0.65;
+      ctx.fillStyle = '#000000';
+      ctx.beginPath(); ctx.ellipse(this.x, this.y + 26, 30 * (1 - q * 0.5), 10 * (1 - q * 0.5), 0, 0, TAU); ctx.fill();
+      if (spr) drawSprite(ctx, spr, this.x, this.y - q * 60 + bob, { scale: sc, tint: this.flash > 0 ? '#ffffff' : undefined });
+      ctx.globalAlpha = 1;
+    } else if (spr) drawSprite(ctx, spr, this.x, this.y + bob, { tint: this.flash > 0 ? '#ffffff' : this.frozen > 0 ? '#7fd4ff' : undefined });
     // beam draw
     if (this.beam) {
       const b = this.beam;

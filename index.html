@@ -12,11 +12,16 @@
   <div id="stage">
     <canvas id="game" width="640" height="360" tabindex="0" aria-label="MARVEL NEXUS"></canvas>
     <div id="boot">
-      <div class="boot-logo">MARVEL <b>NEXUS</b></div>
-      <div class="boot-sub">BULLET HELL DIMENSIONAL</div>
-      <div class="boot-bar"><i id="boot-fill"></i></div>
-      <div class="boot-hint" id="boot-hint">INICIALIZANDO O NEXUS...</div>
-      <div class="boot-err" id="boot-err"></div>
+      <div class="boot-frame">
+        <img id="boot-loki" src="assets/sprites/ui/loki_ugly.png" alt="" />
+        <div class="boot-head">
+          <div class="boot-logo">MARVEL <b>NEXUS</b></div>
+          <div class="boot-sub">BULLET HELL DIMENSIONAL</div>
+        </div>
+        <div class="boot-bar"><i id="boot-fill"></i><span class="boot-seg"></span></div>
+        <div class="boot-row"><div class="boot-hint" id="boot-hint">INICIALIZANDO O NEXUS...</div><div class="boot-pct" id="boot-pct">0%</div></div>
+        <div class="boot-err" id="boot-err"></div>
+      </div>
     </div>
   </div>
   <noscript><div style="color:#fff;font-family:monospace;padding:24px">MARVEL NEXUS precisa de JavaScript.</div></noscript>

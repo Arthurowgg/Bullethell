@@ -94,8 +94,6 @@ export function loadSheetArt(onProgress) {
   // unique shots
   for (const h of ['arachnid', 'stormgod', 'ironknight', 'merc', 'claws', 'mystic'])
     load(`assets/sprites/shots/hero_${h}.png`, (img) => { SPR['shot_hero_' + h] = cnv(img, 1); });
-  for (const e of ['drone', 'chitauri', 'symbiote', 'sorcerer', 'sentinel', 'spectre', 'jotun', 'chaos'])
-    load(`assets/sprites/shots/en_${e}.png`, (img) => { SPR['shot_en_' + e] = cnv(img, 1); });
   for (const b of ['ultron', 'loki', 'hela', 'devourer', 'thanos', 'cosmic', 'kang'])
     load(`assets/sprites/shots/boss_${b}.png`, (img) => { SPR['shot_boss_' + b] = cnv(img, 1); });
   // comic UI icons
@@ -128,6 +126,7 @@ export function loadSheetArt(onProgress) {
     'arch_sk_arachnid', 'arch_sk_stormgod', 'arch_sk_ironknight', 'arch_sk_merc', 'arch_sk_claws', 'arch_sk_mystic'])
     load(`assets/sprites/ui/${k}.png`, (img) => { SPR[k] = cnv(img, 1); });
   // universal UI kit: frames, icons, toggles, sliders, menu backdrop
+  load('assets/sprites/ui/loki_ugly.png', (img) => { SPR.loki_ugly = cnv(img, 1); });
   for (const k of ['ui_btn', 'ui_btn_gold', 'ui_panel', 'ui_header', 'ui_menubg', 'ui_keycap',
     'ui_toggle_on', 'ui_toggle_off', 'ui_slider_track', 'ui_slider_knob',
     'ic_play', 'ic_restart', 'ic_quit', 'ic_gear', 'ic_music', 'ic_speaker',

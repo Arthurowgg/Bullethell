@@ -58,7 +58,7 @@ export class GameScene extends Scene {
     this.pauseCfg = false;
     this.state = 'intro';
     this.introT = 2.2;
-    G.banner = { text: this.raid ? this.raid.name : 'NEXO DE COMBATE', color: this.hero.color, t: 2.2 };
+    G.banner = this.raid ? { text: this.raid.name, color: this.hero.color, t: 2.2 } : { text: this.hero.name, hero: this.hero.id, t: 2.4 };
     G.hintT = this.save.tutorialDone ? 0 : 8;
     G.comic = new ComicUI();
     this.currentFinal = false;
@@ -392,6 +392,7 @@ export class GameScene extends Scene {
     const def = bossById(bossId);
     this.currentFinal = final;
     G.boss = new Boss(def, final ? 0.8 : 1);
+    this.slowmo = 0.35; this.slowmoT = 1.3;
     this._disc(G, 'boss', bossId, def.name);
     G.comic.push('boss', def.name, def.intro || 'INCURSÃO EM CURSO', 'alarm', '#ff4d4d', { bossId });
     Audio.sfx('phase');
@@ -418,6 +419,7 @@ export class GameScene extends Scene {
     }
     if (this.levelChoices) { this.updateLevelUp(G); return; }
 
+    if (this.slowmoT > 0) { this.slowmoT -= dt; if (this.slowmoT <= 0) this.slowmo = 1; }
     const sdt = dt * this.slowmo;
     G.time += sdt;
     G.hintT = Math.max(0, G.hintT - dt);

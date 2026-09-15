@@ -444,6 +444,16 @@ export function buildAllSprites() {
   reg('b_hammer', (() => { const p = new Pix(11, 9); p.rect(1, 2, 9, 5, '#6b7288'); p.rect(2, 3, 7, 3, '#8d93a8'); p.rect(0, 3, 2, 3, '#4dd8ff'); p.rect(9, 3, 2, 3, '#4dd8ff'); p.rect(4, 0, 3, 2, '#524a3a'); p.px(2, 4, '#9feaff'); p.px(8, 4, '#9feaff'); return p; })());
   reg('b_knife', (() => { const p = new Pix(10, 5); p.tri(5, 0, 9, 2, 5, 4, '#d8dde8'); p.rect(1, 1, 5, 3, '#8d93a8'); p.px(9, 2, '#ffffff'); p.rect(0, 2, 2, 1, '#ff4d4d'); p.px(7, 2, '#ffffff'); return p; })());
 
+  // distinct enemy shots (crisp, per family)
+  reg('shot_en_drone', (() => { const p = new Pix(9, 9); p.diamond(4, 4, 3, '#ff4d4d'); p.diamond(4, 4, 1, '#ffd0d0'); p.px(4, 0, '#ff8c8c'); p.px(4, 8, '#ff8c8c'); p.px(0, 4, '#ff8c8c'); p.px(8, 4, '#ff8c8c'); return p; })());
+  reg('shot_en_chitauri', (() => { const p = new Pix(11, 5); p.tri(6, 0, 10, 2, 6, 4, '#7fd4ff'); p.rect(1, 1, 6, 3, '#2b6f9e'); p.px(0, 2, '#eaffff'); p.px(10, 2, '#ffffff'); return p; })());
+  reg('shot_en_symbiote', (() => { const p = new Pix(9, 9); p.disc(4, 4, 3, '#2a1440'); p.disc(4, 4, 2, '#5a2a80'); p.px(4, 4, '#b06bff'); p.px(1, 2, '#5a2a80'); p.px(7, 2, '#5a2a80'); p.px(2, 7, '#5a2a80'); p.px(7, 7, '#5a2a80'); return p; })());
+  reg('shot_en_sorcerer', (() => { const p = new Pix(9, 9); p.circle(4, 4, 3, '#ff9d4d', false); p.diamond(4, 4, 2, '#7a2d00'); p.px(4, 4, '#ffd94a'); p.px(4, 1, '#ffd94a'); p.px(4, 7, '#ffd94a'); return p; })());
+  reg('shot_en_sentinel', (() => { const p = new Pix(9, 9); p.rect(1, 1, 7, 7, '#155a70'); p.rect(2, 2, 5, 5, '#4dd8ff'); p.px(4, 4, '#eaffff'); p.rect(0, 4, 1, 1, '#9feaff'); p.rect(8, 4, 1, 1, '#9feaff'); return p; })());
+  reg('shot_en_spectre', (() => { const p = new Pix(7, 9); p.tri(3, 0, 6, 5, 3, 6, '#cfe8ff'); p.tri(3, 0, 0, 5, 3, 6, '#7fb8e8'); p.px(3, 7, '#7fb8e8'); p.px(2, 8, '#4d88b8'); p.px(4, 8, '#4d88b8'); p.px(3, 3, '#ffffff'); return p; })());
+  reg('shot_en_jotun', (() => { const p = new Pix(7, 11); p.tri(3, 0, 6, 7, 3, 8, '#bfeaff'); p.tri(3, 0, 0, 7, 3, 8, '#5aa8d8'); p.px(3, 9, '#5aa8d8'); p.px(3, 10, '#2b6f9e'); p.px(3, 4, '#ffffff'); return p; })());
+  reg('shot_en_chaos', (() => { const p = new Pix(9, 9); p.px(4, 0, '#ff5df2'); p.px(4, 8, '#ff5df2'); p.px(0, 4, '#ff5df2'); p.px(8, 4, '#ff5df2'); p.px(1, 1, '#ff9df6'); p.px(7, 1, '#ff9df6'); p.px(1, 7, '#ff9df6'); p.px(7, 7, '#ff9df6'); p.diamond(4, 4, 2, '#ff5df2'); p.px(4, 4, '#ffffff'); return p; })());
+
   // pickups & icons
   reg('heart', heart());
   reg('gem', gemXp());

@@ -151,10 +151,16 @@ async function boot() {
   const fill = document.getElementById('boot-fill');
   const hint = document.getElementById('boot-hint');
   const err = document.getElementById('boot-err');
+  const pctEl = document.getElementById('boot-pct');
   const setP = (p, msg) => {
     if (fill) fill.style.width = Math.round(p) + '%';
+    if (pctEl) pctEl.textContent = Math.round(p) + '%';
     if (msg && hint) hint.textContent = msg;
   };
+  const TIPS = ['DICA: ESQUIVE ATRAVESSANDO RAJADAS...', 'DICA: TEIAS CONECTAM ALVOS...', 'DICA: O NEXUS ARCHIVES REGISTRA TUDO...', 'DICA: Q PRONTO = MOMENTO ASSINATURA...', 'DICA: VENTS PULSAM NO NÚCLEO...'];
+  let tipI = 0;
+  const tipTimer = setInterval(() => { if (!hint || !hint.textContent.startsWith('DICA')) return; tipI = (tipI + 1) % TIPS.length; hint.textContent = TIPS[tipI]; }, 2200);
+  setP(2, TIPS[0]);
   try {
     setP(8, 'CARREGANDO PERFIL...');
     Save.load();
@@ -171,6 +177,7 @@ async function boot() {
     setP(100, 'PRONTO!');
     const bootEl = document.getElementById('boot');
     if (bootEl) {
+      clearInterval(tipTimer);
       setTimeout(() => {
         bootEl.classList.add('gone');
         setTimeout(() => bootEl.remove(), 500);

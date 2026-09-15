@@ -123,6 +123,16 @@ export class TitleScene extends Scene {
       drawText(ctx, 'PRESSIONE ENTER OU CLIQUE PARA COMEÇAR', cx, 257, { align: 'center', scale: 1, color: '#ffd94a', shadow: true });
     }
 
+    // ugly loki peeking from the corner, taunting
+    if (SPR.loki_ugly) {
+      const lb = Math.sin(this.t * 2.4) * 2;
+      ctx.save();
+      ctx.globalAlpha = 0.25 + Math.sin(this.t * 3) * 0.08;
+      ctx.fillStyle = '#4dff88';
+      ctx.beginPath(); ctx.ellipse(586, 330, 34, 8, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+      drawSprite(ctx, SPR.loki_ugly, 586, 292 + lb, { scale: 1.1, rot: Math.sin(this.t * 1.2) * 0.04 });
+    }
     if (UI.button('fs', cx - 70, 284, 140, 20, 'TELA CHEIA', { icon: 'ic_full', color: '#4dd8ff' })) toggleFullscreen();
 
     drawText(ctx, 'FAN GAME SEM FINS LUCRATIVOS · v1.2', cx, 344, { align: 'center', scale: 1, color: '#7a74a0' });

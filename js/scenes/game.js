@@ -615,6 +615,16 @@ export class GameScene extends Scene {
             const hits = this.chainLightning(G, e.x, e.y, 1, b.dmg * 0.5, 90, e);
             if (hits && hits.length) Audio.sfx('zap');
           }
+          if (b.arcaneBurst && !b.didBurst) {
+            b.didBurst = true; b.dead = true;
+            for (let k = 0; k < 8; k++) {
+              const aa = (k / 8) * Math.PI * 2;
+              G.bullets.spawnPlayer({ x: b.x, y: b.y, vx: Math.cos(aa) * 170, vy: Math.sin(aa) * 170, dmg: b.dmg * 0.5, pierce: 1, r: 3, sprite: 'b_purple', life: 0.7 });
+            }
+            G.particles.ring(b.x, b.y, '#b06bff', 12, 90);
+            G.particles.burst(b.x, b.y, '#ff9d4d', 6, 60, 0.3, 1);
+            Audio.sfx('illus');
+          }
           if (b.split && !b.didSplit) {
             b.didSplit = true;
             for (const off of [-0.7, 0.7]) {

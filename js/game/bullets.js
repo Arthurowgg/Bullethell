@@ -133,8 +133,12 @@ export class BulletSystem {
       const sc = b.scale || 1;
       if (!s) continue;
       if (b.fx === 'arachnid') {
-        // silk threads trailing the web dart
-        ctx.strokeStyle = '#ff2b2b88';
+        // layered web dart: spinning open web + twin silk threads + node glints
+        if (SPR.web_spider) { ctx.globalAlpha = 0.55; drawSprite(ctx, SPR.web_spider, b.x, b.y, { rot: b.age * 9, scale: sc }); ctx.globalAlpha = 1; }
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(b.x - Math.cos(a) * 9 - 1, b.y - Math.sin(a) * 9 - 1, 1, 1);
+        ctx.fillRect(b.x - Math.cos(a) * 5, b.y - Math.sin(a) * 5, 1, 1);
+        ctx.strokeStyle = '#ffffff99';
         ctx.beginPath();
         ctx.moveTo(b.x - Math.cos(a) * 14 + Math.sin(a) * 2, b.y - Math.sin(a) * 14 - Math.cos(a) * 2);
         ctx.lineTo(b.x, b.y);

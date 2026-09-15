@@ -98,7 +98,8 @@ export class LobbyScene extends Scene {
     const hov = UI.hit(x - 12, y - 12, 24, 30);
     if (hov) UI.hoverId = id;
     ctx.globalAlpha = hov ? 1 : 0.85;
-    drawIcon(ctx, icon, x, y - 2, { scale: 1.5, color: hov ? '#ffffff' : color || '#9a93c8' });
+    if (SPR[icon]) drawSprite(ctx, SPR[icon], x, y - 2, { scale: 1.4 });
+    else drawIcon(ctx, icon, x, y - 2, { scale: 1.5, color: hov ? '#ffffff' : color || '#9a93c8' });
     ctx.globalAlpha = 1;
     drawText(ctx, label, x, y + 12, { align: 'center', scale: 1, color: hov ? '#ffffff' : color || '#9a93c8', shadow: true });
     if (hov && UI.anyClick) return true;
@@ -137,7 +138,7 @@ export class LobbyScene extends Scene {
     drawText(ctx, String(s.fragments), 482, 7, { color: '#9feaff' });
     this.glyphCred(ctx, 544, 11);
     drawText(ctx, String(s.credits), 554, 7, { color: '#ffe9a0' });
-    if (this.holo(ctx, 'gear', 618, 11, 'gear', '', '#8a84a8')) this.open('cfg');
+    if (this.holo(ctx, 'gear', 618, 11, 'nav_gear', '', '#8a84a8')) this.open('cfg');
 
     this.drawComputers(ctx, G);
     this.drawCore(ctx, G);
@@ -210,7 +211,7 @@ export class LobbyScene extends Scene {
       ctx.lineWidth = sel ? 2 : 1;
       ctx.beginPath(); ctx.arc(x, y, 16, 0, Math.PI * 2); ctx.stroke();
       ctx.lineWidth = 1;
-      const em = SPR['hero_' + h.id];
+      const em = SPR['head_' + h.id] || SPR['hero_' + h.id];
       if (em) drawSprite(ctx, em, x, y, { alpha: unlocked ? 1 : 0.3 });
       if (!unlocked) {
         ctx.fillStyle = '#8a84a8';
@@ -259,7 +260,7 @@ export class LobbyScene extends Scene {
     if (SPR.plate_green) { slice9(ctx, SPR.plate_green, x, y + (hov && Input.mouse.down ? 1 : 0), w, h, 12); }
     else { ctx.fillStyle = hov ? '#1d3a24' : '#12281a'; ctx.fillRect(x, y, w, h); ctx.strokeStyle = '#4dff88'; ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1); }
     if (hov) { ctx.fillStyle = '#ffffff22'; ctx.fillRect(x + 4, y + 4, w - 8, h - 8); }
-    drawIcon(ctx, 'play', x + 18, y + h / 2, { scale: 1.6, color: hov ? '#ffffff' : '#4dff88' });
+    if (SPR.nav_play) drawSprite(ctx, SPR.nav_play, x + 18, y + h / 2, { scale: 1.4 }); else drawIcon(ctx, 'play', x + 18, y + h / 2, { scale: 1.6, color: hov ? '#ffffff' : '#4dff88' });
     drawText(ctx, 'JOGAR', VIEW_W / 2 + 8, y + 10, { align: 'center', scale: 2, color: '#4dff88', shadow: true });
     ctx.restore();
     if (hov && UI.anyClick) {
@@ -271,9 +272,9 @@ export class LobbyScene extends Scene {
 
   // bottom holo chips ---------------------------------------------------------
   drawChips(ctx, G) {
-    if (this.holo(ctx, 'mis', 26, 336, 'list', 'MISSÕES', '#4dff88')) this.open('missions');
-    if (this.holo(ctx, 'dev', 78, 336, 'wrench', 'DEV', '#ff8c3b')) this.open('dev');
-    if (this.holo(ctx, 'cod', 130, 336, 'book', 'CODEX', '#4dd8ff')) this.open('arch');
+    if (this.holo(ctx, 'mis', 26, 336, 'nav_mis', 'MISSÕES', '#4dff88')) this.open('missions');
+    if (this.holo(ctx, 'dev', 78, 336, 'nav_dev', 'DEV', '#ff8c3b')) this.open('dev');
+    if (this.holo(ctx, 'cod', 130, 336, 'nav_col', 'CODEX', '#4dd8ff')) this.open('arch');
   }
 
   // clickable consoles on the hub art: hologram shops ----------------------
@@ -359,7 +360,7 @@ export class LobbyScene extends Scene {
       ctx.fillRect(x, y, 174, 124);
       ctx.strokeStyle = '#2a2450';
       ctx.strokeRect(x + 0.5, y + 0.5, 173, 123);
-      const em = SPR['hero_' + h.id];
+      const em = SPR['head_' + h.id] || SPR['hero_' + h.id];
       if (em) drawSprite(ctx, em, x + 16, y + 14, { scale: 0.8 });
       drawText(ctx, h.name.split(' ')[0], x + 32, y + 6, { color: h.color, shadow: true });
       nodes.forEach((n, ni) => {

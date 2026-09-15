@@ -275,6 +275,27 @@ export class Player {
       this.webbed[i].t -= dt;
       if (this.webbed[i].t <= 0 || this.webbed[i].e.dead) this.webbed.splice(i, 1);
     }
+    // SILK LINK: webbed enemies near each other get bound — shared damage + slow
+    if (this.hero.id === 'arachnid') {
+      this.webLinkTick = (this.webLinkTick || 0) - dt;
+      const rooted = G.enemies.filter((e) => !e.dead && e.spawnT <= 0 && (e.rooted || 0) > 0);
+      const links = [];
+      for (let i = 0; i < rooted.length && links.length < 6; i++)
+        for (let j = i + 1; j < rooted.length && links.length < 6; j++)
+          if (dist2(rooted[i].x, rooted[i].y, rooted[j].x, rooted[j].y) < 110 * 110) links.push([rooted[i], rooted[j]]);
+      const had = (this.webLinks || []).length;
+      this.webLinks = links;
+      if (links.length > had) G.audio.sfx('web');
+      if (this.webLinkTick <= 0) {
+        this.webLinkTick = 0.3;
+        for (const [A, B] of links) {
+          G.damageEnemy(A, 3 * st.dmg, A.x, A.y, true);
+          G.damageEnemy(B, 3 * st.dmg, B.x, B.y, true);
+          A.chill = Math.max(A.chill || 0, 0.35);
+          B.chill = Math.max(B.chill || 0, 0.35);
+        }
+      }
+    } else this.webLinks = null;
 
     // iron repulsor burst queue
     if (this.burst > 0) {
@@ -632,13 +653,31 @@ export class Player {
       }
       // ---- DOUTOR ESTRANHO: sigilos místicos teleguiados ----
       case 'sigil': {
+        // feitiços em ciclo: mandala rastreadora -> leque de estilhas -> orbe explosivo
         const n = 1 + st.extraProj;
-        for (let i = 0; i < n; i++) {
-          const off = (i - (n - 1) / 2) * 0.22;
-          const b = mk(a + off, { r: 4, pierce: 1, homing: 2.2, wobble: 0, sprite: 'b_mandala' });
-          if (b) { b.sigil = true; if (SPR.fx_sigil) b.sprite = 'fx_sigil'; }
+        const spell = this.shotCount % 3;
+        if (spell === 0) {
+          for (let i = 0; i < n; i++) {
+            const off = (i - (n - 1) / 2) * 0.22;
+            const b = mk(a + off, { r: 4, pierce: 1, homing: 2.2, wobble: 0, sprite: 'b_mandala' });
+            if (b) { b.sigil = true; if (SPR.fx_sigil) b.sprite = 'fx_sigil'; }
+          }
+          G.audio.sfx('sigil');
+          G.particles.ring(this.x, this.y, '#ff9d4d', 6, 40);
+        } else if (spell === 1) {
+          for (let i = 0; i < n + 2; i++) {
+            const off = (i - (n + 1) / 2) * 0.16;
+            const b = mk(a + off, { r: 3, pierce: 2, speed: (atk.speed || 210) * 1.35, sprite: 'b_purple' });
+            if (b) b.spin = true;
+          }
+          G.audio.sfx('zap');
+          G.particles.spark(this.x + Math.cos(a) * 10, this.y + Math.sin(a) * 10, '#b06bff', 3);
+        } else {
+          const b = mk(a, { r: 5, pierce: 0, homing: 1.2, speed: (atk.speed || 210) * 0.8, sprite: 'b_mandala' });
+          if (b) { b.arcaneBurst = true; b.sigil = true; }
+          G.audio.sfx('illus');
+          G.particles.ring(this.x, this.y, '#b06bff', 8, 50);
         }
-        G.audio.sfx('sigil');
         break;
       }
     }
@@ -866,8 +905,26 @@ export class Player {
         ctx.globalAlpha = 1;
       }
     }
-    // web connections between recently webbed enemies
-    if (this.webbed.length > 1) {
+    // SILK LINK draw: sagging web lines + anchor nodes between bound enemies
+    if (this.webLinks && this.webLinks.length) {
+      for (const [A, B] of this.webLinks) {
+        const mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2 + 6;
+        ctx.strokeStyle = '#ffffffaa';
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.quadraticCurveTo(mx, my, B.x, B.y); ctx.stroke();
+        ctx.strokeStyle = '#ffffff55';
+        ctx.beginPath(); ctx.moveTo(A.x, A.y - 3); ctx.quadraticCurveTo(mx, my - 5, B.x, B.y - 3); ctx.stroke();
+        for (let k = 1; k <= 3; k++) {
+          const t = k / 4;
+          const qx = (1 - t) * (1 - t) * A.x + 2 * (1 - t) * t * mx + t * t * B.x;
+          const qy = (1 - t) * (1 - t) * A.y + 2 * (1 - t) * t * my + t * t * B.y;
+          ctx.fillStyle = '#ffffff'; ctx.fillRect(qx - 1, qy - 1, 2, 2);
+        }
+        if (SPR.web_spider) { ctx.globalAlpha = 0.7; drawSprite(ctx, SPR.web_spider, mx, my, { rot: (performance.now() / 500) % 6.28, scale: 0.8 }); ctx.globalAlpha = 1; }
+      }
+      ctx.lineWidth = 1;
+    }
+    if (false && this.webbed.length > 1) {
       ctx.strokeStyle = '#ffffff99';
       ctx.lineWidth = 1;
       for (let i = 0; i < this.webbed.length - 1; i++) {

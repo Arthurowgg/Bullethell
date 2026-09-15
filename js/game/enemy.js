@@ -480,6 +480,16 @@ export function drawEnemy(ctx, e) {
     ctx.strokeRect(e.x - 6, e.y - 6, 12, 12);
     ctx.globalAlpha = 1;
   }
+  if ((e.rooted || 0) > 0 && SPR.web_spider) {
+    ctx.globalAlpha = 0.75;
+    drawSprite(ctx, SPR.web_spider, e.x, e.y, { rot: e.t * 1.5, scale: (e.r * 2 + 4) / 13 });
+    ctx.strokeStyle = '#ffffff88';
+    ctx.beginPath();
+    ctx.moveTo(e.x - e.r, e.y); ctx.lineTo(e.x - e.r - 4, e.y + e.r + 3);
+    ctx.moveTo(e.x + e.r, e.y); ctx.lineTo(e.x + e.r + 4, e.y + e.r + 3);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
   // variant identification pip
   if (e.def.variantColor) {
     ctx.fillStyle = e.def.variantColor;

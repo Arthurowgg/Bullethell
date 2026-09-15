@@ -119,7 +119,11 @@ export function loadSheetArt(onProgress) {
   // NEXUS ARCHIVES book art
   for (const k of ['arch_cover', 'arch_back', 'arch_page', 'arch_frame', 'arch_stamp', 'arch_unlock',
     'arch_bookmark', 'arch_lock', 'arch_arrow', 'arch_tape', 'arch_under',
-    'arch_i_world', 'arch_i_boss', 'arch_i_enemy', 'arch_i_info'])
+    'arch_i_world', 'arch_i_boss', 'arch_i_enemy', 'arch_i_info',
+    'archb_ultron', 'archb_loki', 'archb_hela', 'archb_kang', 'archb_devourer', 'archb_thanos',
+    'archw_wakanda', 'archw_skydeck', 'archw_ruins', 'archw_asgard', 'archw_nexuscore', 'archw_newyork',
+    'arch_spread', 'arch_s1', 'arch_s2', 'arch_s3', 'arch_s4', 'arch_corner1', 'arch_corner2',
+    'arch_divider', 'arch_polaroid'])
     load(`assets/sprites/ui/${k}.png`, (img) => { SPR[k] = cnv(img, 1); });
   // universal UI kit: frames, icons, toggles, sliders, menu backdrop
   for (const k of ['ui_btn', 'ui_btn_gold', 'ui_panel', 'ui_header', 'ui_menubg', 'ui_keycap',

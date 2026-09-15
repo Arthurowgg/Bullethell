@@ -34,8 +34,11 @@ export class LobbyScene extends Scene {
 
   update(dt, G) {
     this.t += dt; this.transT = Math.max(0, this.transT - dt);
-    if (this.overlay === 'arch') this.arch.update(dt);
-    if (this.overlay && (Input.pressed('Escape') || Input.pressed('KeyP'))) { this.overlay = null; Audio.sfx('uiBack'); }
+    if (this.overlay === 'arch' && this.arch.update(dt)) this.overlay = null;
+    if (this.overlay && (Input.pressed('Escape') || Input.pressed('KeyP'))) {
+      if (this.overlay === 'arch' && !this.arch.closing) this.arch.close();
+      else { this.overlay = null; Audio.sfx('uiBack'); }
+    }
   }
 
   // ------------------------------------------------------------ helpers ----
@@ -84,7 +87,7 @@ export class LobbyScene extends Scene {
     ctx.fillRect(x + 2, y, 3, 1);
   }
 
-  open(id) { this.overlay = id; this.transT = 0.35; Audio.sfx('port'); }
+  open(id) { this.overlay = id; this.transT = 0.35; Audio.sfx('port'); if (id === 'arch') this.arch.open(); }
 
   holo(ctx, id, x, y, icon, label, color) {
     const hov = UI.hit(x - 12, y - 12, 24, 30);
@@ -323,7 +326,7 @@ export class LobbyScene extends Scene {
       this.arch.draw(ctx, 40, 34, 560, 292);
       drawText(ctx, 'NEXUS ARCHIVES', VIEW_W / 2, 12, { align: 'center', scale: 2, color: '#4dd8ff', shadow: true, style: 'hero' });
       drawText(ctx, 'ENCICLOPÉDIA DO NEXO — DESCUBRA JOGANDO', VIEW_W / 2, 332, { align: 'center', scale: 1, color: '#7a74a0' });
-      if (UI.button('closeO', 566, 8, 54, 18, 'FECHAR', { color: '#ff4d4d', icon: 'ic_quit' })) { this.overlay = null; Audio.sfx('uiBack'); }
+      if (UI.button('closeO', 566, 8, 54, 18, 'FECHAR', { color: '#ff4d4d', icon: 'ic_quit' })) this.arch.close();
       return;
     }
     const T = { nexus: 'NEXUS CORE', cos: 'COSMÉTICA', missions: 'MISSÕES', dev: 'CONSOLE DEV', cfg: 'CONFIGURAÇÕES' };

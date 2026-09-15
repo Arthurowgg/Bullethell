@@ -42,7 +42,8 @@ export function loadSheetArt(onProgress) {
     }
   }
   // enemies
-  for (const e of ['drone', 'chitauri', 'symbiote', 'sorcerer', 'sentinel', 'spectre', 'jotun', 'chaos']) {
+  for (const e of ['drone', 'chitauri', 'symbiote', 'sorcerer', 'sentinel', 'spectre', 'jotun', 'chaos',
+    'outrider', 'kree', 'sakaaran', 'aim', 'hydra', 'mysterio', 'destroyer', 'skrull']) {
     load(`assets/sprites/enemies/${e}.png`, (img) => { SPR['en_' + e] = cnv(img, 1); });
   }
   // bosses
@@ -58,7 +59,8 @@ export function loadSheetArt(onProgress) {
     load(`assets/sprites/ui/abil_${h.id}_e.png`, (img) => { SPR['abil_' + h.id + '_e'] = cnv(img, 1); });
   }
   // enemy variant sprites (4 per family)
-  for (const e of ['drone', 'chitauri', 'symbiote', 'sorcerer', 'sentinel', 'spectre', 'jotun', 'chaos']) {
+  for (const e of ['drone', 'chitauri', 'symbiote', 'sorcerer', 'sentinel', 'spectre', 'jotun', 'chaos',
+    'outrider', 'kree', 'sakaaran', 'aim', 'hydra', 'mysterio', 'destroyer', 'skrull']) {
     load(`assets/sprites/enemies/${e}_b.png`, (img) => { SPR['en_' + e + '_b'] = cnv(img, 1); });
     for (let v = 1; v <= 4; v++) {
       load(`assets/sprites/enemies/${e}_v${v}.png`, (img) => { SPR['en_' + e + '_v' + v] = cnv(img, 1); });
@@ -127,6 +129,10 @@ export function loadSheetArt(onProgress) {
     load(`assets/sprites/ui/${k}.png`, (img) => { SPR[k] = cnv(img, 1); });
   // universal UI kit: frames, icons, toggles, sliders, menu backdrop
   load('assets/sprites/ui/loki_ugly.png', (img) => { SPR.loki_ugly = cnv(img, 1); });
+  // head emblems (heroes + skins): the character as a head symbol
+  for (const hd of ['arachnid', 'stormgod', 'ironknight', 'merc', 'claws', 'mystic',
+    'miles', 'ragnarok', 'hulkbuster', 'xforce', 'umbral'])
+    load(`assets/sprites/heads/head_${hd}.png`, (img) => { SPR['head_' + hd] = cnv(img, 1); });
   // v5 button plates (own art per family) + game logo
   for (const k of ['plate_gold', 'plate_purple', 'plate_hazard', 'plate_cyan', 'plate_green', 'plate_pink', 'nexus_logo'])
     load(`assets/sprites/ui/${k}.png`, (img) => { SPR[k] = cnv(img, 1); });

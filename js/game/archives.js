@@ -16,10 +16,10 @@ import { WORLD_LABEL } from '../data/campaign.js';
 import { clamp } from '../core/util.js';
 
 const CHAPTERS = [
+  { id: 'records', icon: 'arch_i_info', label: 'INFO', color: '#b06bff' },
   { id: 'worlds', icon: 'arch_i_world', label: 'MUNDOS', color: '#4dd8ff' },
   { id: 'bosses', icon: 'arch_i_boss', label: 'GUARDIÕES', color: '#ff8c8c' },
   { id: 'enemies', icon: 'arch_i_enemy', label: 'AMEAÇAS', color: '#ffd94a' },
-  { id: 'records', icon: 'arch_i_info', label: 'REGISTROS', color: '#b06bff' },
 ];
 
 const WORLD_ENTRIES = [
@@ -39,8 +39,18 @@ const BOSS_EXTRA = {
   thanos: 'Colapso do nexo; rajadas da manopla. REGISTRO FINAL.',
 };
 const ENEMY_EXTRA = {
-  drone: 'Formação geométrica; rajadas em cruz.',
-  chitauri: 'Enxame envolvente; tiros mirados.',
+  drone: 'Bolts vermelhos sequenciais, rápidos e precisos.',
+  chitauri: 'Rajadas azuis em sequência enquanto cerca em grupo.',
+  outrider: 'Sem projéteis: cerca, telegrafa e investe com rastro de velocidade.',
+  kree: 'Plasma lento e pesado com rastro energético; mantém distância.',
+  sakaaran: 'Vaivém lateral com rajadas tecnológicas alternadas.',
+  aim: 'Rajadas direcionadas e bombardeio de área previsível.',
+  hydra: 'Rajadas rápidas de balas pequenas — ameaça balística, não energia.',
+  mysterio: 'Esferas ilusórias que curvam; ataques de direções falsas.',
+  jotun: 'Leques lentos de grandes fragmentos de gelo.',
+  destroyer: 'Telegrafa e dispara orbes brilhantes letais. Ameaça especial.',
+  skrull: 'Alterna leques de energia e anéis de chama.',
+  sentinel: 'Disparos energéticos grandes com trajetória visível.',
   symbiote: 'Errático; divide-se ao morrer.',
   sorcerer: 'Mantém distância; espirais arcanas.',
   sentinel: 'Lento e blindado; anéis pesados.',
@@ -92,7 +102,7 @@ export class ArchivesUI {
       seen: !!s.discovered.bosses[b], full: (s.bossesDefeated[b] || 0) > 0,
       data: bossById(b),
     }));
-    if (ch === 'enemies') return ['drone', 'chitauri', 'symbiote', 'sorcerer', 'sentinel', 'spectre', 'jotun', 'chaos'].map((e) => ({
+    if (ch === 'enemies') return ['drone', 'chitauri', 'outrider', 'kree', 'sakaaran', 'aim', 'hydra', 'mysterio', 'jotun', 'destroyer', 'skrull', 'sentinel', 'symbiote', 'sorcerer', 'spectre', 'chaos'].map((e) => ({
       id: e, kind: 'enemy', name: ENEMIES[e].name,
       seen: !!s.discovered.enemies[e], full: (s.discovered.kills[e] || 0) > 0,
       data: ENEMIES[e],

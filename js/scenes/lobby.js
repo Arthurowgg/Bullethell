@@ -7,7 +7,6 @@
 import { Scene, UI, toggleFullscreen, slice9 } from './scene.js';
 import { drawText, textWidth } from '../core/font.js';
 import { drawIcon } from '../core/icons.js';
-import { drawHeroTitle, drawSectionTitle } from '../game/herotitle.js';
 import { SPR, drawSprite } from '../core/pixel.js';
 import { Audio } from '../core/audio.js';
 import { Input } from '../core/input.js';
@@ -99,7 +98,7 @@ export class LobbyScene extends Scene {
     const hov = UI.hit(x - 12, y - 12, 24, 30);
     if (hov) UI.hoverId = id;
     ctx.globalAlpha = hov ? 1 : 0.85;
-    if (SPR[icon]) drawSprite(ctx, SPR[icon], x, y, { scale: 1.2 });
+    drawIcon(ctx, icon, x, y - 2, { scale: 1.5, color: hov ? '#ffffff' : color || '#9a93c8' });
     ctx.globalAlpha = 1;
     drawText(ctx, label, x, y + 12, { align: 'center', scale: 1, color: hov ? '#ffffff' : color || '#9a93c8', shadow: true });
     if (hov && UI.anyClick) return true;
@@ -128,8 +127,8 @@ export class LobbyScene extends Scene {
     // header strip
     ctx.fillStyle = '#0d0a1ecc';
     ctx.fillRect(0, 0, VIEW_W, 22);
-    drawText(ctx, 'MARVEL', 6, 4, { color: '#e8e0ff' });
-    drawText(ctx, 'NEXUS', 40, 4, { color: '#ff4d4d' });
+    if (SPR.nexus_logo) { const ls = 20 / SPR.nexus_logo.height; drawSprite(ctx, SPR.nexus_logo, 6 + SPR.nexus_logo.width * ls / 2, 11, { scaleX: ls, scaleY: ls }); }
+    else { drawText(ctx, 'MARVEL', 6, 4, { color: '#e8e0ff' }); drawText(ctx, 'NEXUS', 40, 4, { color: '#ff4d4d' }); }
     drawText(ctx, `NV ${s.accountLevel}`, 92, 7, { color: '#b06bff' });
     ctx.fillStyle = '#1d1740'; ctx.fillRect(118, 8, 60, 4);
     ctx.fillStyle = '#b06bff';
@@ -138,7 +137,7 @@ export class LobbyScene extends Scene {
     drawText(ctx, String(s.fragments), 482, 7, { color: '#9feaff' });
     this.glyphCred(ctx, 544, 11);
     drawText(ctx, String(s.credits), 554, 7, { color: '#ffe9a0' });
-    if (this.holo(ctx, 'gear', 618, 11, 'lobby_nav_gear', '', '#8a84a8')) this.open('cfg');
+    if (this.holo(ctx, 'gear', 618, 11, 'gear', '', '#8a84a8')) this.open('cfg');
 
     this.drawComputers(ctx, G);
     this.drawCore(ctx, G);
@@ -186,10 +185,9 @@ export class LobbyScene extends Scene {
     if (core) drawSprite(ctx, core, cx, cy - 6, { scale: 0.9 + Math.sin(this.t * 2) * 0.04 });
     const eq = skinById(s.cosmeticsEquipped[hero.id]);
     const base = eq && eq.hero === hero.id ? 'skin_' + eq.id : 'hero_' + hero.id;
-    const big = SPR[base + '_big'] || SPR[base];
+    const big = SPR['head_' + (eq && eq.hero === hero.id ? eq.id : hero.id)] || SPR[base + '_big'] || SPR[base];
     if (big) drawSprite(ctx, big, cx, cy - 6, { scale: 56 / big.height });
-    if (eq) drawText(ctx, eq.name, cx, cy + 42, { align: 'center', scale: 2, color: RARITY_SHOP[eq.rarity].color, shadow: true });
-    else drawHeroTitle(ctx, hero.id, hero.name, cx, cy + 42, 2);
+    drawText(ctx, eq ? eq.name : hero.name, cx, cy + 42, { align: 'center', scale: 2, color: eq ? RARITY_SHOP[eq.rarity].color : hero.color, shadow: true });
     drawText(ctx, hero.role, cx, cy + 60, { align: 'center', color: '#9a93c8', shadow: true });
   }
 
@@ -261,7 +259,7 @@ export class LobbyScene extends Scene {
     if (SPR.plate_green) { slice9(ctx, SPR.plate_green, x, y + (hov && Input.mouse.down ? 1 : 0), w, h, 12); }
     else { ctx.fillStyle = hov ? '#1d3a24' : '#12281a'; ctx.fillRect(x, y, w, h); ctx.strokeStyle = '#4dff88'; ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1); }
     if (hov) { ctx.fillStyle = '#ffffff22'; ctx.fillRect(x + 4, y + 4, w - 8, h - 8); }
-    if (SPR.lobby_nav_play) drawSprite(ctx, SPR.lobby_nav_play, x + 18, y + h / 2, { scale: 1.3 });
+    drawIcon(ctx, 'play', x + 18, y + h / 2, { scale: 1.6, color: hov ? '#ffffff' : '#4dff88' });
     drawText(ctx, 'JOGAR', VIEW_W / 2 + 8, y + 10, { align: 'center', scale: 2, color: '#4dff88', shadow: true });
     ctx.restore();
     if (hov && UI.anyClick) {
@@ -273,9 +271,9 @@ export class LobbyScene extends Scene {
 
   // bottom holo chips ---------------------------------------------------------
   drawChips(ctx, G) {
-    if (this.holo(ctx, 'mis', 26, 336, 'lobby_nav_mis', 'MISSÕES', '#4dff88')) this.open('missions');
-    if (this.holo(ctx, 'dev', 78, 336, 'lobby_nav_dev', 'DEV', '#ff8c3b')) this.open('dev');
-    if (this.holo(ctx, 'cod', 130, 336, 'lobby_nav_col', 'CODEX', '#4dd8ff')) this.open('arch');
+    if (this.holo(ctx, 'mis', 26, 336, 'list', 'MISSÕES', '#4dff88')) this.open('missions');
+    if (this.holo(ctx, 'dev', 78, 336, 'wrench', 'DEV', '#ff8c3b')) this.open('dev');
+    if (this.holo(ctx, 'cod', 130, 336, 'book', 'CODEX', '#4dd8ff')) this.open('arch');
   }
 
   // clickable consoles on the hub art: hologram shops ----------------------
@@ -343,7 +341,7 @@ export class LobbyScene extends Scene {
     const T = { nexus: 'NEXUS CORE', cos: 'COSMÉTICA', missions: 'MISSÕES', dev: 'CONSOLE DEV', cfg: 'CONFIGURAÇÕES' };
     const C = { nexus: '#d8b64c', cos: '#ff5df2', missions: '#4dff88', dev: '#ff8c3b', cfg: '#8a84a8' };
     this.frame(ctx, 40, 30, 560, 300, C[this.overlay]);
-    drawSectionTitle(ctx, T[this.overlay], 52, 36, C[this.overlay], 2);
+    drawText(ctx, T[this.overlay], 52, 40, { scale: 2, color: C[this.overlay], shadow: true });
     if (UI.close('closeO', 576, 36, 20)) { this.overlay = null; }
     if (this.overlay === 'nexus') this.drawNexus(ctx, G);
     else if (this.overlay === 'cos') this.drawCosmetics(ctx, G);
@@ -414,7 +412,7 @@ export class LobbyScene extends Scene {
     const sk = skinById(this.skinSel);
     const hero = heroById(sk.hero);
     this.frame(ctx, 252, 62, 336, 200, RARITY_SHOP[sk.rarity].color);
-    const big = SPR['skin_' + sk.id + '_big'] || SPR['skin_' + sk.id];
+    const big = SPR['head_' + sk.id] || SPR['skin_' + sk.id + '_big'] || SPR['skin_' + sk.id];
     ctx.globalAlpha = 0.3 + Math.sin(this.t * 2) * 0.1;
     ctx.fillStyle = sk.fx.aura;
     ctx.beginPath(); ctx.ellipse(340, 190, 50, 10, 0, 0, Math.PI * 2); ctx.fill();

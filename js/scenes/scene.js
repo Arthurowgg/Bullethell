@@ -10,7 +10,6 @@ import { Audio } from '../core/audio.js';
 import { clamp } from '../core/util.js';
 import { SPR, drawSprite } from '../core/pixel.js';
 import { drawIcon } from '../core/icons.js';
-import { drawSectionTitle } from '../game/herotitle.js';
 import { VIEW_W, VIEW_H } from '../game/arena.js';
 
 export class Scene {
@@ -193,7 +192,7 @@ export const UI = {
     ctxFill(x + 3, y + 2, w - 6, 1, '#ffffff14');
     if (o.title) {
       if (SPR.ui_header) drawSprite(GCTX, SPR.ui_header, x + w / 2, y + 13, { scaleX: Math.min(w - 12, Math.max(130, textWidth(o.title, 2) + 46)) / SPR.ui_header.width, scaleY: 22 / SPR.ui_header.height });
-      drawSectionTitle(GCTX, o.title, x + w / 2, y + 6, o.titleColor || '#ffd94a', o.titleScale || 2, 'center');
+      drawText(GCTX, o.title, x + w / 2 + (o.icon ? 5 : 0), y + 7, { align: 'center', scale: o.titleScale || 2, color: o.titleColor || '#ffd94a', shadow: true });
     }
   },
 

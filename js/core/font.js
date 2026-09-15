@@ -137,6 +137,13 @@ export function drawText(ctx, str, x, y, opts = {}) {
     }
   };
   ctx.save();
+  const outlined = opts.outline === undefined ? !hero && opts.noOutline !== true : false;
+  if (outlined) {
+    // comic pixel weight: dark shell around every glyph
+    for (const [ox, oy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      ctx.save(); ctx.translate(ox * Math.max(1, Math.round(scale * 0.5)), oy * Math.max(1, Math.round(scale * 0.5))); draw('#05040a'); ctx.restore();
+    }
+  }
   if (hero) {
     // comic-hero type: italic shear + heavy outline + double drop shadow
     ctx.transform(1, 0, -0.16, 1, 0.16 * py, 0);

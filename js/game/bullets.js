@@ -85,8 +85,46 @@ export class BulletSystem {
 
   draw(ctx) {
     for (const b of this.enemy.live) {
+      const a = Math.atan2(b.vy, b.vx);
+      if (b.fx === 'kree') {
+        ctx.globalAlpha = 0.3; ctx.fillStyle = '#4dd8ff';
+        ctx.beginPath(); ctx.arc(b.x - Math.cos(a) * 7, b.y - Math.sin(a) * 7, 4, 0, TAU); ctx.fill();
+        ctx.globalAlpha = 0.15;
+        ctx.beginPath(); ctx.arc(b.x - Math.cos(a) * 13, b.y - Math.sin(a) * 13, 3, 0, TAU); ctx.fill();
+        ctx.globalAlpha = 1;
+      } else if (b.fx === 'hydra') {
+        ctx.strokeStyle = '#c8c8d855';
+        ctx.beginPath(); ctx.moveTo(b.x - Math.cos(a) * 7, b.y - Math.sin(a) * 7); ctx.lineTo(b.x, b.y); ctx.stroke();
+      } else if (b.fx === 'frost') {
+        const tw = Math.floor(b.age * 12) % 2;
+        ctx.fillStyle = '#bfeaff';
+        ctx.fillRect(b.x - Math.cos(a) * 9 + (tw ? 2 : -2), b.y - Math.sin(a) * 9, 1, 1);
+        ctx.fillRect(b.x - Math.cos(a) * 13 - (tw ? 2 : -2), b.y - Math.sin(a) * 13, 1, 1);
+      } else if (b.fx === 'destroyer') {
+        ctx.globalAlpha = 0.35 + Math.sin(b.age * 30) * 0.1;
+        ctx.fillStyle = '#ffd94a';
+        ctx.beginPath(); ctx.arc(b.x, b.y, 9, 0, TAU); ctx.fill();
+        ctx.globalAlpha = 1;
+      } else if (b.fx === 'senti') {
+        ctx.strokeStyle = '#b06bff66';
+        ctx.beginPath(); ctx.arc(b.x, b.y, 8 + Math.sin(b.age * 10) * 2, 0, TAU); ctx.stroke();
+      } else if (b.fx === 'myst') {
+        ctx.globalAlpha = 0.4; ctx.fillStyle = '#4dff88';
+        for (let i = 0; i < 3; i++) {
+          const ra = b.age * 5 + i * 2.1;
+          ctx.fillRect(b.x + Math.cos(ra) * 7 - 1, b.y + Math.sin(ra) * 7 - 1, 2, 2);
+        }
+        ctx.globalAlpha = 1;
+      } else if (b.fx === 'skrull') {
+        ctx.fillStyle = '#b06bff55';
+        ctx.fillRect(b.x - Math.cos(a) * 8 - 1, b.y - Math.sin(a) * 8 - 1, 2, 2);
+      } else if (b.fx === 'drone' || b.fx === 'chit' || b.fx === 'aim' || b.fx === 'sak') {
+        ctx.globalAlpha = 0.25; ctx.fillStyle = b.fx === 'drone' ? '#ff4d4d' : b.fx === 'chit' ? '#7fd4ff' : b.fx === 'aim' ? '#ffd94a' : '#ff9d4d';
+        ctx.fillRect(b.x - Math.cos(a) * 6 - 1, b.y - Math.sin(a) * 6 - 1, 2, 2);
+        ctx.globalAlpha = 1;
+      }
       const s = SPR[b.sprite];
-      if (s) drawSprite(ctx, s, b.x, b.y);
+      if (s) drawSprite(ctx, s, b.x, b.y, b.fx === 'hydra' ? { rot: a } : undefined);
       else { ctx.fillStyle = '#ff5d8f'; ctx.fillRect(b.x - 2, b.y - 2, 4, 4); }
     }
     for (const b of this.player.live) {

@@ -452,6 +452,15 @@ export function buildAllSprites() {
   reg('shot_en_sentinel', (() => { const p = new Pix(9, 9); p.rect(1, 1, 7, 7, '#155a70'); p.rect(2, 2, 5, 5, '#4dd8ff'); p.px(4, 4, '#eaffff'); p.rect(0, 4, 1, 1, '#9feaff'); p.rect(8, 4, 1, 1, '#9feaff'); return p; })());
   reg('shot_en_spectre', (() => { const p = new Pix(7, 9); p.tri(3, 0, 6, 5, 3, 6, '#cfe8ff'); p.tri(3, 0, 0, 5, 3, 6, '#7fb8e8'); p.px(3, 7, '#7fb8e8'); p.px(2, 8, '#4d88b8'); p.px(4, 8, '#4d88b8'); p.px(3, 3, '#ffffff'); return p; })());
   reg('shot_en_jotun', (() => { const p = new Pix(7, 11); p.tri(3, 0, 6, 7, 3, 8, '#bfeaff'); p.tri(3, 0, 0, 7, 3, 8, '#5aa8d8'); p.px(3, 9, '#5aa8d8'); p.px(3, 10, '#2b6f9e'); p.px(3, 4, '#ffffff'); return p; })());
+  reg('shot_en_kree', (() => { const p = new Pix(11, 11); p.disc(5, 5, 4, '#155a70'); p.disc(5, 5, 3, '#2f9dc8'); p.disc(5, 5, 1, '#eaffff'); p.px(0, 5, '#9feaff'); p.px(10, 5, '#9feaff'); p.px(5, 0, '#9feaff'); p.px(5, 10, '#9feaff'); return p; })());
+  reg('shot_en_sakaaran', (() => { const p = new Pix(9, 9); p.rect(2, 2, 5, 5, '#7a3b12'); p.rect(3, 3, 3, 3, '#ff9d4d'); p.px(4, 4, '#ffe9a0'); p.px(4, 0, '#ff9d4d'); p.px(4, 8, '#ff9d4d'); p.px(0, 4, '#ff9d4d'); p.px(8, 4, '#ff9d4d'); return p; })());
+  reg('shot_en_aim', (() => { const p = new Pix(9, 9); p.diamond(4, 4, 3, '#b89500'); p.diamond(4, 4, 2, '#ffd94a'); p.px(4, 4, '#ffffff'); return p; })());
+  reg('shot_en_hydra', (() => { const p = new Pix(7, 3); p.rect(0, 1, 4, 1, '#c8c8d8'); p.px(5, 1, '#ffffff'); p.px(6, 1, '#ff8c8c'); p.px(0, 0, '#8a8a9a'); p.px(0, 2, '#8a8a9a'); return p; })());
+  reg('shot_en_mysterio', (() => { const p = new Pix(11, 11); p.disc(5, 5, 4, '#0d5a2a'); p.disc(5, 5, 3, '#1f8f4d'); p.disc(5, 5, 1, '#d8ffe8'); p.px(1, 3, '#4dff88'); p.px(9, 7, '#4dff88'); p.px(8, 2, '#4dff88'); p.px(2, 8, '#4dff88'); return p; })());
+  reg('shot_en_destroyer', (() => { const p = new Pix(13, 13); p.disc(6, 6, 5, '#7a5a00'); p.disc(6, 6, 4, '#ffd94a'); p.disc(6, 6, 2, '#fff8d0'); p.px(6, 6, '#ffffff'); p.px(6, 0, '#ffd94a'); p.px(6, 12, '#ffd94a'); p.px(0, 6, '#ffd94a'); p.px(12, 6, '#ffd94a'); return p; })());
+  reg('shot_en_skrull', (() => { const p = new Pix(9, 9); p.tri(4, 0, 8, 6, 4, 8, '#7a1f8f'); p.tri(4, 2, 6, 6, 4, 7, '#b06bff'); p.px(4, 4, '#ffd0ff'); p.px(2, 8, '#b06bff'); p.px(6, 8, '#b06bff'); return p; })());
+  reg('shot_en_frost', (() => { const p = new Pix(11, 13); p.tri(5, 0, 10, 9, 5, 10, '#bfeaff'); p.tri(5, 0, 0, 9, 5, 10, '#5aa8d8'); p.px(5, 5, '#ffffff'); p.px(5, 11, '#2b6f9e'); p.px(5, 12, '#2b6f9e'); return p; })());
+  reg('shot_en_senti', (() => { const p = new Pix(12, 12); p.circle(5, 5, 4, '#b06bff', false); p.disc(5, 5, 3, '#5a2a80'); p.disc(5, 5, 1, '#ffffff'); p.px(5, 0, '#ffd0ff'); p.px(5, 10, '#ffd0ff'); p.px(0, 5, '#ffd0ff'); p.px(10, 5, '#ffd0ff'); return p; })());
   reg('shot_en_chaos', (() => { const p = new Pix(9, 9); p.px(4, 0, '#ff5df2'); p.px(4, 8, '#ff5df2'); p.px(0, 4, '#ff5df2'); p.px(8, 4, '#ff5df2'); p.px(1, 1, '#ff9df6'); p.px(7, 1, '#ff9df6'); p.px(1, 7, '#ff9df6'); p.px(7, 7, '#ff9df6'); p.diamond(4, 4, 2, '#ff5df2'); p.px(4, 4, '#ffffff'); return p; })());
 
   // pickups & icons

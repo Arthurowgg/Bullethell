@@ -60,7 +60,7 @@ export class ResultsScene extends Scene {
     drawText(ctx, p.raid ? p.raid.name : 'NEXO DE COMBATE', VIEW_W / 2, 62, { align: 'center', scale: 1, color: '#9a93c8', shadow: true });
 
     // hero
-    const spr = SPR['hero_' + p.heroId + '_big'] || SPR['hero_' + p.heroId];
+    const spr = SPR['head_' + p.heroId] || SPR['hero_' + p.heroId + '_big'] || SPR['hero_' + p.heroId];
     if (spr) drawSprite(ctx, spr, 130, 150, { scale: 0.5 });
 
     // stats panel

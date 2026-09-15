@@ -109,7 +109,7 @@ export class TitleScene extends Scene {
 
     // hero emblem cards
     HEROES.forEach((h, i) => {
-      const big = SPR['hero_' + h.id + '_big'] || SPR['hero_' + h.id];
+      const big = SPR['head_' + h.id] || SPR['hero_' + h.id + '_big'] || SPR['hero_' + h.id];
       const x = cx + (i - 2.5) * 58;
       const y = 178;
       const unlocked = Save.data.heroesUnlocked[h.id];

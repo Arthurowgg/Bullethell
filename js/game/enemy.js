@@ -195,6 +195,225 @@ export function updateEnemy(e, dt, G) {
       }
       break;
     }
+    case 'seq': { // Ultron drone: sequential precise red bolts
+      const a = angleTo(e.x, e.y, P.x, P.y);
+      mvx = Math.cos(a) * 0.7; mvy = Math.sin(a) * 0.7;
+      if (canAct) {
+        e.attackT -= dt;
+        if (e.attackT <= 0) { e.attackT = e.def.attack.cd; e.seqN = 3; e.seqT = 0; }
+        if (e.seqN > 0) {
+          e.seqT -= dt;
+          if (e.seqT <= 0) {
+            e.seqT = 0.13; e.seqN--;
+            const aa = angleTo(e.x, e.y, P.x, P.y);
+            api.spawn({ x: e.x, y: e.y, vx: Math.cos(aa) * 165, vy: Math.sin(aa) * 165, sprite: e.shot, r: 3, fx: 'drone' });
+            G.audio.sfx('seq');
+          }
+        }
+      }
+      break;
+    }
+    case 'burst': { // Chitauri: pressure groups, sequential blue bursts
+      const a = angleTo(e.x, e.y, P.x, P.y);
+      mvx = Math.cos(a) + Math.cos(a + Math.PI / 2) * e.strafe * 0.5;
+      mvy = Math.sin(a) + Math.sin(a + Math.PI / 2) * e.strafe * 0.5;
+      if (canAct) {
+        e.attackT -= dt;
+        if (e.attackT <= 0) {
+          e.attackT = e.def.attack.cd;
+          Patterns.aimed(e.x, e.y, P.x, P.y, 3, 0.28, 130, api, { b: { sprite: e.shot, fx: 'chit' } });
+          G.audio.sfx('burst');
+        }
+      }
+      break;
+    }
+    case 'outrider': { // chaser: stalk -> crouch telegraph -> lunge, speed fx
+      e.stateT -= dt;
+      if (e.state === 'charge') {
+        mvx = Math.cos(e.chargeDir) * 3.1; mvy = Math.sin(e.chargeDir) * 3.1;
+        if (Math.random() < dt * 40) G.particles.spark(e.x - Math.cos(e.chargeDir) * 8, e.y - Math.sin(e.chargeDir) * 8, '#9fb8ff', 1);
+        if (e.stateT <= 0) { e.state = 'stalk'; e.stateT = 0.4; G.particles.ring(e.x, e.y, '#cfe0ff', 10, 60); }
+      } else if (e.state === 'telegraph') {
+        mvx = 0; mvy = 0;
+        if (e.stateT <= 0) { e.state = 'charge'; e.stateT = 0.4; e.chargeDir = angleTo(e.x, e.y, P.x, P.y); G.audio.sfx('dash'); }
+      } else {
+        const a = angleTo(e.x, e.y, P.x, P.y);
+        // circle around before striking
+        mvx = Math.cos(a) * 1.1 + Math.cos(a + Math.PI / 2) * e.strafe * 0.7;
+        mvy = Math.sin(a) * 1.1 + Math.sin(a + Math.PI / 2) * e.strafe * 0.7;
+        if (e.stateT <= 0 && dist(e.x, e.y, P.x, P.y) < 150) { e.state = 'telegraph'; e.stateT = 0.32; }
+        if (e.stateT <= -2) e.stateT = 0.4;
+      }
+      break;
+    }
+    case 'sniper': { // Kree: keeps range, slow heavy plasma with trail
+      const d = dist(e.x, e.y, P.x, P.y);
+      const a = angleTo(e.x, e.y, P.x, P.y);
+      if (d < 130) { mvx = -Math.cos(a); mvy = -Math.sin(a); }
+      else if (d > 230) { mvx = Math.cos(a) * 0.7; mvy = Math.sin(a) * 0.7; }
+      else { mvx = Math.cos(a + Math.PI / 2) * e.strafe * 0.6; mvy = Math.sin(a + Math.PI / 2) * e.strafe * 0.6; }
+      if (canAct) {
+        e.attackT -= dt;
+        if (e.attackT <= 0) {
+          e.attackT = e.def.attack.cd;
+          api.spawn({ x: e.x, y: e.y, vx: Math.cos(a) * 75, vy: Math.sin(a) * 75, sprite: e.shot, r: 5, dmg: 1.5, fx: 'kree' });
+          G.audio.sfx('plasma');
+        }
+      }
+      break;
+    }
+    case 'strafe': { // Sakaaran: side-to-side pressure, alternating tech bursts
+      const b = arena.bounds;
+      mvx = e.strafe; if (e.x < b.x + 40 || e.x > b.x + b.w - 40) e.strafe *= -1;
+      const a = angleTo(e.x, e.y, P.x, P.y);
+      mvy = Math.sin(a) * 0.5;
+      if (canAct) {
+        e.attackT -= dt;
+        if (e.attackT <= 0) {
+          e.attackT = e.def.attack.cd;
+          e.altK = !e.altK;
+          const off = e.altK ? 0.35 : -0.35;
+          Patterns.fan(e.x, e.y, a + off, 0.22, 2, 120, api, { b: { sprite: e.shot, fx: 'sak' } });
+          G.audio.sfx('zap');
+        }
+      }
+      break;
+    }
+    case 'gunner': { // AIM: directed bursts + predictable area bomb
+      const a = angleTo(e.x, e.y, P.x, P.y);
+      mvx = Math.cos(a) * 0.6; mvy = Math.sin(a) * 0.6;
+      if (canAct) {
+        e.attackT -= dt;
+        if (e.attackT <= 0) {
+          e.attackT = e.def.attack.cd;
+          e.altK = !e.altK;
+          if (e.altK) {
+            Patterns.aimed(e.x, e.y, P.x, P.y, 3, 0.4, 110, api, { b: { sprite: e.shot, fx: 'aim' } });
+            G.audio.sfx('zap');
+          } else {
+            Patterns.rain(arena, P.x, 5, 95, api, { b: { sprite: e.shot, fx: 'aim' } });
+            G.audio.sfx('warn');
+          }
+        }
+      }
+      break;
+    }
+    case 'guns': { // Hydra: fast small ballistic bursts
+      const a = angleTo(e.x, e.y, P.x, P.y);
+      mvx = Math.cos(a) * 0.8 + Math.cos(a + Math.PI / 2) * e.strafe * 0.4;
+      mvy = Math.sin(a) * 0.8 + Math.sin(a + Math.PI / 2) * e.strafe * 0.4;
+      if (canAct) {
+        e.attackT -= dt;
+        if (e.attackT <= 0) { e.attackT = e.def.attack.cd; e.seqN = 5; e.seqT = 0; }
+        if (e.seqN > 0) {
+          e.seqT -= dt;
+          if (e.seqT <= 0) {
+            e.seqT = 0.09; e.seqN--;
+            const aa = angleTo(e.x, e.y, P.x, P.y) + rand(-0.09, 0.09);
+            api.spawn({ x: e.x, y: e.y, vx: Math.cos(aa) * 230, vy: Math.sin(aa) * 230, sprite: e.shot, r: 2, fx: 'hydra' });
+            G.audio.sfx('gun');
+          }
+        }
+      }
+      break;
+    }
+    case 'illusion': { // Mysterio: curving illusory orbs + false-direction rings
+      const a = angleTo(e.x, e.y, P.x, P.y);
+      mvx = -Math.cos(a) * 0.5 + Math.cos(a + Math.PI / 2) * Math.sin(e.t * 1.7) * 0.9;
+      mvy = -Math.sin(a) * 0.5 + Math.sin(a + Math.PI / 2) * Math.sin(e.t * 1.7) * 0.9;
+      if (canAct) {
+        e.attackT -= dt;
+        if (e.attackT <= 0) {
+          e.attackT = e.def.attack.cd;
+          e.altK = !e.altK;
+          if (e.altK) {
+            for (let i = 0; i < 4; i++)
+              api.spawn({ x: e.x, y: e.y, vx: Math.cos(a + i * 1.57) * 70, vy: Math.sin(a + i * 1.57) * 70, sprite: e.shot, r: 4, homing: 1.4, wobble: 2.5, fx: 'myst' });
+          } else {
+            // feint: orbs that seem to come from another direction
+            const b = arena.bounds;
+            const sx = b.x + rand(20, b.w - 20), sy = b.y + 8;
+            Patterns.aimed(sx, sy, P.x, P.y, 3, 0.5, 100, api, { b: { sprite: e.shot, r: 4, wobble: 2, fx: 'myst' } });
+            G.particles.burst(sx, sy, '#4dff88', 6, 50, 0.3);
+          }
+          G.audio.sfx('illus');
+        }
+      }
+      break;
+    }
+    case 'frost': { // Frost Giant: slow dangerous ice fans
+      const a = angleTo(e.x, e.y, P.x, P.y);
+      mvx = Math.cos(a) * 0.8; mvy = Math.sin(a) * 0.8;
+      if (canAct) {
+        e.attackT -= dt;
+        if (e.attackT <= 0) {
+          e.attackT = e.def.attack.cd;
+          e.altK = !e.altK;
+          Patterns.fan(e.x, e.y, a, e.altK ? 1.5 : 0.8, e.altK ? 7 : 4, 62, api, { b: { sprite: e.shot, r: 5, fx: 'frost' } });
+          G.audio.sfx('ice');
+        }
+      }
+      break;
+    }
+    case 'beam': { // Destroyer: telegraph then blinding orb
+      const a = angleTo(e.x, e.y, P.x, P.y);
+      mvx = Math.cos(a) * 0.6; mvy = Math.sin(a) * 0.6;
+      if (canAct) {
+        e.attackT -= dt;
+        if (e.state === 'telegraph') {
+          mvx = 0; mvy = 0;
+          e.stateT -= dt;
+          if (Math.random() < dt * 30) G.particles.spark(e.x + rand(-8, 8), e.y + rand(-8, 8), '#ffd94a', 1);
+          if (e.stateT <= 0) {
+            e.state = 'stalk';
+            api.spawn({ x: e.x, y: e.y, vx: Math.cos(e.chargeDir) * 140, vy: Math.sin(e.chargeDir) * 140, sprite: e.shot, r: 6, dmg: 2, fx: 'destroyer' });
+            G.particles.ring(e.x, e.y, '#fff8d0', 16, 120);
+            G.particles.addShake(4);
+            G.audio.sfx('beam');
+          }
+        } else if (e.attackT <= 0) {
+          e.attackT = e.def.attack.cd;
+          e.state = 'telegraph'; e.stateT = 0.8; e.chargeDir = a;
+          G.audio.sfx('warn');
+        }
+      }
+      break;
+    }
+    case 'alt': { // Super-Skrull: alternating energy fan / flame ring
+      e.wob += rand(-3, 3) * dt;
+      const a = angleTo(e.x, e.y, P.x, P.y);
+      mvx = Math.cos(a) * 0.9 + Math.cos(e.wob) * 0.4;
+      mvy = Math.sin(a) * 0.9 + Math.sin(e.wob) * 0.4;
+      if (canAct) {
+        e.attackT -= dt;
+        if (e.attackT <= 0) {
+          e.attackT = e.def.attack.cd;
+          e.altK = !e.altK;
+          if (e.altK) { Patterns.aimed(e.x, e.y, P.x, P.y, 4, 0.7, 120, api, { b: { sprite: e.shot, fx: 'skrull' } }); G.audio.sfx('skrull'); }
+          else { Patterns.ring(e.x, e.y, 8, 90, api, { b: { sprite: e.shot, fx: 'skrull' } }); G.audio.sfx('boom'); }
+        }
+      }
+      break;
+    }
+    case 'senti': { // Sentinela: big visible-trajectory shots + focused bursts
+      const a = angleTo(e.x, e.y, P.x, P.y);
+      mvx = Math.cos(a) * 0.7; mvy = Math.sin(a) * 0.7;
+      if (canAct) {
+        e.attackT -= dt;
+        if (e.attackT <= 0) {
+          e.attackT = e.def.attack.cd;
+          e.altK = !e.altK;
+          if (e.altK) {
+            api.spawn({ x: e.x, y: e.y, vx: Math.cos(a) * 85, vy: Math.sin(a) * 85, sprite: e.shot, r: 6, fx: 'senti' });
+            G.audio.sfx('laser');
+          } else {
+            Patterns.aimed(e.x, e.y, P.x, P.y, 3, 0.3, 120, api, { b: { sprite: e.shot, r: 4, fx: 'senti' } });
+            G.audio.sfx('laser');
+          }
+        }
+      }
+      break;
+    }
     case 'wander': {
       e.wob += rand(-4, 4) * dt;
       mvx = Math.cos(e.wob); mvy = Math.sin(e.wob);
@@ -240,7 +459,8 @@ export function updateEnemy(e, dt, G) {
 
 export function drawEnemy(ctx, e) {
   // static sprite (effects like flash/freeze still apply)
-  const spr = SPR[e.def.sprite];
+  let spr = SPR[e.def.sprite];
+  if (!spr && e.def.variantOf) spr = SPR['en_' + e.def.variantOf];
   if (!spr) {
     // procedural fallback: never invisible
     ctx.fillStyle = e.flash > 0 ? '#ffffff' : '#c95df2';

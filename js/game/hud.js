@@ -12,7 +12,6 @@ import { fmtTime, clamp } from '../core/util.js';
 import { xpNeed } from './run.js';
 import { VIEW_W } from './arena.js';
 import { TOTAL_WAVES, WORLD_LABEL } from '../data/campaign.js';
-import { drawHeroTitle } from './herotitle.js';
 
 const HERO_COLOR = { arachnid: '#ff4d4d', stormgod: '#9feaff', ironknight: '#ffd94a', merc: '#ff8c8c', claws: '#ff8c3b', mystic: '#b06bff' };
 
@@ -27,7 +26,7 @@ export function drawHud(ctx, G) {
   // avatar
   ctx.fillStyle = '#100818';
   ctx.fillRect(9, 9, 28, 28);
-  const av = SPR[P.base] || SPR['hero_' + P.hero.id];
+  const av = SPR['head_' + P.hero.id] || SPR[P.base] || SPR['hero_' + P.hero.id];
   if (av) drawSprite(ctx, av, 23, 23, { scale: 1 });
   ctx.strokeStyle = hc; ctx.lineWidth = 1; ctx.strokeRect(9.5, 9.5, 27, 27);
   // name + shield
@@ -53,7 +52,7 @@ export function drawHud(ctx, G) {
   ctx.fillStyle = '#ffffff55';
   ctx.fillRect(hbx, hby, Math.round(hbw * hpf), 2);
   for (let i = 1; i < 4; i++) { ctx.fillStyle = '#00000066'; ctx.fillRect(hbx + (hbw / 4) * i, hby, 1, hbh); }
-  drawText(ctx, `${Math.ceil(st.hp)}/${st.maxHp}`, hbx + hbw - 2, hby + 1, { align: 'right', scale: 1, color: crit ? '#ffb4b4' : '#ffd0da', shadow: true });
+  drawText(ctx, `${Math.round(hpf * 100)}%`, hbx + hbw - 2, hby + 1, { align: 'right', scale: 1, color: crit ? '#ffb4b4' : '#ffffff', shadow: true });
   // xp strip + level
   const xby = hby + hbh + 5;
   ctx.fillStyle = '#081018';
@@ -168,8 +167,7 @@ export function drawHud(ctx, G) {
 
   if (G.banner) {
     ctx.globalAlpha = Math.min(1, G.banner.t);
-    if (G.banner.hero) drawHeroTitle(ctx, G.banner.hero, G.banner.text, VIEW_W / 2, 116, 3);
-    else drawText(ctx, G.banner.text, VIEW_W / 2, 120, { scale: 2, align: 'center', color: G.banner.color || '#e8e8ff', shadow: true });
+    drawText(ctx, G.banner.text, VIEW_W / 2, 120, { scale: 2, align: 'center', color: G.banner.color || '#e8e8ff', shadow: true });
     ctx.globalAlpha = 1;
   }
 }

@@ -118,6 +118,14 @@ class AudioSys {
       case 'port': this.tone({ f: 250, f2: 1500, t: 0.2, type: 'sine', v: 0.2 }); break;
       case 'clank': this.tone({ f: 320, f2: 180, t: 0.05, type: 'square', v: 0.12 }); this.noise({ t: 0.04, v: 0.1, hp: 2000 }); break;
       // ---- hero basic attacks (identity sounds) ----
+      case 'seq': this.tone({ f: 880, f2: 660, t: 0.05, type: 'square', v: 0.1 }); break;
+      case 'burst': this.tone({ f: 500, f2: 900, t: 0.07, type: 'sawtooth', v: 0.12 }); break;
+      case 'plasma': this.tone({ f: 220, f2: 90, t: 0.22, type: 'sine', v: 0.25 }); this.noise({ t: 0.1, v: 0.1, lp: 900 }); break;
+      case 'gun': this.noise({ t: 0.05, v: 0.16, hp: 2500 }); this.tone({ f: 300, f2: 140, t: 0.04, type: 'square', v: 0.1 }); break;
+      case 'ice': this.tone({ f: 1600, f2: 900, t: 0.14, type: 'sine', v: 0.14 }); this.noise({ t: 0.08, v: 0.08, hp: 4000 }); break;
+      case 'beam': this.tone({ f: 100, f2: 1600, t: 0.3, type: 'sawtooth', v: 0.26 }); this.noise({ t: 0.2, v: 0.16, lp: 2000 }); break;
+      case 'illus': this.tone({ f: 700, f2: 300, t: 0.16, type: 'sine', v: 0.14 }); this.tone({ f: 1050, f2: 500, t: 0.16, type: 'sine', v: 0.1, at: 0.05 }); break;
+      case 'skrull': this.tone({ f: 340, f2: 620, t: 0.1, type: 'sawtooth', v: 0.16 }); break;
       case 'webshot': this.tone({ f: 1100, f2: 350, t: 0.06, type: 'sine', v: 0.14 }); this.noise({ t: 0.04, v: 0.07, hp: 3500 }); break;
       case 'boltheavy': this.tone({ f: 900, f2: 180, t: 0.1, type: 'sawtooth', v: 0.18 }); this.noise({ t: 0.06, v: 0.12, hp: 2500 }); break;
       case 'hamthrow': this.noise({ t: 0.12, v: 0.16, hp: 800 }); this.tone({ f: 220, f2: 70, t: 0.14, type: 'square', v: 0.2 }); this.tone({ f: 90, t: 0.1, type: 'sine', v: 0.22, at: 0.04 }); break;

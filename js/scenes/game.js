@@ -2,7 +2,7 @@
 // MARVEL NEXUS — scenes/game.js
 // The run orchestrator: collision, XP/levels, rewards, pause, win/lose.
 // ---------------------------------------------------------------------------
-import { Scene, UI, setCtx } from './scene.js';
+import { Scene, UI, setCtx, toggleFullscreen } from './scene.js';
 import { Input } from '../core/input.js';
 import { Audio } from '../core/audio.js';
 import { Particles } from '../core/particles.js';
@@ -54,6 +54,7 @@ export class GameScene extends Scene {
     this.levelQueue = 0;
     this.levelChoices = null;
     this.paused = false;
+    this.pauseCfg = false;
     this.state = 'intro';
     this.introT = 2.2;
     G.banner = { text: this.raid ? this.raid.name : 'NEXO DE COMBATE', color: this.hero.color, t: 2.2 };
@@ -772,29 +773,38 @@ export class GameScene extends Scene {
   }
 
   drawPause(ctx, G) {
-    ctx.fillStyle = 'rgba(5,4,10,0.82)';
+    ctx.fillStyle = 'rgba(4,3,10,0.88)';
     ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-    drawText(ctx, 'PAUSA', VIEW_W / 2, 70, { align: 'center', scale: 3, color: '#e8e0ff', shadow: true });
-    const bw = 200, bx = VIEW_W / 2 - bw / 2;
-    if (UI.button('resume', bx, 120, bw, 26, 'CONTINUAR')) { this.paused = false; }
-    if (UI.button('restart', bx, 154, bw, 26, 'REINICIAR PARTIDA')) { G.restartGame(); return; }
-    if (UI.button('quit', bx, 188, bw, 26, 'SAIR PARA O LOBBY')) { G.gotoLobby(); return; }
-    // live telemetry (helps diagnose stalls from a screenshot)
-    drawText(ctx, `t=${G.time.toFixed(0)}s wave=${G.waves ? G.waves.wave : '-'}/${TOTAL_WAVES} phase=${G.waves ? G.waves.phase : '-'} mobs=${G.enemies.length} boss=${G.boss ? G.boss.def.id : '-'} portal=${G.portal ? 'Y' : '-'} world=${G.arena.themeId}`, VIEW_W / 2, 236, { align: 'center', color: '#5a5470' });
-    if (G.__err) drawText(ctx, 'ERR: ' + String(G.__err.message || G.__err).slice(0, 60), VIEW_W / 2, 250, { align: 'center', color: '#ff4d4d' });
-    // volumes
+    if (SPR.ui_menubg) { ctx.globalAlpha = 0.3; ctx.drawImage(SPR.ui_menubg, 0, 0, VIEW_W, VIEW_H); ctx.globalAlpha = 1; }
     const s = this.save.settings;
-    drawText(ctx, 'MÚSICA', bx, 232, { color: '#9a93c8' });
-    if (UI.button('m-', bx + 70, 228, 22, 14, '-')) s.music = clamp(s.music - 0.1, 0, 1);
-    if (UI.button('m+', bx + 96, 228, 22, 14, '+')) s.music = clamp(s.music + 0.1, 0, 1);
-    drawText(ctx, Math.round(s.music * 100) + '%', bx + 130, 232, { color: '#e8e0ff' });
-    drawText(ctx, 'SFX', bx, 252, { color: '#9a93c8' });
-    if (UI.button('s-', bx + 70, 248, 22, 14, '-')) s.sfx = clamp(s.sfx - 0.1, 0, 1);
-    if (UI.button('s+', bx + 96, 248, 22, 14, '+')) s.sfx = clamp(s.sfx + 0.1, 0, 1);
-    drawText(ctx, Math.round(s.sfx * 100) + '%', bx + 130, 252, { color: '#e8e0ff' });
-    Audio.setVolumes({ music: s.music, sfx: s.sfx, master: s.master });
-    if (UI.button('shake', bx, 272, bw, 18, 'VIBRAÇÃO DE TELA: ' + (s.screenshake ? 'ON' : 'OFF'))) s.screenshake = !s.screenshake;
-    Save.save();
+    const px = 176, py = 40, pw = 288, ph = 280;
+    if (!this.pauseCfg) {
+      UI.panel(px, py, pw, ph, { title: 'PAUSA', icon: 'ic_gear' });
+      const bx = px + 24, bw = pw - 48;
+      if (UI.button('resume', bx, py + 44, bw, 26, 'CONTINUAR', { primary: true, icon: 'ic_play' })) { this.paused = false; this.pauseCfg = false; }
+      if (UI.button('cfg', bx, py + 78, bw, 26, 'CONFIGURAÇÕES', { icon: 'ic_gear' })) { this.pauseCfg = true; }
+      if (UI.button('restart', bx, py + 112, bw, 26, 'REINICIAR PARTIDA', { icon: 'ic_restart' })) { G.restartGame(); return; }
+      if (UI.button('quit', bx, py + 146, bw, 26, 'SAIR PARA O NEXO', { icon: 'ic_quit' })) { G.gotoLobby(); return; }
+      if (UI.iconButton('fs', px + pw - 30, py + ph - 28, 20, 'ic_full')) toggleFullscreen();
+      // discreet live telemetry (diagnostics)
+      drawText(ctx, `t=${G.time.toFixed(0)}s  wave=${G.waves ? G.waves.wave : '-'}/${TOTAL_WAVES}  ${G.waves ? G.waves.phase : ''}  mobs=${G.enemies.length}  world=${G.arena.themeId}`, VIEW_W / 2, py + ph + 8, { align: 'center', color: '#5a5470' });
+      if (G.__err) drawText(ctx, 'ERR: ' + String(G.__err.message || G.__err).slice(0, 60), VIEW_W / 2, py + ph + 20, { align: 'center', color: '#ff4d4d' });
+    } else {
+      UI.panel(px - 16, py, pw + 32, ph, { title: 'CONFIGURAÇÕES', icon: 'ic_gear' });
+      const cx = px + 4, cw = pw - 8;
+      drawText(ctx, 'ÁUDIO', cx + 8, py + 36, { scale: 1, color: '#9a93c8' });
+      UI.slider('mus', cx, py + 48, cw, 'MÚSICA', 'ic_music', s.music, (v) => { s.music = v; Save.save(); });
+      UI.slider('sfx', cx, py + 68, cw, 'EFEITOS', 'ic_speaker', s.sfx, (v) => { s.sfx = v; Save.save(); });
+      drawText(ctx, 'VÍDEO / COMBATE', cx + 8, py + 96, { scale: 1, color: '#9a93c8' });
+      if (UI.toggle('shake', cx, py + 108, cw, 'VIBRAÇÃO DE TELA', 'ic_shake', s.screenshake)) { s.screenshake = !s.screenshake; Save.save(); }
+      if (UI.toggle('dmg', cx, py + 128, cw, 'NÚMEROS DE DANO', 'ic_dmg', s.dmgNumbers)) { s.dmgNumbers = !s.dmgNumbers; Save.save(); }
+      if (UI.toggle('aim', cx, py + 148, cw, 'MIRA AUTOMÁTICA', 'ic_aim', s.autofire)) { s.autofire = !s.autofire; Save.save(); }
+      if (UI.toggle('int', cx, py + 168, cw, 'ESCALA INTEIRA', 'ic_pixel', s.integerScale)) { s.integerScale = !s.integerScale; Save.save(); G.resize && G.resize(); }
+      if (UI.button('fs2', cx + 8, py + 194, 128, 22, 'TELA CHEIA', { icon: 'ic_full' })) toggleFullscreen();
+      if (UI.button('back', cx + cw - 116, py + 194, 124, 22, 'VOLTAR', { primary: true, icon: 'ic_restart', silent: true })) { this.pauseCfg = false; Audio.sfx('uiBack'); }
+      Audio.setVolumes({ music: s.music, sfx: s.sfx, master: s.master });
+    }
+    drawText(ctx, 'WASD MOVER · MOUSE MIRAR · ESPAÇO ESQUIVA · Q ESPECIAL · E HABILIDADE', VIEW_W / 2, VIEW_H - 14, { align: 'center', scale: 1, color: '#5a5470' });
   }
 }
 

@@ -488,29 +488,26 @@ export class LobbyScene extends Scene {
 
   drawConfig(ctx, G) {
     const s = Save.data.settings;
-    const row = (label, y) => drawText(ctx, label, 60, y, { color: '#9a93c8' });
-    row('MÚSICA', 76);
-    if (UI.button('cm-', 200, 72, 18, 14, '-')) { s.music = clamp(s.music - 0.1, 0, 1); Save.save(); }
-    ctx.fillStyle = '#1d1740'; ctx.fillRect(224, 75, 60, 6);
-    ctx.fillStyle = '#b06bff'; ctx.fillRect(224, 75, Math.round(60 * s.music), 6);
-    if (UI.button('cm+', 292, 72, 18, 14, '+')) { s.music = clamp(s.music + 0.1, 0, 1); Save.save(); }
-    row('SFX', 96);
-    if (UI.button('cs-', 200, 92, 18, 14, '-')) { s.sfx = clamp(s.sfx - 0.1, 0, 1); Save.save(); }
-    ctx.fillStyle = '#1d1740'; ctx.fillRect(224, 95, 60, 6);
-    ctx.fillStyle = '#4dd8ff'; ctx.fillRect(224, 95, Math.round(60 * s.sfx), 6);
-    if (UI.button('cs+', 292, 92, 18, 14, '+')) { s.sfx = clamp(s.sfx + 0.1, 0, 1); Save.save(); }
-    if (UI.button('t1', 60, 120, 260, 16, 'VIBRAÇÃO DE TELA: ' + (s.screenshake ? 'ON' : 'OFF'))) s.screenshake = !s.screenshake;
-    if (UI.button('t2', 60, 140, 260, 16, 'NÚMEROS DE DANO: ' + (s.dmgNumbers ? 'ON' : 'OFF'))) s.dmgNumbers = !s.dmgNumbers;
-    if (UI.button('t3', 60, 160, 260, 16, 'MIRA AUTOMÁTICA: ' + (s.autofire ? 'ON' : 'OFF'))) s.autofire = !s.autofire;
-    if (UI.button('t4', 60, 180, 260, 16, 'ESCALA INTEIRA: ' + (s.integerScale ? 'ON' : 'OFF'))) { s.integerScale = !s.integerScale; G.resize && G.resize(); }
-    if (UI.button('fs', 60, 200, 260, 16, 'TELA CHEIA [F]')) toggleFullscreen();
-    if (UI.button('tut', 60, 220, 260, 16, 'REEXIBIR TUTORIAL')) Save.data.tutorialDone = false;
-    if (UI.button('reset2', 60, 250, 260, 18, 'APAGAR SAVE (2x)', { color: '#ff4d4d' })) {
+    UI.panel(150, 36, 340, 288, { title: 'CONFIGURAÇÕES', icon: 'ic_gear' });
+    const cx = 162, cw = 316;
+    drawText(ctx, 'ÁUDIO', cx + 8, 66, { scale: 1, color: '#9a93c8' });
+    UI.slider('mus', cx, 78, cw, 'MÚSICA', 'ic_music', s.music, (v) => { s.music = v; Save.save(); });
+    UI.slider('sfx', cx, 98, cw, 'EFEITOS', 'ic_speaker', s.sfx, (v) => { s.sfx = v; Save.save(); });
+    drawText(ctx, 'VÍDEO / COMBATE', cx + 8, 126, { scale: 1, color: '#9a93c8' });
+    if (UI.toggle('t1', cx, 138, cw, 'VIBRAÇÃO DE TELA', 'ic_shake', s.screenshake)) { s.screenshake = !s.screenshake; Save.save(); }
+    if (UI.toggle('t2', cx, 158, cw, 'NÚMEROS DE DANO', 'ic_dmg', s.dmgNumbers)) { s.dmgNumbers = !s.dmgNumbers; Save.save(); }
+    if (UI.toggle('t3', cx, 178, cw, 'MIRA AUTOMÁTICA', 'ic_aim', s.autofire)) { s.autofire = !s.autofire; Save.save(); }
+    if (UI.toggle('t4', cx, 198, cw, 'ESCALA INTEIRA', 'ic_pixel', s.integerScale)) { s.integerScale = !s.integerScale; Save.save(); G.resize && G.resize(); }
+    if (UI.button('fs', cx + 8, 224, 148, 22, 'TELA CHEIA', { icon: 'ic_full' })) toggleFullscreen();
+    if (UI.button('tut', cx + 164, 224, 148, 22, 'RETUTORIAL', { icon: 'ic_play' })) { Save.data.tutorialDone = false; Audio.sfx('ui'); }
+    if (UI.button('reset2', cx + 8, 256, 148, 22, 'APAGAR SAVE', { icon: 'ic_quit', color: '#ff4d4d', textColor: this._resetArm ? '#ffffff' : '#ff8c8c' })) {
       if (this._resetArm) { Save.reset(); Audio.sfx('defeat'); this._resetArm = false; }
       else this._resetArm = true;
     }
-    if (this._resetArm) drawText(ctx, 'CLIQUE DE NOVO PARA CONFIRMAR', 190, 274, { align: 'center', color: '#ff4d4d' });
+    if (this._resetArm) drawText(ctx, 'CLIQUE DE NOVO PARA CONFIRMAR', cx + 236, 264, { align: 'center', color: '#ff4d4d' });
+    drawText(ctx, 'AS MESMAS OPÇÕES VALEM NO MENU DE PAUSA', 320, 296, { align: 'center', scale: 1, color: '#5a5470' });
     Audio.setVolumes({ music: s.music, sfx: s.sfx, master: s.master });
     Save.save();
   }
 }
+

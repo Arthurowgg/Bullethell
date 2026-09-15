@@ -1,11 +1,12 @@
 // ---------------------------------------------------------------------------
 // MARVEL NEXUS — game/hud.js
-// Combat HUD v2: hero panel with animated vitals, wave tracker + timer,
-// world/intel chip, ability plates with Q-ready glow, boss bar.
-// Marvel-comic + Nexus-tech pixel identity.
+// Combat HUD v3: same Nexus UI kit as menus (nine-slice panels, framed
+// plates). Hero vitals top-left, wave tracker + timer top-center, world intel
+// top-right, ability plates bottom-left, boss bar bottom-center.
 // ---------------------------------------------------------------------------
 import { drawText } from '../core/font.js';
 import { SPR, drawSprite } from '../core/pixel.js';
+import { slice9 } from '../scenes/scene.js';
 import { fmtTime, clamp } from '../core/util.js';
 import { xpNeed } from './run.js';
 import { VIEW_W } from './arena.js';
@@ -16,113 +17,105 @@ const HERO_COLOR = { arachnid: '#ff4d4d', stormgod: '#9feaff', ironknight: '#ffd
 export function drawHud(ctx, G) {
   const st = G.runStats;
   const P = G.player;
-  const hud = G._hud || (G._hud = { ghost: st.hp, flash: 0 });
+  const hud = G._hud || (G._hud = { ghost: st.hp });
 
   // ================= top-left: hero vitals =================
   const hc = HERO_COLOR[P.hero.id] || '#ffffff';
-  // panel
   ctx.fillStyle = '#0d0a1ecc';
-  ctx.fillRect(4, 4, 178, 34);
-  ctx.strokeStyle = '#000000'; ctx.strokeRect(3.5, 3.5, 179, 35);
-  ctx.strokeStyle = hc; ctx.lineWidth = 1; ctx.strokeRect(4.5, 4.5, 177, 33);
+  ctx.fillRect(4, 4, 182, 40);
+  if (SPR.ui_panel) slice9(ctx, SPR.ui_panel, 4, 4, 182, 40, 8);
   // avatar plate
   ctx.fillStyle = '#100818';
-  ctx.fillRect(7, 7, 28, 28);
-  ctx.strokeStyle = hc; ctx.strokeRect(7.5, 7.5, 27, 27);
+  ctx.fillRect(8, 8, 28, 28);
   const av = SPR[P.base] || SPR['hero_' + P.hero.id];
-  if (av) drawSprite(ctx, av, 21, 21, { scale: 1 });
-  if (SPR.hud_avatar) drawSprite(ctx, SPR.hud_avatar, 21, 21, { scaleX: 30 / SPR.hud_avatar.width, scaleY: 30 / SPR.hud_avatar.height });
-  // hp with ghost damage bar
-  const hbx = 40, hby = 9, hbw = 132, hbh = 8;
+  if (av) drawSprite(ctx, av, 22, 22, { scale: 1 });
+  ctx.strokeStyle = hc; ctx.lineWidth = 1; ctx.strokeRect(8.5, 8.5, 27, 27);
+  // name + shield
+  drawText(ctx, P.hero.name, 41, 7, { scale: 1, color: hc, shadow: true });
+  if (st.shield > 0) {
+    drawText(ctx, 'ESC', 132, 7, { scale: 1, color: '#4dd8ff' });
+    ctx.fillStyle = '#4dd8ff';
+    for (let i = 0; i < Math.min(4, st.shield); i++) ctx.fillRect(152 + i * 6, 8, 4, 4);
+  }
+  // hp bar with ghost damage trail + crit state
+  const hbx = 41, hby = 17, hbw = 136, hbh = 10;
   const hpf = clamp(st.hp / st.maxHp, 0, 1);
   hud.ghost = Math.max(hpf, hud.ghost - 0.35 * (1 / 60) * 3);
   if (hud.ghost < hpf) hud.ghost = hpf;
+  const crit = hpf <= 0.3;
   ctx.fillStyle = '#100818';
   ctx.fillRect(hbx - 1, hby - 1, hbw + 2, hbh + 2);
-  if (SPR.hud_hp) drawSprite(ctx, SPR.hud_hp, hbx + hbw / 2, hby + hbh / 2, { scaleX: (hbw + 8) / SPR.hud_hp.width, scaleY: (hbh + 8) / SPR.hud_hp.height });
   ctx.fillStyle = '#3d0d1c';
   ctx.fillRect(hbx, hby, hbw, hbh);
   ctx.fillStyle = '#8a2038';
-  ctx.fillRect(hbx, hby, Math.round(hbw * hud.ghost), hbh);       // ghost (recent loss)
-  const crit = hpf <= 0.3;
+  ctx.fillRect(hbx, hby, Math.round(hbw * hud.ghost), hbh);
   ctx.fillStyle = crit && Math.floor(performance.now() / 160) % 2 === 0 ? '#ff2b2b' : '#ff4d6b';
   ctx.fillRect(hbx, hby, Math.round(hbw * hpf), hbh);
   ctx.fillStyle = '#ffffff55';
   ctx.fillRect(hbx, hby, Math.round(hbw * hpf), 2);
-  for (let i = 1; i < 4; i++) { ctx.fillStyle = '#00000066'; ctx.fillRect(hbx + (hbw / 4) * i, hby, 1, hbh); } // segments
+  for (let i = 1; i < 4; i++) { ctx.fillStyle = '#00000066'; ctx.fillRect(hbx + (hbw / 4) * i, hby, 1, hbh); }
   if (crit) { ctx.strokeStyle = '#ff2b2b'; ctx.strokeRect(hbx - 1.5, hby - 1.5, hbw + 3, hbh + 3); }
-  drawText(ctx, `${Math.ceil(st.hp)}/${st.maxHp}`, hbx + hbw + 4 - 8, hby + 10, { scale: 1, color: crit ? '#ff8c8c' : '#ffd0da' });
-  // shield + name
-  drawText(ctx, P.hero.name, hbx, hby + 10, { scale: 1, color: hc, shadow: true });
-  if (st.shield > 0) {
-    ctx.fillStyle = '#4dd8ff';
-    for (let i = 0; i < Math.min(4, st.shield); i++) ctx.fillRect(hbx + 96 + i * 6, hby + 11, 4, 4);
-    drawText(ctx, 'ESC', hbx + 88, hby + 10, { scale: 1, color: '#4dd8ff' });
-  }
-  // xp
+  drawText(ctx, `${Math.ceil(st.hp)}/${st.maxHp}`, hbx + hbw - 2, hby + 1, { align: 'right', scale: 1, color: crit ? '#ffb4b4' : '#ffd0da', shadow: true });
+  // xp strip
   const xby = hby + hbh + 4;
   ctx.fillStyle = '#081018';
   ctx.fillRect(hbx - 1, xby - 1, hbw + 2, 4);
   ctx.fillStyle = '#4dd8ff';
   ctx.fillRect(hbx, xby, Math.round(hbw * clamp(st.xp / xpNeed(st.level), 0, 1)), 2);
-  drawText(ctx, `NV ${st.level}`, hbx + hbw - 24, xby - 2, { scale: 1, color: '#9feaff' });
+  drawText(ctx, `NV ${st.level}`, hbx + hbw, xby - 2, { align: 'right', scale: 1, color: '#9feaff', shadow: true });
 
   // ================= top-center: wave tracker + timer =================
   if (G.waves) {
     const wv = G.waves;
     const inc = wv.phase === 'incursion' || G.portal || G.boss;
-    const cw = 168, cx = VIEW_W / 2 - cw / 2, cy = 4;
+    const cw = 176, cx = VIEW_W / 2 - cw / 2, cy = 4;
     ctx.fillStyle = '#0d0a1ecc';
-    ctx.fillRect(cx, cy, cw, 26);
-    if (SPR.hud_wave) drawSprite(ctx, SPR.hud_wave, VIEW_W / 2, cy + 13, { scaleX: (cw + 10) / SPR.hud_wave.width, scaleY: 30 / SPR.hud_wave.height });
-    ctx.strokeStyle = inc ? '#ff4d4d' : '#7b5cff';
-    ctx.strokeRect(cx + 0.5, cy + 0.5, cw - 1, 25);
+    ctx.fillRect(cx, cy, cw, 28);
+    if (SPR.ui_panel) slice9(ctx, SPR.ui_panel, cx, cy, cw, 28, 7);
     if (inc) {
       const pul = 0.6 + Math.sin(performance.now() / 140) * 0.4;
       ctx.globalAlpha = pul;
-      drawText(ctx, 'INCURSÃO', VIEW_W / 2, cy + 4, { align: 'center', scale: 2, color: '#ff4d4d', shadow: true });
+      drawText(ctx, 'INCURSÃO', VIEW_W / 2, cy + 5, { align: 'center', scale: 2, color: '#ff4d4d', shadow: true });
       ctx.globalAlpha = 1;
-      drawText(ctx, G.boss ? G.boss.def.name : 'ENTRE NO PORTAL', VIEW_W / 2, cy + 18, { align: 'center', scale: 1, color: '#ffd0da', shadow: true });
+      drawText(ctx, G.boss ? G.boss.def.name : 'ENTRE NO PORTAL', VIEW_W / 2, cy + 19, { align: 'center', scale: 1, color: '#ffd0da', shadow: true });
     } else {
-      drawText(ctx, `WAVE ${String(wv.wave || 1).padStart(2, '0')}/${TOTAL_WAVES}`, cx + 6, cy + 4, { scale: 2, color: '#ffd94a', shadow: true });
-      const k = wv.kind ? (typeof wv.kind === 'string' ? wv.kind : wv.kind) : '';
-      drawText(ctx, wv.phase === 'breather' ? 'RESPIRO' : wv.phase === 'announce' ? 'PREPARAR' : String(k).toUpperCase(), cx + 6, cy + 17, { scale: 1, color: '#9a93c8', shadow: true });
-      // hostiles remaining
+      drawText(ctx, `WAVE ${String(wv.wave || 1).padStart(2, '0')}/${TOTAL_WAVES}`, cx + 8, cy + 5, { scale: 2, color: '#ffd94a', shadow: true });
+      drawText(ctx, wv.phase === 'breather' ? 'RESPIRO' : wv.phase === 'announce' ? 'PREPARAR' : String(wv.kind || '').toUpperCase(), cx + 8, cy + 19, { scale: 1, color: '#9a93c8', shadow: true });
       const rem = wv.remaining(G);
       const bar = 44;
       ctx.fillStyle = '#1d1740';
-      ctx.fillRect(cx + cw - bar - 8, cy + 7, bar, 5);
+      ctx.fillRect(cx + cw - bar - 8, cy + 9, bar, 5);
       ctx.fillStyle = '#ff5d8f';
-      ctx.fillRect(cx + cw - bar - 8, cy + 7, Math.round(bar * clamp(rem / 26, 0, 1)), 5);
-      drawText(ctx, String(rem), cx + cw - bar - 12, cy + 6, { align: 'right', scale: 1, color: '#c8c8d8' });
-      drawText(ctx, 'HOSTIS', cx + cw - bar - 12, cy + 14, { align: 'right', scale: 1, color: '#7a74a0' });
+      ctx.fillRect(cx + cw - bar - 8, cy + 9, Math.round(bar * clamp(rem / 26, 0, 1)), 5);
+      drawText(ctx, String(rem), cx + cw - bar - 12, cy + 8, { align: 'right', scale: 1, color: '#c8c8d8', shadow: true });
+      drawText(ctx, 'HOSTIS', cx + cw - bar - 12, cy + 16, { align: 'right', scale: 1, color: '#7a74a0' });
     }
-    // timer chip (discreet)
-    const t = fmtTime(G.time);
-    const dramatic = inc;
-    if (SPR.hud_timer) drawSprite(ctx, SPR.hud_timer, cx + cw + 16, cy + 10, { scaleX: 30 / SPR.hud_timer.width, scaleY: 16 / SPR.hud_timer.height });
-    drawText(ctx, t, cx + cw + 8, cy + 6, { scale: 1, color: dramatic ? '#ff8c8c' : '#9a93c8', shadow: true });
-    drawSprite(ctx, SPR.skull, cx - 16, cy + 8, { scale: 0.8 });
-    drawText(ctx, String(G.kills), cx - 8, cy + 8, { scale: 1, color: '#c8c8d8' });
+    // kills (left) + timer (right), discreet chips
+    drawSprite(ctx, SPR.skull, cx - 14, cy + 9, { scale: 0.8 });
+    drawText(ctx, String(G.kills), cx - 6, cy + 8, { scale: 1, color: '#c8c8d8', shadow: true });
+    drawText(ctx, fmtTime(G.time), cx + cw + 10, cy + 8, { scale: 1, color: inc ? '#ff8c8c' : '#9a93c8', shadow: true });
   }
 
   // ================= top-right: world intel =================
   {
     const tid = G.arena && G.arena.themeId;
+    ctx.fillStyle = '#0d0a1ecc';
+    ctx.fillRect(VIEW_W - 128, 4, 124, 24);
+    if (SPR.ui_panel) slice9(ctx, SPR.ui_panel, VIEW_W - 128, 4, 124, 24, 7);
     const ic = SPR['wicon_' + tid] || SPR.ui_burst;
-    if (ic) drawSprite(ctx, ic, VIEW_W - 14, 14, { scale: 1.2 });
-    drawText(ctx, WORLD_LABEL[tid] || tid, VIEW_W - 26, 8, { align: 'right', scale: 1, color: '#dcd6f6', shadow: true });
-    drawSprite(ctx, SPR.fragment, VIEW_W - 78, 22, { scale: 0.8 });
-    drawText(ctx, String(G.runFragments), VIEW_W - 68, 21, { scale: 1, color: '#9feaff' });
+    if (ic) drawSprite(ctx, ic, VIEW_W - 116, 16, { scale: 1.2 });
+    drawText(ctx, WORLD_LABEL[tid] || tid, VIEW_W - 104, 7, { scale: 1, color: '#dcd6f6', shadow: true });
+    drawSprite(ctx, SPR.fragment, VIEW_W - 40, 20, { scale: 0.8 });
+    drawText(ctx, String(G.runFragments), VIEW_W - 32, 18, { scale: 1, color: '#9feaff', shadow: true });
   }
 
   // ================= bottom-left: combat plates =================
-  drawAbility(ctx, 10, 316, 'Q', P.hero.special.name, 100 - P.charge, 100, '#ffd94a', P.charge >= 100, P.charge >= 100 ? 'PRONTO!' : null, SPR['abil_' + P.hero.id + '_e'], P.hero.id, true);
-  drawAbility(ctx, 48, 316, 'E', P.hero.ability.name, P.abilityCd, P.hero.ability.cd * st.cdr, P.hero.color, P.abilityCd <= 0, null, SPR['abil_' + P.hero.id + '_q'], P.hero.id, false);
-  drawAbility(ctx, 86, 316, 'ESP', 'ESQUIVA', P.dashCd, st.dashCd, '#ffffff', P.dashCd <= 0, null, SPR.ui_bolt, P.hero.id, false);
+  drawAbility(ctx, 10, 312, 'Q', P.hero.special.name, 100 - P.charge, 100, '#ffd94a', P.charge >= 100, P.charge >= 100 ? 'PRONTO!' : null, SPR['abil_' + P.hero.id + '_e'], P.hero.id, true);
+  drawAbility(ctx, 50, 314, 'E', P.hero.ability.name, P.abilityCd, P.hero.ability.cd * st.cdr, P.hero.color, P.abilityCd <= 0, null, SPR['abil_' + P.hero.id + '_q'], P.hero.id, false);
+  drawAbility(ctx, 88, 314, 'ESP', 'ESQUIVA', P.dashCd, st.dashCd, '#ffffff', P.dashCd <= 0, null, SPR.ui_bolt, P.hero.id, false);
   // basic attack tag
-  drawSprite(ctx, SPR['shot_hero_' + P.hero.id] || SPR.b_player, 124, 329, { scale: 1 });
-  drawText(ctx, 'ATAQUE', 118, 340, { scale: 1, color: '#7a74a0' });
+  drawSprite(ctx, SPR['shot_hero_' + P.hero.id] || SPR.b_player, 132, 326, { scale: 1 });
+  drawText(ctx, 'ATAQUE', 126, 338, { scale: 1, color: '#7a74a0' });
 
   // ================= boss bar =================
   if (G.boss && !G.boss.dead) {
@@ -193,20 +186,17 @@ export function drawHud(ctx, G) {
 }
 
 function drawAbility(ctx, x, y, key, name, cd, cdMax, color, ready, readyLabel, icon, heroId, primary) {
-  const s = primary ? 30 : 26;
-  // plate
+  const s = primary ? 32 : 28;
   ctx.fillStyle = '#100818dd';
   ctx.fillRect(x, y, s, s);
+  if (SPR.ui_panel) slice9(ctx, SPR.ui_panel, x, y, s, s, 6);
   // cooldown sweep
   if (!ready && cdMax > 0) {
     const f = clamp(cd / cdMax, 0, 1);
     ctx.fillStyle = '#000000bb';
-    ctx.fillRect(x, y, s, Math.round(s * f));
+    ctx.fillRect(x + 2, y + 2, s - 4, Math.round((s - 4) * f));
   }
-  // icon
-  if (icon) drawSprite(ctx, icon, x + s / 2, y + s / 2, { scale: Math.min(22 / icon.width, 22 / icon.height) });
-  // ready glow (Q charged): elegant pulsing double frame
-  const HB = HERO_COLOR;
+  if (icon) drawSprite(ctx, icon, x + s / 2, y + s / 2, { scale: Math.min(20 / icon.width, 20 / icon.height) });
   if (ready && primary) {
     const pul = 0.5 + Math.sin(performance.now() / 150) * 0.5;
     ctx.strokeStyle = '#ffd94a';
@@ -221,12 +211,9 @@ function drawAbility(ctx, x, y, key, name, cd, cdMax, color, ready, readyLabel, 
     ctx.strokeStyle = ready ? color : '#7a74a0';
     ctx.strokeRect(x + 0.5, y + 0.5, s - 1, s - 1);
   }
-  ctx.strokeStyle = HB[heroId] || color;
-  ctx.strokeRect(x - 1.5, y - 1.5, s + 3, s + 3);
-  if (SPR.hud_abil) drawSprite(ctx, SPR.hud_abil, x + s / 2, y + s / 2, { scaleX: (s + 6) / SPR.hud_abil.width, scaleY: (s + 6) / SPR.hud_abil.height });
-  // key tag
-  ctx.fillStyle = '#0d0a1e';
-  ctx.fillRect(x, y + s, 12, 8);
-  drawText(ctx, key, x + 1, y + s + 1, { scale: 1, color: ready ? '#ffd94a' : '#9a93c8' });
+  // keycap tag
+  if (SPR.ui_keycap) drawSprite(ctx, SPR.ui_keycap, x + s / 2, y + s + 6, { scaleX: 1, scaleY: 1 });
+  else { ctx.fillStyle = '#0d0a1e'; ctx.fillRect(x + s / 2 - 8, y + s + 1, 16, 9); }
+  drawText(ctx, key, x + s / 2, y + s + 2, { align: 'center', scale: 1, color: ready ? '#ffffff' : '#9a93c8', shadow: true });
   if (readyLabel && ready) drawText(ctx, readyLabel, x + s / 2, y - 9, { align: 'center', scale: 1, color: '#ffd94a', shadow: true });
 }

@@ -70,6 +70,7 @@ export class TitleScene extends Scene {
     const cx = VIEW_W / 2;
     ctx.fillStyle = '#06050b';
     ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    if (SPR.ui_menubg) { ctx.globalAlpha = 0.55; ctx.drawImage(SPR.ui_menubg, 0, 0, VIEW_W, VIEW_H); ctx.globalAlpha = 1; }
     // parallax stars
     for (let i = 0; i < 90; i++) {
       const sp = 1 + (i % 3);
@@ -122,7 +123,7 @@ export class TitleScene extends Scene {
       drawText(ctx, 'PRESSIONE ENTER OU CLIQUE PARA COMEÇAR', cx, 257, { align: 'center', scale: 1, color: '#ffd94a', shadow: true });
     }
 
-    if (UI.button('fs', cx - 70, 284, 140, 18, 'TELA CHEIA [F]', { color: '#4dd8ff' })) toggleFullscreen();
+    if (UI.button('fs', cx - 70, 284, 140, 20, 'TELA CHEIA', { icon: 'ic_full', color: '#4dd8ff' })) toggleFullscreen();
 
     drawText(ctx, 'WASD MOVER · MOUSE MIRAR · ESPAÇO ESQUIVA · Q ESPECIAL · E HABILIDADE · P PAUSA', cx, 318, { align: 'center', scale: 1, color: '#9a93c8' });
     drawText(ctx, 'FAN GAME SEM FINS LUCRATIVOS · v1.2', cx, 344, { align: 'center', scale: 1, color: '#7a74a0' });

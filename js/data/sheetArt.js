@@ -116,6 +116,12 @@ export function loadSheetArt(onProgress) {
     load(`assets/sprites/ui/${k}.png`, (img) => { SPR[k] = cnv(img, 1); });
   for (const k of ['dz_fire', 'dz_vent', 'fx_gravwell', 'fx_gauntlet', 'fx_tclock'])
     load(`assets/sprites/fx/${k}.png`, (img) => { SPR[k] = cnv(img, 1); });
+  // universal UI kit: frames, icons, toggles, sliders, menu backdrop
+  for (const k of ['ui_btn', 'ui_btn_gold', 'ui_panel', 'ui_header', 'ui_menubg', 'ui_keycap',
+    'ui_toggle_on', 'ui_toggle_off', 'ui_slider_track', 'ui_slider_knob',
+    'ic_play', 'ic_restart', 'ic_quit', 'ic_gear', 'ic_music', 'ic_speaker',
+    'ic_shake', 'ic_dmg', 'ic_aim', 'ic_pixel', 'ic_full', 'ic_trophy'])
+    load(`assets/sprites/ui/${k}.png`, (img) => { SPR[k] = cnv(img, 1); });
   // HUD frames + Nexus event icons (campaign rework)
   for (const k of ['hud_hp', 'hud_avatar', 'hud_abil', 'hud_wave', 'hud_timer',
     'ev_wave', 'ev_elite', 'ev_miniboss', 'ev_incursion', 'ev_tear', 'ev_swarm',

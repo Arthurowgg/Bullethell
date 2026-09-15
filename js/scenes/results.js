@@ -82,8 +82,8 @@ export class ResultsScene extends Scene {
       drawText(ctx, 'MISSÕES CONCLUÍDAS: ' + this.newMissions.map((m) => m.name).join(', '), 234, 222, { color: '#4dff88' });
     }
 
-    if (UI.button('retry', 220, 260, 145, 26, 'JOGAR NOVAMENTE')) G.startGame({ mode: p.mode, raidId: p.raid && p.raid.id, heroId: p.heroId });
-    if (UI.button('lobby', 375, 260, 145, 26, 'VOLTAR AO LOBBY')) G.gotoLobby();
+    if (UI.button('retry', 214, 260, 158, 26, 'JOGAR NOVAMENTE', { primary: true, icon: 'ic_restart' })) G.startGame({ mode: p.mode, raidId: p.raid && p.raid.id, heroId: p.heroId });
+    if (UI.button('lobby', 380, 260, 150, 26, 'VOLTAR AO NEXO', { icon: 'ic_quit' })) G.gotoLobby();
     drawText(ctx, 'AS RECOMPENSAS FORAM ADICIONADAS AO SEU PERFIL', VIEW_W / 2, 320, { align: 'center', color: '#9a93c8' });
   }
 }

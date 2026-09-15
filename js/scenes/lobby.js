@@ -282,13 +282,13 @@ export class LobbyScene extends Scene {
     const hovR = UI.hit(512, 156, 96, 64);
     if (hovL) UI.hoverId = 'pcL';
     if (hovR) UI.hoverId = 'pcR';
-    this._holoShop(ctx, 83, 138, 'LOJA NEXUS', '#4dd8ff', hovL);
-    this._holoShop(ctx, 560, 156, 'LOJA COSMÉTICA', '#ff5df2', hovR);
+    this._holoShop(ctx, 83, 138, 'LOJA NEXUS', '#4dd8ff', hovL, hovL ? ['up_01', 'up_05', 'up_12'] : null);
+    this._holoShop(ctx, 560, 156, 'LOJA COSMÉTICA', '#ff5df2', hovR, hovR ? SKINS.slice(0, 3).map((k) => 'skin_' + k.id) : null);
     if (hovL && UI.anyClick) this.open('nexus');
     if (hovR && UI.anyClick) this.open('cos');
   }
 
-  _holoShop(ctx, x, yTop, label, color, hov) {
+  _holoShop(ctx, x, yTop, label, color, hov, previews) {
     const flick = 0.75 + Math.sin(this.t * 13 + x) * 0.12 + (Math.sin(this.t * 47) > 0.96 ? -0.3 : 0);
     const a = hov ? 1 : 0.55;
     ctx.save();
@@ -314,6 +314,12 @@ export class LobbyScene extends Scene {
     ctx.fillStyle = color + '33';
     for (let yy = yTop - 14 - h + 3; yy < yTop - 14 - 2; yy += 3) ctx.fillRect(x - w / 2 + 2, yy, w - 4, 1);
     drawText(ctx, label, x, yTop - 14 - h + 5, { align: 'center', scale: 1, color: hov ? '#ffffff' : color, shadow: true });
+    if (previews) {
+      previews.forEach((k, i) => {
+        const sp = SPR[k];
+        if (sp) { ctx.globalAlpha = a * flick; drawSprite(ctx, sp, x - 26 + i * 26, yTop - 2, { scale: Math.min(14 / sp.width, 14 / sp.height) }); }
+      });
+    }
     ctx.restore();
   }
 

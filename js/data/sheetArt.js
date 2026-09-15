@@ -123,7 +123,9 @@ export function loadSheetArt(onProgress) {
     'archb_ultron', 'archb_loki', 'archb_hela', 'archb_kang', 'archb_devourer', 'archb_thanos',
     'archw_wakanda', 'archw_skydeck', 'archw_ruins', 'archw_asgard', 'archw_nexuscore', 'archw_newyork',
     'arch_spread', 'arch_s1', 'arch_s2', 'arch_s3', 'arch_s4', 'arch_corner1', 'arch_corner2',
-    'arch_divider', 'arch_polaroid'])
+    'arch_divider', 'arch_polaroid', 'arch_skull', 'arch_skull2', 'arch_page_tech', 'arch_page_map',
+    'arch_compass', 'arch_pin', 'arch_rune1', 'arch_rune2', 'arch_rune3',
+    'arch_sk_arachnid', 'arch_sk_stormgod', 'arch_sk_ironknight', 'arch_sk_merc', 'arch_sk_claws', 'arch_sk_mystic'])
     load(`assets/sprites/ui/${k}.png`, (img) => { SPR[k] = cnv(img, 1); });
   // universal UI kit: frames, icons, toggles, sliders, menu backdrop
   for (const k of ['ui_btn', 'ui_btn_gold', 'ui_panel', 'ui_header', 'ui_menubg', 'ui_keycap',

@@ -101,6 +101,7 @@ export class ArchivesUI {
       { id: 'r1', kind: 'record', name: 'CAMPANHA', seen: true, full: true },
       { id: 'r2', kind: 'record', name: 'AMEAÇAS ABATIDAS', seen: true, full: true },
       { id: 'r3', kind: 'record', name: 'DESCOBERTAS', seen: true, full: true },
+      { id: 'r4', kind: 'record', name: 'AUTÓGRAFOS', seen: true, full: true },
     ];
   }
 
@@ -132,7 +133,8 @@ export class ArchivesUI {
 
     // LEFT page: chapter tabs + entry list
     const lx = bx + 8, ly = by + 8, lw = bw / 2 - 16, lh = bh - 16;
-    if (SPR.arch_page) ctx.drawImage(SPR.arch_page, lx, ly, lw, lh);
+    const pageSpr = CHAPTERS[this.chapter].id === 'records' ? (SPR.arch_page_tech || SPR.arch_page) : CHAPTERS[this.chapter].id === 'worlds' ? (SPR.arch_page_map || SPR.arch_page) : SPR.arch_page;
+    if (pageSpr) ctx.drawImage(pageSpr, lx, ly, lw, lh);
     else { ctx.fillStyle = '#e8dcc0'; ctx.fillRect(lx, ly, lw, lh); }
     CHAPTERS.forEach((c, i) => {
       const tx = lx + 6 + i * 52, ty = ly + 4;
@@ -160,12 +162,13 @@ export class ArchivesUI {
         if (SPR.arch_arrow) drawSprite(ctx, SPR.arch_arrow, lx + 14, ey + 11, { scaleX: 0.6, scaleY: 0.8 });
       }
       const disc = e.seen;
-      drawText(ctx, disc ? e.name : '??? ???', lx + 26, ey + 4, { scale: 1, color: sel ? '#241b52' : disc ? '#4a3a20' : '#9a8a6a' });
+      const dark = CHAPTERS[this.chapter].id !== 'records';
+      drawText(ctx, disc ? e.name : '??? ???', lx + 26, ey + 4, { scale: 1, color: sel ? (dark ? '#241b52' : '#ffffff') : disc ? (dark ? '#4a3a20' : '#c8c2e8') : (dark ? '#9a8a6a' : '#6a6488') });
       if (!disc) drawText(ctx, 'OCULTO', lx + lw - 10, ey + 4, { align: 'right', scale: 1, color: '#b06bff' });
       else if (e.full) drawText(ctx, '✔', lx + lw - 10, ey + 4, { align: 'right', scale: 1, color: '#2f8f4f' });
       if (hov && UI.anyClick) this.setSel(i);
     });
-    drawText(ctx, `CAP. ${this.chapter + 1} · PÁG. ${this.sel + 1}/${list.length}`, lx + 8, ly + lh - 12, { scale: 1, color: '#8a7a5a' });
+    drawText(ctx, `CAP. ${this.chapter + 1} · PÁG. ${this.sel + 1}/${list.length}`, lx + 8, ly + lh - 12, { scale: 1, color: CHAPTERS[this.chapter].id === 'records' ? '#7a74a0' : '#8a7a5a' });
 
     // RIGHT page: detail (with flip anim)
     const rx = bx + bw / 2 + 8, ry = by + 8, rw = bw / 2 - 16, rh = bh - 16;
@@ -175,12 +178,20 @@ export class ArchivesUI {
     ctx.scale(Math.max(0.12, flip), 1);
     ctx.translate(-(rx + rw / 2), -ry);
     if (this.turnT > 0 && flip < 0.9) { ctx.fillStyle = '#00000033'; ctx.fillRect(rx + 4, ry + 4, rw, rh); }
-    if (SPR.arch_page) ctx.drawImage(SPR.arch_page, rx, ry, rw, rh);
+    if (pageSpr) ctx.drawImage(pageSpr, rx, ry, rw, rh);
     else { ctx.fillStyle = '#e8dcc0'; ctx.fillRect(rx, ry, rw, rh); }
     // corner ornaments + stickers
     if (SPR.arch_corner1) drawSprite(ctx, SPR.arch_corner1, rx + 12, ry + 10, { scale: 1 });
     if (SPR.arch_corner2) { ctx.save(); ctx.translate(rx + rw - 12, ry + rh - 12); ctx.rotate(Math.PI); ctx.translate(-(rx + rw - 12), -(ry + rh - 12)); drawSprite(ctx, SPR.arch_corner2, rx + rw - 12, ry + rh - 12, { scale: 1 }); ctx.restore(); }
     if (SPR.arch_s3) { ctx.save(); ctx.globalAlpha = 0.9; drawSprite(ctx, SPR.arch_s3, rx + rw - 20, ry + 16, { scale: 0.9, rot: 0.2 }); ctx.restore(); }
+    const chId = CHAPTERS[this.chapter].id;
+    if (chId === 'worlds' && SPR.arch_compass) { ctx.globalAlpha = 0.8; drawSprite(ctx, SPR.arch_compass, rx + rw - 26, ry + rh - 26, { scale: 1 }); ctx.globalAlpha = 1; }
+    if (chId === 'bosses') {
+      if (SPR.arch_rune1) drawSprite(ctx, SPR.arch_rune1, rx + 14, ry + rh - 40, { scale: 1 });
+      if (SPR.arch_rune2) drawSprite(ctx, SPR.arch_rune2, rx + 14, ry + rh - 24, { scale: 1 });
+      if (SPR.arch_skull2) drawSprite(ctx, SPR.arch_skull2, rx + rw - 46, ry + 12, { scale: 0.8 });
+    }
+    if (chId === 'enemies' && SPR.arch_skull) drawSprite(ctx, SPR.arch_skull, rx + rw - 46, ry + 12, { scale: 0.8 });
     const e = list[clamp(this.sel, 0, list.length - 1)];
     if (e) this._drawEntry(ctx, e, rx, ry, rw, rh, t);
     ctx.restore();
@@ -291,17 +302,29 @@ export class ArchivesUI {
 
   _records(ctx, e, x, y, w, ink) {
     const s = Save.data;
+    const L = '#c8c2e8', D = '#7a74a0';
     if (SPR.arch_divider) drawSprite(ctx, SPR.arch_divider, x + w / 2, y - 4, { scaleX: (w - 40) / 128, scaleY: 1 });
     if (e.id === 'r1') {
-      this._wrap(ctx, `Partidas ${s.stats.runs} · Vitórias ${s.stats.wins} · Nível máx ${s.stats.levelReached} · Balas desviadas ${s.stats.bulletsDodged}`, x, y, w, '#5a4a2a', 10);
+      this._wrap(ctx, `Partidas ${s.stats.runs} · Vitórias ${s.stats.wins} · Nível máx ${s.stats.levelReached} · Balas desviadas ${s.stats.bulletsDodged}`, x, y, w, L, 10);
     } else if (e.id === 'r2') {
-      this._wrap(ctx, `Abates totais ${s.stats.kills}. Guardiões vencidos: ${['ultron', 'loki', 'hela', 'kang', 'devourer', 'thanos'].map((b) => (s.bossesDefeated[b] ? bossById(b).name.split(' ')[0] + ' x' + s.bossesDefeated[b] : null)).filter(Boolean).join(' · ') || 'nenhum ainda.'}`, x, y, w, '#5a4a2a', 10);
-    } else {
+      this._wrap(ctx, `Abates totais ${s.stats.kills}. Guardiões vencidos: ${['ultron', 'loki', 'hela', 'kang', 'devourer', 'thanos'].map((b) => (s.bossesDefeated[b] ? bossById(b).name.split(' ')[0] + ' x' + s.bossesDefeated[b] : null)).filter(Boolean).join(' · ') || 'nenhum ainda.'}`, x, y, w, L, 10);
+    } else if (e.id === 'r3') {
       const d = s.discovered;
       const en = ['drone', 'chitauri', 'symbiote', 'sorcerer', 'sentinel', 'spectre', 'jotun', 'chaos'].filter((i) => d.enemies[i]).length;
       const bo = ['ultron', 'loki', 'hela', 'kang', 'devourer', 'thanos'].filter((i) => d.bosses[i]).length;
       const wo = Object.keys(d.worlds || {}).length;
-      this._wrap(ctx, `Ameaças ${en}/8 · Guardiões ${bo}/6 · Mundos ${wo}/6. O arquivo cresce conforme você joga.`, x, y, w, '#5a4a2a', 10);
+      this._wrap(ctx, `Ameaças ${en}/8 · Guardiões ${bo}/6 · Mundos ${wo}/6. O arquivo cresce conforme você joga.`, x, y, w, L, 10);
+    } else if (e.id === 'r4') {
+      this._wrap(ctx, 'Heróis que assinaram o arquivo:', x, y, w, L, 10);
+      const hs = ['arachnid', 'stormgod', 'ironknight', 'merc', 'claws', 'mystic'];
+      hs.forEach((hid, i) => {
+        const sx = x + 8 + (i % 3) * ((w - 16) / 3), sy = y + 24 + ((i / 3) | 0) * 66;
+        const un = s.heroesUnlocked[hid];
+        const sk = SPR['arch_sk_' + hid];
+        if (sk) { ctx.globalAlpha = un ? 0.95 : 0.18; drawSprite(ctx, sk, sx + 20, sy + 20, { scale: 1 }); ctx.globalAlpha = 1; }
+        drawText(ctx, un ? hid.toUpperCase() : '???', sx + 20, sy + 44, { align: 'center', scale: 1, color: un ? L : D });
+        if (un && SPR.arch_pin) drawSprite(ctx, SPR.arch_pin, sx + 34, sy + 8, { scale: 0.8, rot: 0.3 });
+      });
     }
   }
 

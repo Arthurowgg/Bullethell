@@ -404,7 +404,7 @@ export class Player {
           const a2 = (i / 14) * TAU + this.webStormT * 2.5;
           const b = G.bullets.spawnPlayer({
             x: this.x, y: this.y, vx: Math.cos(a2) * rr, vy: Math.sin(a2) * rr,
-            dmg: 9 * st.dmg, pierce: 2, r: 3, sprite: 'b_web', life: 1.2,
+            dmg: 9 * st.dmg, pierce: 2, r: 3, sprite: 'b_web', life: 1.2, scale: 0.7,
           });
           if (b) { b.fx = 'arachnid'; b.root = 0.8; if (SPR.fx_web_dart) b.sprite = 'fx_web_dart'; }
         }
@@ -532,6 +532,7 @@ export class Player {
           const b = mk(a + off, { pierce: 1, r: 3, sprite: 'b_web' });
           if (b) {
             b.root = Math.max(st.webRoot || 0, 0.45);   // gruda no impacto
+            b.scale = 0.6;                               // teias menores e legíveis
             if (st.webSplit) b.split = true;
           }
         }

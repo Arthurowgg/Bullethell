@@ -325,21 +325,22 @@ export class LobbyScene extends Scene {
 
   // ============================================================ overlays ====
   drawOverlay(ctx, G) {
-    ctx.fillStyle = 'rgba(5,4,10,0.82)';
+    ctx.fillStyle = '#0a0816';
     ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    if (SPR.ui_menubg) { ctx.globalAlpha = 0.35; ctx.drawImage(SPR.ui_menubg, 0, 0, VIEW_W, VIEW_H); ctx.globalAlpha = 1; }
     if (this.overlay === 'arch') {
       if (SPR.ui_menubg) { ctx.globalAlpha = 0.4; ctx.drawImage(SPR.ui_menubg, 0, 0, VIEW_W, VIEW_H); ctx.globalAlpha = 1; }
       this.arch.draw(ctx, 40, 34, 560, 292);
       drawText(ctx, 'NEXUS ARCHIVES', VIEW_W / 2, 12, { align: 'center', scale: 2, color: '#4dd8ff', shadow: true, style: 'hero' });
       drawText(ctx, 'ENCICLOPÉDIA DO NEXO — DESCUBRA JOGANDO', VIEW_W / 2, 332, { align: 'center', scale: 1, color: '#7a74a0' });
-      if (UI.button('closeO', 566, 8, 54, 18, 'FECHAR', { color: '#ff4d4d', icon: 'ic_quit' })) this.arch.close();
+      if (UI.close('closeArch', 606, 8, 20)) this.arch.close();
       return;
     }
     const T = { nexus: 'NEXUS CORE', cos: 'COSMÉTICA', missions: 'MISSÕES', dev: 'CONSOLE DEV', cfg: 'CONFIGURAÇÕES' };
     const C = { nexus: '#d8b64c', cos: '#ff5df2', missions: '#4dff88', dev: '#ff8c3b', cfg: '#8a84a8' };
     this.frame(ctx, 40, 30, 560, 300, C[this.overlay]);
     drawText(ctx, T[this.overlay], 52, 38, { scale: 2, color: C[this.overlay], shadow: true, style: 'hero' });
-    if (UI.button('closeO', 540, 38, 48, 16, 'X', { color: '#ff4d4d' })) { this.overlay = null; Audio.sfx('uiBack'); }
+    if (UI.close('closeO', 576, 36, 20)) { this.overlay = null; }
     if (this.overlay === 'nexus') this.drawNexus(ctx, G);
     else if (this.overlay === 'cos') this.drawCosmetics(ctx, G);
     else if (this.overlay === 'missions') this.drawMissions(ctx, G);
@@ -509,24 +510,30 @@ export class LobbyScene extends Scene {
 
   drawConfig(ctx, G) {
     const s = Save.data.settings;
-    UI.panel(150, 36, 340, 288, { title: 'CONFIGURAÇÕES', icon: 'ic_gear' });
-    const cx = 162, cw = 316;
-    drawText(ctx, 'ÁUDIO', cx + 8, 66, { scale: 1, color: '#9a93c8' });
-    UI.slider('mus', cx, 78, cw, 'MÚSICA', 'ic_music', s.music, (v) => { s.music = v; Save.save(); });
-    UI.slider('sfx', cx, 98, cw, 'EFEITOS', 'ic_speaker', s.sfx, (v) => { s.sfx = v; Save.save(); });
-    drawText(ctx, 'VÍDEO / COMBATE', cx + 8, 126, { scale: 1, color: '#9a93c8' });
-    if (UI.toggle('t1', cx, 138, cw, 'VIBRAÇÃO DE TELA', 'ic_shake', s.screenshake)) { s.screenshake = !s.screenshake; Save.save(); }
-    if (UI.toggle('t2', cx, 158, cw, 'NÚMEROS DE DANO', 'ic_dmg', s.dmgNumbers)) { s.dmgNumbers = !s.dmgNumbers; Save.save(); }
-    if (UI.toggle('t3', cx, 178, cw, 'MIRA AUTOMÁTICA', 'ic_aim', s.autofire)) { s.autofire = !s.autofire; Save.save(); }
-    if (UI.toggle('t4', cx, 198, cw, 'ESCALA INTEIRA', 'ic_pixel', s.integerScale)) { s.integerScale = !s.integerScale; Save.save(); G.resize && G.resize(); }
-    if (UI.button('fs', cx + 8, 224, 148, 22, 'TELA CHEIA', { icon: 'ic_full' })) toggleFullscreen();
-    if (UI.button('tut', cx + 164, 224, 148, 22, 'RETUTORIAL', { icon: 'ic_play' })) { Save.data.tutorialDone = false; Audio.sfx('ui'); }
-    if (UI.button('reset2', cx + 8, 256, 148, 22, 'APAGAR SAVE', { icon: 'ic_quit', color: '#ff4d4d', textColor: this._resetArm ? '#ffffff' : '#ff8c8c' })) {
+    this.cfgTab = this.cfgTab || 'audio';
+    UI.panel(140, 36, 360, 288, { title: 'CONFIGURAÇÕES', icon: 'gear' });
+    const cx = 152, cw = 336;
+    const tw = 104;
+    if (UI.tab('cA', cx + 8, 68, tw, 18, 'ÁUDIO', this.cfgTab === 'audio')) this.cfgTab = 'audio';
+    if (UI.tab('cV', cx + 12 + tw, 68, tw, 18, 'VÍDEO', this.cfgTab === 'video')) this.cfgTab = 'video';
+    if (UI.tab('cC', cx + 16 + tw * 2, 68, tw, 18, 'COMBATE', this.cfgTab === 'combate')) this.cfgTab = 'combate';
+    if (this.cfgTab === 'audio') {
+      UI.slider('mus', cx, 100, cw, 'MÚSICA', 'music', s.music, (v) => { s.music = v; Save.save(); });
+      UI.slider('sfx', cx, 124, cw, 'EFEITOS', 'speaker', s.sfx, (v) => { s.sfx = v; Save.save(); });
+    } else if (this.cfgTab === 'video') {
+      if (UI.toggle('t4', cx, 100, cw, 'ESCALA INTEIRA', 'pixel', s.integerScale)) { s.integerScale = !s.integerScale; Save.save(); G.resize && G.resize(); }
+      if (UI.button('fs', cx + 8, 126, 140, 22, 'TELA CHEIA', { icon: 'full' })) toggleFullscreen();
+      if (UI.button('tut', cx + 160, 126, 140, 22, 'RETUTORIAL', { icon: 'play' })) { Save.data.tutorialDone = false; Audio.sfx('ui'); }
+    } else {
+      if (UI.toggle('t1', cx, 100, cw, 'VIBRAÇÃO DE TELA', 'shake', s.screenshake)) { s.screenshake = !s.screenshake; Save.save(); }
+      if (UI.toggle('t2', cx, 122, cw, 'NÚMEROS DE DANO', 'dmg', s.dmgNumbers)) { s.dmgNumbers = !s.dmgNumbers; Save.save(); }
+      if (UI.toggle('t3', cx, 144, cw, 'MIRA AUTOMÁTICA', 'aim', s.autofire)) { s.autofire = !s.autofire; Save.save(); }
+    }
+    if (UI.button('reset2', cx + 8, 288, 150, 22, 'APAGAR SAVE', { icon: 'x', color: '#ff4d4d', textColor: this._resetArm ? '#ffffff' : '#ff8c8c' })) {
       if (this._resetArm) { Save.reset(); Audio.sfx('defeat'); this._resetArm = false; }
       else this._resetArm = true;
     }
-    if (this._resetArm) drawText(ctx, 'CLIQUE DE NOVO PARA CONFIRMAR', cx + 236, 264, { align: 'center', color: '#ff4d4d' });
-    drawText(ctx, 'AS MESMAS OPÇÕES VALEM NO MENU DE PAUSA', 320, 296, { align: 'center', scale: 1, color: '#5a5470' });
+    if (this._resetArm) drawText(ctx, 'CLIQUE DE NOVO PARA CONFIRMAR', cx + 200, 296, { align: 'center', color: '#ff4d4d' });
     Audio.setVolumes({ music: s.music, sfx: s.sfx, master: s.master });
     Save.save();
   }

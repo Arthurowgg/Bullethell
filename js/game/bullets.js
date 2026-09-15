@@ -92,6 +92,7 @@ export class BulletSystem {
     for (const b of this.player.live) {
       const s = SPR[b.sprite];
       const a = Math.atan2(b.vy, b.vx);
+      const sc = b.scale || 1;
       if (!s) continue;
       if (b.fx === 'arachnid') {
         // silk threads trailing the web dart
@@ -102,7 +103,7 @@ export class BulletSystem {
         ctx.moveTo(b.x - Math.cos(a) * 14 - Math.sin(a) * 2, b.y - Math.sin(a) * 14 + Math.cos(a) * 2);
         ctx.lineTo(b.x, b.y);
         ctx.stroke();
-        drawSprite(ctx, s, b.x, b.y, { rot: a });
+        drawSprite(ctx, s, b.x, b.y, { rot: a, scale: sc });
       } else if (b.fx === 'stormgod') {
         // zigzag zap tail
         ctx.strokeStyle = '#9feaffaa';
@@ -117,29 +118,29 @@ export class BulletSystem {
           ctx.lineTo(px, py);
         }
         ctx.stroke();
-        drawSprite(ctx, s, b.x, b.y, { rot: a });
+        drawSprite(ctx, s, b.x, b.y, { rot: a, scale: sc });
       } else if (b.fx === 'ironknight') {
         ctx.globalAlpha = 0.35;
         ctx.fillStyle = '#4dd8ff';
         ctx.beginPath(); ctx.arc(b.x, b.y, 6 + Math.sin(b.age * 30) * 1, 0, TAU); ctx.fill();
         ctx.globalAlpha = 1;
-        drawSprite(ctx, s, b.x, b.y);
+        drawSprite(ctx, s, b.x, b.y, { scale: sc });
       } else if (b.fx === 'merc') {
         ctx.strokeStyle = '#ffd94a66';
         ctx.beginPath();
         ctx.moveTo(b.x - Math.cos(a) * 12, b.y - Math.sin(a) * 12);
         ctx.lineTo(b.x, b.y);
         ctx.stroke();
-        drawSprite(ctx, s, b.x, b.y, { rot: b.age * 25 });
+        drawSprite(ctx, s, b.x, b.y, { rot: b.age * 25, scale: sc });
       } else if (b.fx === 'claws') {
-        drawSprite(ctx, s, b.x, b.y, { rot: a, alpha: Math.min(1, b.life * 4) });
+        drawSprite(ctx, s, b.x, b.y, { rot: a, alpha: Math.min(1, b.life * 4), scale: sc });
       } else if (b.fx === 'mystic') {
         const ra = b.age * 6;
         ctx.fillStyle = '#ffd94a';
         ctx.fillRect(b.x + Math.cos(ra) * 7 - 1, b.y + Math.sin(ra) * 7 - 1, 2, 2);
-        drawSprite(ctx, s, b.x, b.y, { rot: ra * 0.5 });
+        drawSprite(ctx, s, b.x, b.y, { rot: ra * 0.5, scale: sc });
       } else {
-        drawSprite(ctx, s, b.x, b.y);
+        drawSprite(ctx, s, b.x, b.y, { scale: sc });
       }
     }
   }

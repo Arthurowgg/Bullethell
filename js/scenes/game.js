@@ -793,6 +793,92 @@ export class GameScene extends Scene {
   }
 
   drawPause(ctx, G) {
+    ctx.fillStyle = '#0a0816';
+    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    if (SPR.ui_menubg) { ctx.globalAlpha = 0.4; ctx.drawImage(SPR.ui_menubg, 0, 0, VIEW_W, VIEW_H); ctx.globalAlpha = 1; }
+    const s = this.save.settings;
+    const px = 176, py = 44, pw = 288, ph = 272;
+    if (!this.pauseCfg) {
+      UI.panel(px, py, pw, ph, { title: 'PAUSA', icon: 'gear' });
+      if (UI.close('pclose', px + pw - 24, py + 6)) { this.paused = false; this.pauseCfg = false; }
+      const bx = px + 28, bw = pw - 56;
+      if (UI.button('resume', bx, py + 46, bw, 28, 'CONTINUAR', { primary: true, icon: 'play', style: 'frame' })) { this.paused = false; this.pauseCfg = false; }
+      if (UI.button('cfg', bx, py + 82, bw, 26, 'CONFIGURAÇÕES', { icon: 'gear' })) { this.pauseCfg = true; this.pauseTab = this.pauseTab || 'audio'; }
+      if (UI.button('restart', bx, py + 116, bw, 26, 'REINICIAR PARTIDA', { icon: 'restart', color: '#ff8c3b' })) { G.restartGame(); return; }
+      if (UI.button('quit', bx, py + 150, bw, 26, 'SAIR PARA O NEXO', { icon: 'quit', color: '#ff4d4d' })) { G.gotoLobby(); return; }
+      if (UI.iconButton('fs', px + pw / 2 - 11, py + ph - 34, 22, 'full')) toggleFullscreen();
+      drawText(ctx, `t=${G.time.toFixed(0)}s  wave=${G.waves ? G.waves.wave : '-'}/${TOTAL_WAVES}  ${G.waves ? G.waves.phase : ''}  mobs=${G.enemies.length}  world=${G.arena.themeId}`, VIEW_W / 2, py + ph + 10, { align: 'center', color: '#5a5470' });
+      if (G.__err) drawText(ctx, 'ERR: ' + String(G.__err.message || G.__err).slice(0, 60), VIEW_W / 2, py + ph + 22, { align: 'center', color: '#ff4d4d' });
+    } else {
+      UI.panel(px - 16, py, pw + 32, ph, { title: 'CONFIGURAÇÕES', icon: 'gear' });
+      if (UI.close('pclose2', px + pw + 4, py + 6)) { this.pauseCfg = false; }
+      const cx = px - 4, cw = pw + 8;
+      const tw = 88;
+      if (UI.tab('tabA', cx + 8, py + 34, tw, 18, 'ÁUDIO', this.pauseTab === 'audio')) this.pauseTab = 'audio';
+      if (UI.tab('tabV', cx + 8 + tw + 6, py + 34, tw, 18, 'VÍDEO', this.pauseTab === 'video')) this.pauseTab = 'video';
+      if (UI.tab('tabC', cx + 8 + (tw + 6) * 2, py + 34, tw, 18, 'COMBATE', this.pauseTab === 'combate')) this.pauseTab = 'combate';
+      if (this.pauseTab === 'audio') {
+        UI.slider('mus', cx, py + 66, cw, 'MÚSICA', 'music', s.music, (v) => { s.music = v; Save.save(); });
+        UI.slider('sfx', cx, py + 90, cw, 'EFEITOS', 'speaker', s.sfx, (v) => { s.sfx = v; Save.save(); });
+      } else if (this.pauseTab === 'video') {
+        if (UI.toggle('int', cx, py + 66, cw, 'ESCALA INTEIRA', 'pixel', s.integerScale)) { s.integerScale = !s.integerScale; Save.save(); G.resize && G.resize(); }
+        if (UI.button('fs2', cx + 8, py + 92, 130, 22, 'TELA CHEIA', { icon: 'full' })) toggleFullscreen();
+      } else {
+        if (UI.toggle('shake', cx, py + 66, cw, 'VIBRAÇÃO DE TELA', 'shake', s.screenshake)) { s.screenshake = !s.screenshake; Save.save(); }
+        if (UI.toggle('dmg', cx, py + 88, cw, 'NÚMEROS DE DANO', 'dmg', s.dmgNumbers)) { s.dmgNumbers = !s.dmgNumbers; Save.save(); }
+        if (UI.toggle('aim', cx, py + 110, cw, 'MIRA AUTOMÁTICA', 'aim', s.autofire)) { s.autofire = !s.autofire; Save.save(); }
+      }
+      if (UI.button('back', cx + cw - 118, py + ph - 40, 126, 24, 'VOLTAR', { primary: true, icon: 'play', silent: true, style: 'frame' })) { this.pauseCfg = false; Audio.sfx('uiBack'); }
+      Audio.setVolumes({ music: s.music, sfx: s.sfx, master: s.master });
+    }
+  }
+
+  drawLevelUp(ctx, G) {
+    ctx.fillStyle = 'rgba(5,4,10,0.78)';
+    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    drawText(ctx, 'NÍVEL ' + G.runStats.level + ' — ESCOLHA UM APRIMORAMENTO', VIEW_W / 2, 60, { align: 'center', scale: 2, color: '#ffd94a', shadow: true });
+    const n = this.levelChoices.length;
+    const w = 140, h = 150, gap = 14;
+    const total = n * w + (n - 1) * gap;
+    let x = (VIEW_W - total) / 2;
+    this.levelChoices.forEach((u, i) => {
+      const hov = UI.hit(x, 80, w, h);
+      if (hov) UI.hoverId = 'up' + i;
+      ctx.fillStyle = hov ? '#241b52' : '#171233';
+      ctx.fillRect(x, 80, w, h);
+      const rc = RARITY[u.rarity].color;
+      ctx.strokeStyle = hov ? '#ffffff' : rc;
+      ctx.strokeRect(x + 0.5, 80.5, w - 1, h - 1);
+      ctx.fillStyle = rc;
+      ctx.fillRect(x, 80, w, 3);
+      drawText(ctx, '[' + (i + 1) + ']', x + 6, 90, { color: '#8a84a8' });
+      drawText(ctx, RARITY[u.rarity].name, x + w - 6, 90, { align: 'right', color: rc });
+      if (u.icon && SPR[u.icon]) drawSprite(ctx, SPR[u.icon], x + w / 2, 112, { scale: 1.5 });
+      // name wrap
+      const words = u.name.split(' ');
+      let line = '', ly = 128;
+      for (const wd of words) {
+        if ((line + wd).length > 16) { drawText(ctx, line, x + 8, ly, { color: '#ffffff' }); ly += 9; line = ''; }
+        line += (line ? ' ' : '') + wd;
+      }
+      if (line) drawText(ctx, line, x + 8, ly, { color: '#ffffff' });
+      ly += 14;
+      // desc wrap
+      const dwords = u.desc.split(' ');
+      line = '';
+      for (const wd of dwords) {
+        if ((line + wd).length > 20) { drawText(ctx, line, x + 8, ly, { color: '#9a93c8' }); ly += 8; line = ''; }
+        line += (line ? ' ' : '') + wd;
+      }
+      if (line) drawText(ctx, line, x + 8, ly, { color: '#9a93c8' });
+      const taken = G.takenUpgrades[u.id] || 0;
+      if (taken) drawText(ctx, 'RANK ' + (taken + 1), x + 8, 80 + h - 12, { color: '#ffd94a' });
+      if (hov && UI.anyClick) this.chooseUpgrade(G, i);
+      x += w + gap;
+    });
+  }
+
+  drawPause(ctx, G) {
     ctx.fillStyle = 'rgba(4,3,10,0.88)';
     ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     if (SPR.ui_menubg) { ctx.globalAlpha = 0.3; ctx.drawImage(SPR.ui_menubg, 0, 0, VIEW_W, VIEW_H); ctx.globalAlpha = 1; }

@@ -1,12 +1,13 @@
 // ---------------------------------------------------------------------------
 // MARVEL NEXUS — game/hud.js
-// Combat HUD v3: same Nexus UI kit as menus (nine-slice panels, framed
-// plates). Hero vitals top-left, wave tracker + timer top-center, world intel
-// top-right, ability plates bottom-left, boss bar bottom-center.
+// Combat HUD v4: crisp chamfered panels (same kit as menus). Hero vitals
+// top-left; world intel (full name) top-right with the WAVE tracker UNDER it;
+// ability plates bottom-left (Q + E only); boss bar bottom-center.
 // ---------------------------------------------------------------------------
 import { drawText } from '../core/font.js';
 import { SPR, drawSprite } from '../core/pixel.js';
-import { slice9 } from '../scenes/scene.js';
+import { chamfer } from '../scenes/scene.js';
+import { drawIcon } from '../core/icons.js';
 import { fmtTime, clamp } from '../core/util.js';
 import { xpNeed } from './run.js';
 import { VIEW_W } from './arena.js';
@@ -21,30 +22,27 @@ export function drawHud(ctx, G) {
 
   // ================= top-left: hero vitals =================
   const hc = HERO_COLOR[P.hero.id] || '#ffffff';
-  ctx.fillStyle = '#0d0a1ecc';
-  ctx.fillRect(4, 4, 182, 40);
-  if (SPR.ui_panel) slice9(ctx, SPR.ui_panel, 4, 4, 182, 40, 8);
-  // avatar plate
+  chamfer(ctx, 4, 4, 186, 40, { fill: '#0d0a1ecc', border: hc, cut: 3 });
+  // avatar
   ctx.fillStyle = '#100818';
-  ctx.fillRect(8, 8, 28, 28);
+  ctx.fillRect(9, 9, 28, 28);
   const av = SPR[P.base] || SPR['hero_' + P.hero.id];
-  if (av) drawSprite(ctx, av, 22, 22, { scale: 1 });
-  ctx.strokeStyle = hc; ctx.lineWidth = 1; ctx.strokeRect(8.5, 8.5, 27, 27);
+  if (av) drawSprite(ctx, av, 23, 23, { scale: 1 });
+  ctx.strokeStyle = hc; ctx.lineWidth = 1; ctx.strokeRect(9.5, 9.5, 27, 27);
   // name + shield
-  drawText(ctx, P.hero.name, 41, 7, { scale: 1, color: hc, shadow: true });
+  drawText(ctx, P.hero.name, 43, 7, { scale: 1, color: hc, shadow: true });
   if (st.shield > 0) {
-    drawText(ctx, 'ESC', 132, 7, { scale: 1, color: '#4dd8ff' });
+    drawText(ctx, 'ESC', 138, 7, { scale: 1, color: '#4dd8ff' });
     ctx.fillStyle = '#4dd8ff';
-    for (let i = 0; i < Math.min(4, st.shield); i++) ctx.fillRect(152 + i * 6, 8, 4, 4);
+    for (let i = 0; i < Math.min(4, st.shield); i++) ctx.fillRect(158 + i * 6, 8, 4, 4);
   }
-  // hp bar with ghost damage trail + crit state
-  const hbx = 41, hby = 17, hbw = 136, hbh = 10;
+  // hp bar: frame + ghost trail + segments + value
+  const hbx = 43, hby = 17, hbw = 138, hbh = 10;
   const hpf = clamp(st.hp / st.maxHp, 0, 1);
   hud.ghost = Math.max(hpf, hud.ghost - 0.35 * (1 / 60) * 3);
   if (hud.ghost < hpf) hud.ghost = hpf;
   const crit = hpf <= 0.3;
-  ctx.fillStyle = '#100818';
-  ctx.fillRect(hbx - 1, hby - 1, hbw + 2, hbh + 2);
+  chamfer(ctx, hbx - 2, hby - 2, hbw + 4, hbh + 4, { fill: '#100818', border: crit ? '#ff2b2b' : '#000000', cut: 2 });
   ctx.fillStyle = '#3d0d1c';
   ctx.fillRect(hbx, hby, hbw, hbh);
   ctx.fillStyle = '#8a2038';
@@ -54,68 +52,63 @@ export function drawHud(ctx, G) {
   ctx.fillStyle = '#ffffff55';
   ctx.fillRect(hbx, hby, Math.round(hbw * hpf), 2);
   for (let i = 1; i < 4; i++) { ctx.fillStyle = '#00000066'; ctx.fillRect(hbx + (hbw / 4) * i, hby, 1, hbh); }
-  if (crit) { ctx.strokeStyle = '#ff2b2b'; ctx.strokeRect(hbx - 1.5, hby - 1.5, hbw + 3, hbh + 3); }
   drawText(ctx, `${Math.ceil(st.hp)}/${st.maxHp}`, hbx + hbw - 2, hby + 1, { align: 'right', scale: 1, color: crit ? '#ffb4b4' : '#ffd0da', shadow: true });
-  // xp strip
-  const xby = hby + hbh + 4;
+  // xp strip + level
+  const xby = hby + hbh + 5;
   ctx.fillStyle = '#081018';
-  ctx.fillRect(hbx - 1, xby - 1, hbw + 2, 4);
+  ctx.fillRect(hbx, xby, hbw, 3);
   ctx.fillStyle = '#4dd8ff';
   ctx.fillRect(hbx, xby, Math.round(hbw * clamp(st.xp / xpNeed(st.level), 0, 1)), 2);
   drawText(ctx, `NV ${st.level}`, hbx + hbw, xby - 2, { align: 'right', scale: 1, color: '#9feaff', shadow: true });
 
-  // ================= top-center: wave tracker + timer =================
-  if (G.waves) {
-    const wv = G.waves;
-    const inc = wv.phase === 'incursion' || G.portal || G.boss;
-    const cw = 176, cx = VIEW_W / 2 - cw / 2, cy = 4;
-    ctx.fillStyle = '#0d0a1ecc';
-    ctx.fillRect(cx, cy, cw, 28);
-    if (SPR.ui_panel) slice9(ctx, SPR.ui_panel, cx, cy, cw, 28, 7);
-    if (inc) {
-      const pul = 0.6 + Math.sin(performance.now() / 140) * 0.4;
-      ctx.globalAlpha = pul;
-      drawText(ctx, 'INCURSÃO', VIEW_W / 2, cy + 5, { align: 'center', scale: 2, color: '#ff4d4d', shadow: true });
-      ctx.globalAlpha = 1;
-      drawText(ctx, G.boss ? G.boss.def.name : 'ENTRE NO PORTAL', VIEW_W / 2, cy + 19, { align: 'center', scale: 1, color: '#ffd0da', shadow: true });
-    } else {
-      drawText(ctx, `WAVE ${String(wv.wave || 1).padStart(2, '0')}/${TOTAL_WAVES}`, cx + 8, cy + 5, { scale: 2, color: '#ffd94a', shadow: true });
-      drawText(ctx, wv.phase === 'breather' ? 'RESPIRO' : wv.phase === 'announce' ? 'PREPARAR' : String(wv.kind || '').toUpperCase(), cx + 8, cy + 19, { scale: 1, color: '#9a93c8', shadow: true });
-      const rem = wv.remaining(G);
-      const bar = 44;
-      ctx.fillStyle = '#1d1740';
-      ctx.fillRect(cx + cw - bar - 8, cy + 9, bar, 5);
-      ctx.fillStyle = '#ff5d8f';
-      ctx.fillRect(cx + cw - bar - 8, cy + 9, Math.round(bar * clamp(rem / 26, 0, 1)), 5);
-      drawText(ctx, String(rem), cx + cw - bar - 12, cy + 8, { align: 'right', scale: 1, color: '#c8c8d8', shadow: true });
-      drawText(ctx, 'HOSTIS', cx + cw - bar - 12, cy + 16, { align: 'right', scale: 1, color: '#7a74a0' });
-    }
-    // kills (left) + timer (right), discreet chips
-    drawSprite(ctx, SPR.skull, cx - 14, cy + 9, { scale: 0.8 });
-    drawText(ctx, String(G.kills), cx - 6, cy + 8, { scale: 1, color: '#c8c8d8', shadow: true });
-    drawText(ctx, fmtTime(G.time), cx + cw + 10, cy + 8, { scale: 1, color: inc ? '#ff8c8c' : '#9a93c8', shadow: true });
-  }
-
-  // ================= top-right: world intel =================
+  // ================= top-right: world intel + wave under it =============
   {
     const tid = G.arena && G.arena.themeId;
-    ctx.fillStyle = '#0d0a1ecc';
-    ctx.fillRect(VIEW_W - 128, 4, 124, 24);
-    if (SPR.ui_panel) slice9(ctx, SPR.ui_panel, VIEW_W - 128, 4, 124, 24, 7);
-    const ic = SPR['wicon_' + tid] || SPR.ui_burst;
-    if (ic) drawSprite(ctx, ic, VIEW_W - 116, 16, { scale: 1.2 });
-    drawText(ctx, WORLD_LABEL[tid] || tid, VIEW_W - 104, 7, { scale: 1, color: '#dcd6f6', shadow: true });
-    drawSprite(ctx, SPR.fragment, VIEW_W - 40, 20, { scale: 0.8 });
-    drawText(ctx, String(G.runFragments), VIEW_W - 32, 18, { scale: 1, color: '#9feaff', shadow: true });
+    const wname = WORLD_LABEL[tid] || tid || '';
+    const pw = Math.max(124, 34 + Math.ceil(drawTextW(wname)) + 52);
+    const px = VIEW_W - pw - 4;
+    chamfer(ctx, px, 4, pw, 22, { fill: '#0d0a1ecc', border: '#3a3350', cut: 3 });
+    const ic = SPR['wicon_' + tid] || null;
+    if (ic) drawSprite(ctx, ic, px + 12, 15, { scale: 1.2 });
+    drawText(ctx, wname, px + (ic ? 24 : 8), 8, { scale: 1, color: '#dcd6f6', shadow: true });
+    drawSprite(ctx, SPR.fragment, px + pw - 42, 17, { scale: 0.8 });
+    drawText(ctx, String(G.runFragments), px + pw - 34, 15, { scale: 1, color: '#9feaff', shadow: true });
+
+    if (G.waves) {
+      const wv = G.waves;
+      const inc = wv.phase === 'incursion' || G.portal || G.boss;
+      const wy = 30;
+      chamfer(ctx, px, wy, pw, 26, { fill: '#0d0a1ecc', border: inc ? '#ff4d4d' : '#7b5cff', cut: 3 });
+      if (inc) {
+        const pul = 0.6 + Math.sin(performance.now() / 140) * 0.4;
+        ctx.globalAlpha = pul;
+        drawText(ctx, 'INCURSÃO', px + 8, wy + 4, { scale: 2, color: '#ff4d4d', shadow: true });
+        ctx.globalAlpha = 1;
+        drawText(ctx, G.boss ? G.boss.def.name : 'ENTRE NO PORTAL', px + 8, wy + 17, { scale: 1, color: '#ffd0da', shadow: true });
+      } else {
+        drawText(ctx, `WAVE ${String(wv.wave || 1).padStart(2, '0')}/${TOTAL_WAVES}`, px + 8, wy + 4, { scale: 2, color: '#ffd94a', shadow: true });
+        drawText(ctx, wv.phase === 'breather' ? 'RESPIRO' : wv.phase === 'announce' ? 'PREPARAR' : String(wv.kind || '').toUpperCase(), px + 8, wy + 17, { scale: 1, color: '#9a93c8', shadow: true });
+        const rem = wv.remaining(G);
+        const bar = 40;
+        ctx.fillStyle = '#1d1740';
+        ctx.fillRect(px + pw - bar - 8, wy + 9, bar, 5);
+        ctx.fillStyle = '#ff5d8f';
+        ctx.fillRect(px + pw - bar - 8, wy + 9, Math.round(bar * clamp(rem / 26, 0, 1)), 5);
+        drawText(ctx, String(rem), px + pw - bar - 12, wy + 8, { align: 'right', scale: 1, color: '#c8c8d8', shadow: true });
+      }
+      // kills + timer on the left of the wave chip
+      drawIcon(ctx, 'dmg', px - 22, wy + 9, { color: '#c8c8d8' });
+      drawText(ctx, String(G.kills), px - 14, wy + 5, { scale: 1, color: '#c8c8d8', shadow: true });
+      drawText(ctx, fmtTime(G.time), px - 26, wy + 5, { align: 'right', scale: 1, color: inc ? '#ff8c8c' : '#9a93c8', shadow: true });
+    }
   }
 
-  // ================= bottom-left: combat plates =================
-  drawAbility(ctx, 10, 312, 'Q', P.hero.special.name, 100 - P.charge, 100, '#ffd94a', P.charge >= 100, P.charge >= 100 ? 'PRONTO!' : null, SPR['abil_' + P.hero.id + '_e'], P.hero.id, true);
-  drawAbility(ctx, 50, 314, 'E', P.hero.ability.name, P.abilityCd, P.hero.ability.cd * st.cdr, P.hero.color, P.abilityCd <= 0, null, SPR['abil_' + P.hero.id + '_q'], P.hero.id, false);
-  drawAbility(ctx, 88, 314, 'ESP', 'ESQUIVA', P.dashCd, st.dashCd, '#ffffff', P.dashCd <= 0, null, SPR.ui_bolt, P.hero.id, false);
+  // ================= bottom-left: Q + E plates =================
+  drawAbility(ctx, 10, 310, 'Q', 100 - P.charge, 100, '#ffd94a', P.charge >= 100, P.charge >= 100 ? 'PRONTO!' : null, 'q_' + P.hero.id, P.hero.id, true);
+  drawAbility(ctx, 52, 313, 'E', P.abilityCd, P.hero.ability.cd * st.cdr, P.hero.color, P.abilityCd <= 0, null, 'e_' + P.hero.id, P.hero.id, false);
   // basic attack tag
-  drawSprite(ctx, SPR['shot_hero_' + P.hero.id] || SPR.b_player, 132, 326, { scale: 1 });
-  drawText(ctx, 'ATAQUE', 126, 338, { scale: 1, color: '#7a74a0' });
+  drawSprite(ctx, SPR['shot_hero_' + P.hero.id] || SPR.b_player, 96, 326, { scale: 1 });
+  drawText(ctx, 'ATAQUE', 90, 338, { scale: 1, color: '#7a74a0' });
 
   // ================= boss bar =================
   if (G.boss && !G.boss.dead) {
@@ -151,12 +144,13 @@ export function drawHud(ctx, G) {
       ctx.restore();
       drawSprite(ctx, frame, bx + bw / 2, by + bh / 2, { scaleX: bw / frame.width, scaleY: bh / frame.height });
     } else {
-      ctx.fillStyle = '#100818';
-      ctx.fillRect(bx - 1, by - 1, bw + 2, 10);
+      chamfer(ctx, bx - 2, by - 2, bw + 4, bh + 4, { fill: '#100818', border: bc, cut: 3 });
       ctx.fillStyle = '#3d0d1c';
-      ctx.fillRect(bx, by, bw, 8);
+      ctx.fillRect(bx, by, bw, bh);
       ctx.fillStyle = bc;
-      ctx.fillRect(bx, by, Math.round(bw * f), 8);
+      ctx.fillRect(bx, by, Math.round(bw * f), bh);
+      ctx.fillStyle = '#ffffff44';
+      ctx.fillRect(bx, by, Math.round(bw * f), 2);
     }
   }
 
@@ -176,27 +170,20 @@ export function drawHud(ctx, G) {
     drawText(ctx, G.banner.text, VIEW_W / 2, 120, { scale: 2, align: 'center', color: G.banner.color || '#e8e8ff', shadow: true });
     ctx.globalAlpha = 1;
   }
-
-  // control hint (first run)
-  if (G.hintT > 0) {
-    ctx.globalAlpha = Math.min(1, G.hintT);
-    drawText(ctx, 'WASD MOVER  ·  MOUSE MIRAR  ·  ESPAÇO ESQUIVA  ·  Q ESPECIAL  ·  E HABILIDADE', VIEW_W / 2, 300, { align: 'center', scale: 1, color: '#9a93c8', shadow: true });
-    ctx.globalAlpha = 1;
-  }
 }
 
-function drawAbility(ctx, x, y, key, name, cd, cdMax, color, ready, readyLabel, icon, heroId, primary) {
-  const s = primary ? 32 : 28;
-  ctx.fillStyle = '#100818dd';
-  ctx.fillRect(x, y, s, s);
-  if (SPR.ui_panel) slice9(ctx, SPR.ui_panel, x, y, s, s, 6);
+function drawTextW(s) { return s.length * 6; }
+
+function drawAbility(ctx, x, y, key, cd, cdMax, color, ready, readyLabel, iconId, heroId, primary) {
+  const s = primary ? 34 : 30;
+  chamfer(ctx, x, y, s, s, { fill: '#100818dd', border: ready ? (primary ? '#ffd94a' : color) : '#3a3350', cut: 3 });
   // cooldown sweep
   if (!ready && cdMax > 0) {
     const f = clamp(cd / cdMax, 0, 1);
     ctx.fillStyle = '#000000bb';
     ctx.fillRect(x + 2, y + 2, s - 4, Math.round((s - 4) * f));
   }
-  if (icon) drawSprite(ctx, icon, x + s / 2, y + s / 2, { scale: Math.min(20 / icon.width, 20 / icon.height) });
+  drawIcon(ctx, iconId, x + s / 2, y + s / 2, { scale: primary ? 2.5 : 2, color: ready ? '#ffffff' : color, accent: color });
   if (ready && primary) {
     const pul = 0.5 + Math.sin(performance.now() / 150) * 0.5;
     ctx.strokeStyle = '#ffd94a';
@@ -207,13 +194,9 @@ function drawAbility(ctx, x, y, key, name, cd, cdMax, color, ready, readyLabel, 
     ctx.strokeStyle = '#ffffff';
     ctx.strokeRect(x - 3, y - 3, s + 6, s + 6);
     ctx.globalAlpha = 1;
-  } else {
-    ctx.strokeStyle = ready ? color : '#7a74a0';
-    ctx.strokeRect(x + 0.5, y + 0.5, s - 1, s - 1);
   }
   // keycap tag
-  if (SPR.ui_keycap) drawSprite(ctx, SPR.ui_keycap, x + s / 2, y + s + 6, { scaleX: 1, scaleY: 1 });
-  else { ctx.fillStyle = '#0d0a1e'; ctx.fillRect(x + s / 2 - 8, y + s + 1, 16, 9); }
-  drawText(ctx, key, x + s / 2, y + s + 2, { align: 'center', scale: 1, color: ready ? '#ffffff' : '#9a93c8', shadow: true });
+  chamfer(ctx, x + s / 2 - 8, y + s + 2, 16, 10, { fill: '#0d0a1e', border: ready ? '#ffd94a' : '#3a3350', cut: 2 });
+  drawText(ctx, key, x + s / 2, y + s + 3, { align: 'center', scale: 1, color: ready ? '#ffffff' : '#9a93c8', shadow: true });
   if (readyLabel && ready) drawText(ctx, readyLabel, x + s / 2, y - 9, { align: 'center', scale: 1, color: '#ffd94a', shadow: true });
 }
